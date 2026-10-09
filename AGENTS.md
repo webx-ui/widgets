@@ -6,31 +6,26 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
 
 ## What it owns
 
-- **Runtime** — `dist/runtime.js` + `dist/runtime.css`, on every page of a site with a theme. Joins
-  `window.webx`: `webx.mount(root)` starts what is new inside `root` (idempotent),
-  `webx.unmount(root)` lets it go, `webx.widget(name, selector, setup)` registers a widget —
-  `setup(el)` may return its cleanup.
-- **Behaviours by attribute** (no component needed):
-  - `data-webx-disclosure="<id>"` on a button — shows/hides `#<id>`, Esc and a click outside close.
-  - `data-webx-dialog="<id>"` on a link or button — opens `<dialog id="<id>">` as a modal;
-    `[data-webx-dialog-close]` inside closes it. A URL ending in `#<id>` opens it on load.
-  - `data-webx-tabs` on a container of `[data-webx-tab]` panels — label from the attribute's
-    value or the panel's first heading; `data-webx-tab-selected` picks the first one shown.
-  - `data-webx-accordion="single"` on a container of `<details>` — one open at a time.
-- **Components** — `<x-webx-dialog id title close>`, `<x-webx-tabs label>` with
-  `<x-webx-tabs.panel title selected level>`. Views: `webx-widgets::components.<name>`.
+- **Runtime** — `dist/runtime.js|css`, on every page of a site with a theme. Joins `window.webx`:
+  `webx.mount(root)` starts what is new inside `root` (idempotent), `webx.unmount(root)` lets it
+  go, `webx.widget(name, selector, setup)` registers one — `setup(el)` may return its cleanup.
+  `Widgets::need('<name>')` (facade) claims `dist/<name>.js|css`: CSS at `@webxTheme`, JS before `</body>`.
+- **Behaviours by attribute** (no component needed): `data-webx-disclosure="<id>"` on a button
+  shows/hides `#<id>` (Esc, a click outside close); `data-webx-dialog="<id>"` opens `<dialog id>` as
+  a modal (`[data-webx-dialog-close]` inside closes it, a URL ending in `#<id>` opens it on load);
+  `data-webx-tabs` on a container of `[data-webx-tab]` panels (label: the value or the first heading;
+  `data-webx-tab-selected` first shown); `data-webx-accordion="single"` on `<details>` — one open.
+- **Components** — `<x-webx-dialog id title close>`, `<x-webx-tabs label>` with `<x-webx-tabs.panel title selected level>`.
 - **Header** — `<x-webx-header>` with slots `topbar`, `brand`, the default (the navigation),
   `actions`, `mobile-bottom`, `mobile`, `trigger`; props `collapse` (`auto` | a width in px |
   `never`), `breakpoint` (where `auto` folds without JavaScript, 960), `sticky` (`none` |
   `sticky` | `hide-on-scroll`), `overlay`, `skip` (`#content`, or `false` when the layout has
   its own skip link), `mode` and `side` of the mobile menu it builds. Inside it
-  `<x-webx-header.nav :items="menu('header')" :mega="['services' => 'components.mega']">` —
-  dropdowns; a `mega` view gets `$item`. `:items` takes `menu()` trees or arrays
-  `['label', 'url', 'children', 'current', 'variant']`.
-- **Mobile menu** — `<x-webx-mobile-menu side breakpoint close-on-navigate history>` with slots
-  `top`, the default (the body), `bottom`, `trigger`; `<x-webx-mobile-menu.nav :items
-mode="accordion|drill">` in its body. The header builds one by itself out of its brand,
-  navigation and actions unless given `mobile` or `collapse="never"`.
+  `<x-webx-header.nav :items="menu('header')" :mega="['services' => 'components.mega']">` — dropdowns; a `mega`
+  view gets `$item`. `:items` takes `menu()` trees or arrays `['label', 'url', 'children', 'current', 'variant']`.
+- **Mobile menu** — `<x-webx-mobile-menu side breakpoint close-on-navigate history>`, slots `top`, the default (the
+  body), `bottom`, `trigger`; `<x-webx-mobile-menu.nav :items mode="accordion|drill">` in its body. The header builds
+  one of its brand, navigation and actions unless given `mobile` or `collapse="never"`.
 - **Dropdown panel** — `<x-webx-dropdown placement="bottom-start|bottom-end|bottom|top-start|top-end|top"
 open-on="click|hover" label open>` with slot `trigger` (its attributes go on the `<summary>`).
   A `<details>`: without JavaScript a click opens it; with it the panel is a popover placed from
@@ -56,47 +51,63 @@ open-on="click|hover" label open>` with slot `trigger` (its attributes go on the
   "Cookie" tab of `module-settings` (`consent.*`, also over MCP `settings_set`), otherwise
   `config/webx-widgets.php` (`php artisan vendor:publish --tag=webx-widgets-config`).
 - **Contacts** — `dist/contacts.js|css`, only where one stands; they read the Contacts tab of
-  `module-settings` (`contacts()`) and print nothing while it is empty.
-  `<x-webx-phones layout="dropdown|list" callback="<form>" compact placement>` — the main number a
-  `tel:` link in E.164 (shown as typed), the others in a dropdown, messengers as icons;
-  `<x-webx-hours layout="status|table">` — "Open until 19:00" in the site's time zone, the week
-  folded, worked out again in the browser every minute from words the server wrote;
-  `<x-webx-contact-button corner form :items>` — a round button in a corner, above the cookie
-  banner while it shows; `<x-webx-contact-bar form :breakpoint>` — "Call / Write / Request" on a
-  phone, no script; `<x-webx-socials>`; `<x-webx-icon name>` — networks, messengers (Simple Icons,
-  CC0) and `phone`, `chat`, `mail`, `clock`, `link`, `form`, `close`, `globe`.
-- **Language switcher** — `<x-webx-language-switcher layout="dropdown|list" codes placement
-label fallback-label>`: each language named in itself, a link to the same page in it from the
-  `webx-ui/routing` registry (as `hreflang`), or to its home page with `is-fallback` where there
-  is no translation; nothing with one language or without the language in the path.
-  `dist/language-switcher.css` only. Links for a markup of your own: `LanguageLinks::current()`.
-- **Loading** — `Widgets::need('<name>')` (facade `WebxUi\Widgets\Facades\Widgets`) claims a
-  widget's own `dist/<name>.js|css` for the page. `@webxTheme` prints a marker; the response gets
-  the `<link>`s there and the `<script type="module">`s before `</body>`.
+  `module-settings` (`contacts()`) and print nothing while it is empty. `<x-webx-phones
+layout="dropdown|list" callback="<form>" compact placement>` — the main number a `tel:` link in
+  E.164 (shown as typed), the others in a dropdown, messengers as icons; `<x-webx-hours
+layout="status|table">` — "Open until 19:00" in the site's time zone, the week folded, worked
+  out again in the browser every minute; `<x-webx-contact-button corner form :items>` — a round
+  button in a corner, above the cookie banner; `<x-webx-contact-bar form :breakpoint>` — "Call /
+  Write / Request" on a phone, no script; `<x-webx-socials>`; `<x-webx-icon name>` — networks,
+  messengers (Simple Icons, CC0), `phone chat mail clock link form close globe zoom`.
+- **Language switcher** — `<x-webx-language-switcher layout="dropdown|list" codes placement label fallback-label>`:
+  each language named in itself, a link to the same page in it (`routing`, `hreflang`), or to its home page with
+  `is-fallback`; nothing with one language or no language in the path. CSS only. `LanguageLinks::current()`.
+- **Slider** — `dist/slider.js|css` (Swiper built in), only where one stands: `<x-webx-slider
+variant="cards|hero|gallery|logos" :per-view="['sm' => 1.2, 'md' => 2, 'lg' => 3]">` with
+  `<x-webx-slide thumb>` inside. Per view by its own width (`sm` 0, `md` 640, `lg` 960, `xl` 1280
+  or px); `arrows pagination loop autoplay continuous effect thumbs speed label`, `options` for the
+  rest of Swiper. No JavaScript: a strip that scrolls and snaps; what moves itself has a pause
+  button; only the first slides in view load at once.
+- **Lightbox** — `dist/lightbox.js|css` (PhotoSwipe), claimed by any `<a data-webx-lightbox>` on the
+  page: `<x-webx-lightbox :image="$picture" group>` (a media field's value or an object with `url()`,
+  `width`, `height`; or `src width height thumb alt`; the slot replaces the thumbnail), or by hand
+  `<a href data-webx-lightbox="<group>" data-width data-height>`. A group pages together, an empty
+  one is alone, a slider's slides too. No JavaScript: the link opens the file. Write the sizes.
+- **Video** — `dist/video.js|css`, only where one stands: `<x-webx-video src="<YouTube or Vimeo>"
+:poster="$picture" title ratio="16/9">` — a poster and a play button, the player (youtube-nocookie)
+  only on a click; before consent to `media` the server prints the notice with "Load" / "Always load
+  videos". No poster: the video's preview, fetched once into the library (folder "Video posters").
+  `<x-webx-video :file="$media" :poster>` — a `<video preload="none">`, no consent. No JS: a link.
+- **Map** — `dist/map.js|css` (Leaflet), only where one stands: `<x-webx-map :lat :lng :zoom marker height title link>`
+  or `<x-webx-map from="settings">` (main address of the Contacts tab; no coordinates — the address alone). The server
+  prints the address, "Open in maps" and, before consent to `media`, "Load" / "Always load maps"; tiles only after. The
+  wheel scrolls the page until the map is clicked. Tiles: `webx-widgets.map.provider` (OpenStreetMap; `{key}` entries).
+- **Blocks** — offered with `module-media` (`webx:setup`, or `webx:blocks:offered --install --module=widgets`),
+  then the site's: `gallery` (library pictures, grid or slider, zoom = lightbox, a group per block, title = caption),
+  `logos` (name, logo, link each, a strip), `video` (link or file by a switch, poster, caption, 16:9|4:3|1:1|9:16), `map` (contacts or coordinates, zoom, height); nothing to show prints nothing.
+- **Audit** (with `module-audit`): `widgets.before_consent` (a known player, map, counter or pixel asked at once —
+  fix `widgets.wait-for-consent` rewrites it where content stores it), `widgets.banner_off` (fix `widgets.banner-on`),
+  `widgets.lightbox_size`, `widgets.slider_pause`, `widgets.contact_both`. Own third parties: `webx-widgets.audit.third-party`.
 - **Classes** — public contract: `webx-<name>`, `webx-<name>__<element>`, states `is-*`
   (`webx-dialog__header|title|close|body`, `webx-tabs__list|tab|panel|title`, `is-enhanced`;
   `webx-header`, `--sticky|--hide-on-scroll|--overlay`, `__skip|topbar|bar|brand|nav|actions|trigger`,
   `is-collapsed|is-scrolled|is-hidden`; `webx-header-nav__item|link|toggle|dropdown|mega|sublink`,
   `is-open|is-current|is-flipped`; `webx-mobile-menu__trigger|panel|panel--<side>|top|close|body|bottom`;
   `webx-mobile-nav__list|item|link|toggle|level|back|title`, `is-drilled`;
-  `webx-consent__inner|text|title|body|policy|actions|button|customize`,
-  `webx-consent-dialog__intro|gpc|list|item|label|switch|name|always|description|actions`,
-  `webx-consent-link`; `webx-dropdown`, `--<placement>`, `__trigger|panel`, `is-open|is-flipped`;
-  `webx-form-dialog__header|title|close|body|done`, `is-sent`;
-  `webx-phones__*`, `webx-hours__*` (`is-open|is-closed|is-today`), `webx-contact-button__*`,
-  `webx-contact-bar__*`, `webx-socials__*`, `webx-icon`; `webx-language-switcher__current|list|
-link`, `is-current|is-fallback` — listed in each view's header).
-  `html.webx-js` once the runtime runs; `html.webx-scroll-locked` while a modal is open;
-  `html.webx-header-sticky` while a header sticks (the page's scroll padding is its height).
-- **Local tokens** — `--webx-dialog-*`, `--webx-tabs-*`, `--webx-header-*`,
-  `--webx-mobile-menu-*`, `--webx-consent-*`, `--webx-dropdown-offset|min-width`,
-  `--webx-icon-size`, `--webx-hours-*`, `--webx-contact-*`, `--webx-contact-bar-*`,
-  `--webx-socials-size`, `--webx-language-switcher-*`; each listed in its stylesheet, declared on
-  `:root` from `--site-*`. `--webx-header-height` and
-  `--webx-header-topbar-height` are kept live by the runtime — use them for `top` of anything
-  else sticky.
-- **Words** — `webx-widgets::widgets.*` in en, ru, uk, de, pl, fr, es, it, pt, tr; every word
-  is also a prop (`close="…"`).
+  `webx-consent__inner|text|title|body|policy|actions|button|customize`, `webx-consent-dialog__intro|
+gpc|list|item|label|switch|name|always|description|actions`, `webx-consent-link`; `webx-dropdown`,
+  `--<placement>`, `__trigger|panel`, `is-open|is-flipped`; `webx-form-dialog__header|title|close|
+body|done`, `is-sent`; `webx-phones__*`, `webx-hours__*` (`is-open|is-closed|is-today`),
+  `webx-contact-button__*`, `webx-contact-bar__*`, `webx-socials__*`, `webx-icon`;
+  `webx-language-switcher__current|list|link`, `is-current|is-fallback`; `webx-slider`, `--<variant>`,
+  `__viewport|track|slide|controls|button|prev|next|pause|pagination|bullet|thumbs|thumb`,
+  `is-ready|is-active`; `webx-lightbox-link`, `__image`, `is-ready`, the viewer PhotoSwipe's `.pswp`
+  with `webx-lightbox`; `webx-video`, `--youtube|vimeo|file`, `__facade|poster|play|consent|notice|
+button|frame|player`, `is-blocked|is-ready|is-playing`; `webx-map`, `--place`, `__place|address|open|notice|button|attribution|canvas|marker|hint`, `is-loaded|is-active` — in each view). `html.webx-js` once the runtime runs; `html.webx-scroll-locked`
+  while a modal is open; `html.webx-header-sticky` while a header sticks (scroll padding = its height).
+- **Local tokens** — `--webx-<name>-*` of each widget (`--webx-slider-per-view`, `--webx-lightbox-backdrop`…),
+  on `:root` from `--site-*`; `--webx-header-height|-topbar-height` kept live by the runtime — `top` of anything sticky.
+  **Words** — `webx-widgets::widgets.*` in en ru uk de pl fr es it pt tr; each also a prop.
 
 ## Change it without forking
 
@@ -114,36 +125,26 @@ link`, `is-current|is-fallback` — listed in each view's header).
 
 ## Do not
 
-- Do not edit `vendor/webx-ui/widgets` or `public/themes/webx-ui/widgets`: the next update or
-  `webx:theme:sync` replaces them.
-- Do not write a colour literally or with a fallback (`var(--site-x, #fff)`): presets stop
-  repainting it.
+- Do not edit `vendor/webx-ui/widgets` or `public/themes/webx-ui/widgets`: an update or a sync replaces them.
+- Do not write a colour literally or with a fallback (`var(--site-x, #fff)`): presets skip it.
 - Do not add `hidden` to a disclosure's panel in markup: without JavaScript it would never show.
 - Do not style a widget through a chain (`.site-main .webx-dialog__title`): one class matches the
   package and wins by order; a longer chain starts a specificity race with the next theme.
 - Do not paste a counter, a pixel, a chat or an embed as it is: wrap it in
   `<x-webx-consent category="…">` or write it as `type="text/plain"` / `data-src` — nothing
-  third-party may load before the visitor agrees.
-- Do not print a form of the inbox inside a dialog of your own for a button: link the button to
-  `#webx-form-<slug>` — the page gets the form once, however many buttons lead to it.
+  third-party may load before the visitor agrees. A video is `<x-webx-video>`, a map `<x-webx-map>`.
+- Do not put an inbox form in a dialog of your own: link the button to `#webx-form-<slug>` — printed once.
 - Do not make "Accept all" bigger or brighter than "Reject all": they share one class on purpose.
 - Do not type a phone number, an address or a network into a template: it goes on the Contacts
   tab, and the widgets and the SEO markup read it from there.
-- Do not format the hours or a time with `toLocaleString()` in a script of your own: it writes the
-  browser's way, not the page's language — `<x-webx-hours>` already carries the words.
-- Do not copy the runtime into the theme to change one behaviour: register your own widget.
-- Do not call `Widgets::need()` for the behaviours above to get them — the runtime is already on
-  every page; `need()` matters for widgets with files of their own.
+- Do not format a time with `toLocaleString()`: it writes the browser's way — `<x-webx-hours>` has the words.
+- Do not copy the runtime into the theme (register your own widget), nor `Widgets::need()` its behaviours.
 
 ## Check your work
 
-- `php artisan webx:theme:sync` lists `webx-ui/widgets` as published.
-- The page source has `/themes/webx-ui/widgets/<hash>/runtime.css` in `<head>` and
-  `runtime.js` right before `</body>`; no `<!--webx-widgets-->` left.
-- In the browser console: `typeof webx.widget === 'function'`; Tab through the widget with the
-  keyboard; turn JavaScript off and the content is still there.
+- `webx:theme:sync` lists `webx-ui/widgets`; `.../widgets/<hash>/runtime.css` in `<head>`, `runtime.js` before `</body>`. Tab; JS off.
+- `php artisan webx:audit:run`, then `audit_issues` with `check: "widgets.before_consent"` — nothing; the "Kitchen sink" pages of `theme-default` show each widget.
 
 ## Read more
 
-- [README.md](README.md) in this directory.
-- Specification: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_WIDGETS.md
+- [README.md](README.md); the guide: https://webx-ui.github.io/webx-ui/guide/widgets; the spec: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_WIDGETS.md

@@ -1,0 +1,127 @@
+{
+  "slug": "map",
+  "title": "Map",
+  "description": "A map with a pin: the main address of the Contacts settings, or coordinates of its own. The tiles wait for the visitor’s consent to media; before it, the address and a link to a map.",
+  "icon": null,
+  "group": "media",
+  "sort": 0,
+  "allow": null,
+  "allowed_in": null,
+  "max_per_entity": null,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "heading",
+      "type": "wx-input",
+      "label": "Heading",
+      "localized": true
+    },
+    {
+      "id": "source",
+      "type": "wx-segmented",
+      "label": "Place",
+      "default": "settings",
+      "props": {
+        "options": [
+          {
+            "value": "settings",
+            "label": "From the contacts"
+          },
+          {
+            "value": "coordinates",
+            "label": "Coordinates"
+          }
+        ]
+      }
+    },
+    {
+      "id": "latitude",
+      "type": "wx-input-number",
+      "label": "Latitude",
+      "help": "From −90 to 90: the first of the two numbers a map shows for a place, 51.5074.",
+      "props": {
+        "min": -90,
+        "max": 90,
+        "step": 0.000001,
+        "precision": 6
+      },
+      "visible": {
+        "when": "source",
+        "is": "coordinates"
+      }
+    },
+    {
+      "id": "longitude",
+      "type": "wx-input-number",
+      "label": "Longitude",
+      "help": "From −180 to 180: the second, −0.1278.",
+      "props": {
+        "min": -180,
+        "max": 180,
+        "step": 0.000001,
+        "precision": 6
+      },
+      "visible": {
+        "when": "source",
+        "is": "coordinates"
+      }
+    },
+    {
+      "id": "address",
+      "type": "wx-input",
+      "label": "Address",
+      "help": "Shown before the map loads and on the pin.",
+      "localized": true,
+      "visible": {
+        "when": "source",
+        "is": "coordinates"
+      }
+    },
+    {
+      "id": "zoom",
+      "type": "wx-input-number",
+      "label": "Zoom",
+      "help": "From 1, the whole world, to 19, a building; 15 is a few streets.",
+      "default": 15,
+      "props": {
+        "min": 1,
+        "max": 19,
+        "step": 1
+      }
+    },
+    {
+      "id": "height",
+      "type": "wx-segmented",
+      "label": "Height",
+      "default": "medium",
+      "props": {
+        "options": [
+          {
+            "value": "small",
+            "label": "Low"
+          },
+          {
+            "value": "medium",
+            "label": "Medium"
+          },
+          {
+            "value": "large",
+            "label": "Tall"
+          }
+        ]
+      }
+    }
+  ],
+  "template": "@php\n    // The switch says where the place is; a block saved before it had a value reads the contacts, as new ones do.\n    $fromSettings = $source !== 'coordinates';\n    // What the component would refuse is not handed to it: a number off the earth is no number.\n    $lat = is_numeric($latitude) && abs((float) $latitude) <= 90 ? (float) $latitude : null;\n    $lng = is_numeric($longitude) && abs((float) $longitude) <= 180 ? (float) $longitude : null;\n    $scale = is_numeric($zoom) ? max(1, min(19, (int) round((float) $zoom))) : 15;\n    $tall = ['small' => '16em', 'medium' => '24em', 'large' => '32em'][$height] ?? '24em';\n    $place = $address ? wx_text($address)->plain() : null;\n    $contacts = $fromSettings ? \\WebxUi\\Widgets\\Contacts\\ContactsSource::get()?->primaryAddress() : null;\n    $shown = $fromSettings ? $contacts !== null : $lat !== null && $lng !== null;\n@endphp\n@if ($shown)\n<section class=\"b-map\" data-wx-block=\"map\">\n    @if ($heading)\n        <h2 class=\"b-map__heading\">{{ $heading }}</h2>\n    @endif\n    @if ($fromSettings)\n        <x-webx-map from=\"settings\" :zoom=\"$scale\" :height=\"$tall\" />\n    @else\n        <x-webx-map :lat=\"$lat\" :lng=\"$lng\" :zoom=\"$scale\" :height=\"$tall\" :address=\"$place\" />\n    @endif\n</section>\n@endif\n",
+  "styles": ".b-map {\n    container-type: inline-size;\n}\n\n.b-map__heading {\n    margin: 0 0 1em;\n}\n",
+  "script": null,
+  "sample": {
+    "heading": "Map",
+    "source": "settings",
+    "latitude": null,
+    "longitude": null,
+    "address": "",
+    "zoom": 15,
+    "height": "medium"
+  }
+}

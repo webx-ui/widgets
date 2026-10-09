@@ -1,0 +1,117 @@
+{
+  "slug": "video",
+  "title": "Video",
+  "description": "A video of YouTube or Vimeo, or a file of the media library, with a poster and a caption. A video of another site waits for the visitor’s consent to media and plays on a click.",
+  "icon": null,
+  "group": "media",
+  "sort": 0,
+  "allow": null,
+  "allowed_in": null,
+  "max_per_entity": null,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "heading",
+      "type": "wx-input",
+      "label": "Heading",
+      "localized": true
+    },
+    {
+      "id": "source",
+      "type": "wx-segmented",
+      "label": "Video",
+      "default": "link",
+      "props": {
+        "options": [
+          {
+            "value": "link",
+            "label": "Link"
+          },
+          {
+            "value": "file",
+            "label": "File"
+          }
+        ]
+      }
+    },
+    {
+      "id": "link",
+      "type": "wx-input",
+      "label": "Address on YouTube or Vimeo",
+      "help": "Any address the video is shared by: watch, youtu.be, shorts, a channel’s, an unlisted one.",
+      "props": {
+        "placeholder": "https://www.youtube.com/watch?v=…"
+      },
+      "visible": {
+        "when": "source",
+        "is": "link"
+      }
+    },
+    {
+      "id": "file",
+      "type": "wx-media",
+      "label": "Video of the library",
+      "help": "MP4 or WebM. Plays on the site itself: no consent asked.",
+      "props": {
+        "accept": "video"
+      },
+      "visible": {
+        "when": "source",
+        "is": "file"
+      }
+    },
+    {
+      "id": "poster",
+      "type": "wx-media",
+      "label": "Poster",
+      "help": "Empty: a link shows the video’s own preview, fetched once into the library; a file shows an empty frame until it plays.",
+      "props": {
+        "accept": "image"
+      }
+    },
+    {
+      "id": "caption",
+      "type": "wx-input",
+      "label": "Caption",
+      "localized": true
+    },
+    {
+      "id": "ratio",
+      "type": "wx-segmented",
+      "label": "Shape",
+      "default": "16/9",
+      "props": {
+        "options": [
+          {
+            "value": "16/9",
+            "label": "16:9"
+          },
+          {
+            "value": "4/3",
+            "label": "4:3"
+          },
+          {
+            "value": "1/1",
+            "label": "1:1"
+          },
+          {
+            "value": "9/16",
+            "label": "9:16"
+          }
+        ]
+      }
+    }
+  ],
+  "template": "@php\n    // The switch says where the video is; a block saved before it had a value is a link, as new ones are.\n    $fromFile = $source === 'file';\n    $address = ! $fromFile && is_string($link) ? trim($link) : '';\n    // An address of no provider the site knows is not printed: the component would refuse it, and the page with it.\n    $known = $address !== '' && app(\\WebxUi\\Widgets\\Video\\VideoProviders::class)->find($address) !== null;\n    // A video or a picture deleted from the library resolves without an address: as if never picked.\n    $clip = $fromFile && is_array($file) && ! empty($file['url']) ? $file : null;\n    $picture = is_array($poster) && ! empty($poster['url']) ? $poster : null;\n    $shape = in_array($ratio, ['16/9', '4/3', '1/1', '9/16'], true) ? $ratio : '16/9';\n    $title = $heading ? wx_text($heading)->plain() : null;\n@endphp\n@if ($clip || $known)\n<section class=\"b-video b-video--{{ str_replace('/', '-', $shape) }}\" data-wx-block=\"video\">\n    @if ($heading)\n        <h2 class=\"b-video__heading\">{{ $heading }}</h2>\n    @endif\n    <figure class=\"b-video__figure\">\n        @if ($clip)\n            <x-webx-video :file=\"$clip\" :poster=\"$picture\" :title=\"$title\" :ratio=\"$shape\" />\n        @else\n            <x-webx-video :src=\"$address\" :poster=\"$picture\" :title=\"$title\" :ratio=\"$shape\" />\n        @endif\n        @if ($caption)\n            <figcaption class=\"b-video__caption\">{{ $caption }}</figcaption>\n        @endif\n    </figure>\n</section>\n@endif\n",
+  "styles": ".b-video {\n    container-type: inline-size;\n}\n\n.b-video__heading {\n    margin: 0 0 1em;\n}\n\n/* No margin of its own: a theme's prose spaces figures, and the frame keeps to the column. */\n.b-video__figure {\n    margin: 0 auto;\n}\n\n/* A square or an upright video as wide as the column would be taller than any screen: held to a\n   width a phone's video would have, in the middle. */\n.b-video--1-1 .b-video__figure {\n    max-width: 36em;\n}\n\n.b-video--9-16 .b-video__figure {\n    max-width: 22em;\n}\n\n.b-video__caption {\n    margin: 0.5em 0 0;\n    font-size: 0.875em;\n    opacity: 0.75;\n}\n",
+  "script": null,
+  "sample": {
+    "heading": "Video",
+    "source": "link",
+    "link": "",
+    "file": null,
+    "poster": null,
+    "caption": "",
+    "ratio": "16/9"
+  }
+}

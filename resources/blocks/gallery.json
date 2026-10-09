@@ -1,0 +1,75 @@
+{
+  "slug": "gallery",
+  "title": "Gallery",
+  "description": "Pictures from the media library as a grid or as a slider with thumbnails; a click opens a picture over the page and the arrows page through the rest.",
+  "icon": null,
+  "group": "media",
+  "sort": 0,
+  "allow": null,
+  "allowed_in": null,
+  "max_per_entity": null,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "heading",
+      "type": "wx-input",
+      "label": "Heading",
+      "localized": true
+    },
+    {
+      "id": "pictures",
+      "type": "wx-gallery",
+      "label": "Pictures",
+      "help": "The title of a picture is printed under it."
+    },
+    {
+      "id": "view",
+      "type": "wx-segmented",
+      "label": "View",
+      "default": "grid",
+      "props": {
+        "options": [
+          {
+            "value": "grid",
+            "label": "Grid"
+          },
+          {
+            "value": "slider",
+            "label": "Slider"
+          }
+        ]
+      }
+    },
+    {
+      "id": "columns",
+      "type": "wx-input-number",
+      "label": "Columns",
+      "help": "At most; a narrow column shows fewer.",
+      "default": 3,
+      "props": {
+        "min": 1,
+        "max": 6
+      },
+      "visible": {
+        "when": "view",
+        "is": "grid"
+      }
+    },
+    {
+      "id": "zoom",
+      "type": "wx-switch",
+      "label": "Open a picture over the page on click",
+      "default": true
+    }
+  ],
+  "template": "@php\n    // A picture deleted from the library resolves without an address: left out, not printed broken.\n    $shown = array_values(array_filter(is_array($pictures) ? $pictures : [], static fn ($picture): bool => is_array($picture) && ! empty($picture['url'])));\n    $across = max(1, min(6, (int) ($columns ?: 3)));\n    $label = $heading ? wx_text($heading)->plain() : null;\n    // One group per block: the arrows of the lightbox page through this gallery and no other.\n    $group = 'gallery-'.$block->key;\n@endphp\n@if ($shown)\n<section class=\"b-gallery b-gallery--{{ $view === 'slider' ? 'slider' : 'grid' }}\" data-wx-block=\"gallery\" style=\"--gallery-columns: {{ $across }}\">\n    @if ($heading)\n        <h2 class=\"b-gallery__heading\">{{ $heading }}</h2>\n    @endif\n    @if ($view === 'slider')\n        <x-webx-slider variant=\"gallery\" :label=\"$label\">\n            @foreach ($shown as $picture)\n                <x-webx-slide :thumb=\"$picture['thumb'] ?? null\">\n                    <figure class=\"b-gallery__figure\">\n                        @if ($zoom)\n                            <x-webx-lightbox :image=\"$picture\" :group=\"$group\"><img class=\"b-gallery__image\" src=\"{{ $picture['url'] }}\" alt=\"{{ $picture['alt'] ?? '' }}\" @if ($picture['width']) width=\"{{ $picture['width'] }}\" height=\"{{ $picture['height'] }}\" @endif></x-webx-lightbox>\n                        @else\n                            <img class=\"b-gallery__image\" src=\"{{ $picture['url'] }}\" alt=\"{{ $picture['alt'] ?? '' }}\" @if ($picture['width']) width=\"{{ $picture['width'] }}\" height=\"{{ $picture['height'] }}\" @endif>\n                        @endif\n                        @if (! empty($picture['title']))\n                            <figcaption class=\"b-gallery__caption\">{{ $picture['title'] }}</figcaption>\n                        @endif\n                    </figure>\n                </x-webx-slide>\n            @endforeach\n        </x-webx-slider>\n    @else\n        <ul class=\"b-gallery__grid\">\n            @foreach ($shown as $picture)\n                @php\n                    // The square preview of the library, and the picture itself where a cell is wider than it.\n                    $sources = $picture['thumb'] && $picture['width'] ? $picture['thumb'].' 320w, '.$picture['url'].' '.$picture['width'].'w' : null;\n                @endphp\n                <li class=\"b-gallery__cell\">\n                    <figure class=\"b-gallery__figure\">\n                        @if ($zoom)\n                            <x-webx-lightbox :image=\"$picture\" :group=\"$group\"><img class=\"b-gallery__image\" src=\"{{ $picture['thumb'] ?: $picture['url'] }}\" @if ($sources) srcset=\"{{ $sources }}\" sizes=\"(max-width: 40rem) 50vw, {{ (int) ceil(100 / $across) }}vw\" @endif alt=\"{{ $picture['alt'] ?? '' }}\" width=\"320\" height=\"320\" @if ($loop->index >= $across) loading=\"lazy\" @endif></x-webx-lightbox>\n                        @else\n                            <img class=\"b-gallery__image\" src=\"{{ $picture['thumb'] ?: $picture['url'] }}\" @if ($sources) srcset=\"{{ $sources }}\" sizes=\"(max-width: 40rem) 50vw, {{ (int) ceil(100 / $across) }}vw\" @endif alt=\"{{ $picture['alt'] ?? '' }}\" width=\"320\" height=\"320\" @if ($loop->index >= $across) loading=\"lazy\" @endif>\n                        @endif\n                        @if (! empty($picture['title']))\n                            <figcaption class=\"b-gallery__caption\">{{ $picture['title'] }}</figcaption>\n                        @endif\n                    </figure>\n                </li>\n            @endforeach\n        </ul>\n    @endif\n</section>\n@endif\n",
+  "styles": ".b-gallery {\n    container-type: inline-size;\n    --gallery-gap: 0.75em;\n}\n\n.b-gallery__heading {\n    margin: 0 0 1em;\n}\n\n/* Up to `--gallery-columns` across, fewer when a cell would be narrower than 9em: the width of the\n   column the block stands in decides, not the window. */\n.b-gallery__grid {\n    display: grid;\n    grid-template-columns: repeat(\n        auto-fill,\n        minmax(min(100%, max(9em, (100% - (var(--gallery-columns, 3) - 1) * var(--gallery-gap)) / var(--gallery-columns, 3))), 1fr)\n    );\n    gap: var(--gallery-gap);\n    margin: 0;\n    padding: 0;\n    list-style: none;\n}\n\n/* No margin of its own: a theme's prose spaces `li + li`, which in a grid lifts the first cell\n   above its row. */\n.b-gallery__cell {\n    min-width: 0;\n    margin: 0;\n}\n\n.b-gallery__figure {\n    margin: 0;\n}\n\n.b-gallery__image {\n    display: block;\n    width: 100%;\n    height: auto;\n    border-radius: 0.25em;\n}\n\n/* The library's preview is square, and so is a cell: pictures of every shape line up. */\n.b-gallery__grid .b-gallery__image {\n    aspect-ratio: 1;\n    object-fit: cover;\n}\n\n.b-gallery__caption {\n    margin-top: 0.5em;\n    font-size: 0.875em;\n    opacity: 0.75;\n}\n",
+  "script": null,
+  "sample": {
+    "heading": "Gallery",
+    "pictures": [],
+    "view": "grid",
+    "columns": 3,
+    "zoom": true
+  }
+}

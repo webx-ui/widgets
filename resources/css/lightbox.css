@@ -1,0 +1,67 @@
+/*
+ * The lightbox (spec §8). PhotoSwipe's stylesheet comes before this one, as it is: it lays out a
+ * DOM of its own under `.pswp*` classes it cannot rename. Its look is repainted here through its
+ * own custom properties on `.webx-lightbox` — the class the script gives its root — from the
+ * site's tokens, so a preset repaints the lightbox as it repaints the page.
+ *
+ * The links: `.webx-lightbox-link` is what `<x-webx-lightbox>` prints; a link written by hand with
+ * `data-webx-lightbox` works the same and looks the way its own classes make it.
+ */
+
+:where(:root) {
+  --webx-lightbox-backdrop: var(--site-color-bg);
+  --webx-lightbox-color: var(--site-color-text);
+  /* Around the icons, so they stay readable over a picture. */
+  --webx-lightbox-outline: var(--site-color-bg);
+  --webx-lightbox-placeholder: var(--site-color-surface-muted);
+  --webx-lightbox-icon-size: 28px;
+  /* Over the header, the dialogs and the consent banner. */
+  --webx-lightbox-z: 400;
+}
+
+.webx-lightbox {
+  --pswp-bg: var(--webx-lightbox-backdrop);
+  --pswp-placeholder-bg: var(--webx-lightbox-placeholder);
+  --pswp-root-z-index: var(--webx-lightbox-z);
+  --pswp-icon-color: var(--webx-lightbox-color);
+  --pswp-icon-color-secondary: var(--webx-lightbox-outline);
+  --pswp-icon-stroke-color: var(--webx-lightbox-outline);
+  --pswp-error-text-color: var(--webx-lightbox-color);
+  --pswp-preloader-color: var(--site-color-border);
+  --pswp-preloader-color-secondary: var(--site-color-accent);
+  --pswp-transition-duration: var(--site-duration);
+  font-family: var(--site-font-body);
+}
+
+/* The chain's icons in PhotoSwipe's buttons, centred in whatever size the button has. */
+.webx-lightbox__icon {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: var(--webx-lightbox-icon-size);
+  height: var(--webx-lightbox-icon-size);
+  color: var(--webx-lightbox-color);
+  filter: drop-shadow(0 0 2px var(--webx-lightbox-outline));
+  pointer-events: none;
+}
+
+.webx-lightbox-link {
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: top;
+}
+
+.webx-lightbox-link.is-ready {
+  cursor: zoom-in;
+}
+
+.webx-lightbox-link:focus-visible {
+  outline: 2px solid var(--site-color-accent);
+  outline-offset: 2px;
+}
+
+.webx-lightbox-link__image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}

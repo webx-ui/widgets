@@ -15,8 +15,23 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Audit\Checks\AuditChecks;
+use WebxUi\Audit\Crawl\PageReaders;
+use WebxUi\Audit\Fixes\AuditFixes;
+use WebxUi\Blocks\BlockOffers;
+use WebxUi\Media\MediaServiceProvider;
 use WebxUi\Themes\BottomLayers;
 use WebxUi\Themes\Contracts\HeadPart;
+use WebxUi\Widgets\Audit\BannerOff;
+use WebxUi\Widgets\Audit\BannerOn;
+use WebxUi\Widgets\Audit\BeforeConsent;
+use WebxUi\Widgets\Audit\ContactBoth;
+use WebxUi\Widgets\Audit\LightboxSize;
+use WebxUi\Widgets\Audit\SliderPause;
+use WebxUi\Widgets\Audit\WaitForConsent;
+use WebxUi\Widgets\Audit\WidgetsPageReader;
+use WebxUi\Widgets\Video\Posters;
+use WebxUi\Widgets\Video\VideoProviders;
 use WebxUi\Widgets\View\Components\ConsentGate;
 use WebxUi\Widgets\View\Components\ConsentLink;
 use WebxUi\Widgets\View\Components\ContactBar;
@@ -27,14 +42,20 @@ use WebxUi\Widgets\View\Components\Header;
 use WebxUi\Widgets\View\Components\HeaderNav;
 use WebxUi\Widgets\View\Components\Icon;
 use WebxUi\Widgets\View\Components\LanguageSwitcher;
+use WebxUi\Widgets\View\Components\Lightbox;
+use WebxUi\Widgets\View\Components\Map;
 use WebxUi\Widgets\View\Components\MobileMenu;
 use WebxUi\Widgets\View\Components\MobileMenuNav;
 use WebxUi\Widgets\View\Components\OpeningHours;
 use WebxUi\Widgets\View\Components\Phones;
+use WebxUi\Widgets\View\Components\Slide;
+use WebxUi\Widgets\View\Components\Slider;
 use WebxUi\Widgets\View\Components\Socials;
 use WebxUi\Widgets\View\Components\Tabs;
 use WebxUi\Widgets\View\Components\TabsPanel;
+use WebxUi\Widgets\View\Components\Video;
 use WebxUi\Widgets\View\HeaderNavigation;
+use WebxUi\Widgets\View\Sliders;
 
 /**
  * The widgets as the bottom layer of the theme chain (spec §3, THEMES §7.1, §11):
@@ -53,14 +74,21 @@ class WidgetsServiceProvider extends ServiceProvider
 
     private const string ASK_AGAIN = 'consent.ask-again';
 
+    /** What `webx:blocks:offered --module=` calls the blocks this package offers. */
+    public const string OFFERS = 'widgets';
+
     public function register(): void
     {
         // Scoped: what one request claimed must not load on the next one of a long-lived worker.
         $this->app->scoped(Widgets::class);
         $this->app->scoped(HeaderNavigation::class);
+        $this->app->scoped(Sliders::class);
         $this->app->scoped(FormDialogs::class);
         // Scoped too: the answer is read once from the request it came with.
         $this->app->scoped(Consent::class);
+        // Scoped: a request puts off the fetch of each missing poster once.
+        $this->app->scoped(Posters::class);
+        $this->app->singleton(VideoProviders::class);
         $this->app->tag([Widgets::class], HeadPart::TAG);
 
         $this->mergeConfigFrom(Widgets::path().'/config/webx-widgets.php', 'webx-widgets');
@@ -76,6 +104,8 @@ class WidgetsServiceProvider extends ServiceProvider
         EncryptCookies::except(Consent::COOKIE);
 
         $this->registerConsentSettings();
+        $this->offerBlocks();
+        $this->registerAudit();
 
         $this->app->make(BottomLayers::class)->add(Widgets::NAME, Widgets::path());
 
@@ -96,6 +126,11 @@ class WidgetsServiceProvider extends ServiceProvider
         Blade::component('webx-contact-bar', ContactBar::class);
         Blade::component('webx-socials', Socials::class);
         Blade::component('webx-language-switcher', LanguageSwitcher::class);
+        Blade::component('webx-slider', Slider::class);
+        Blade::component('webx-slide', Slide::class);
+        Blade::component('webx-lightbox', Lightbox::class);
+        Blade::component('webx-video', Video::class);
+        Blade::component('webx-map', Map::class);
 
         if ($this->app->runningInConsole()) {
             $this->publishes([Widgets::path().'/config/webx-widgets.php' => config_path('webx-widgets.php')], 'webx-widgets-config');
@@ -152,6 +187,50 @@ class WidgetsServiceProvider extends ServiceProvider
                 ]);
             }
         });
+    }
+
+    /**
+     * The blocks `gallery`, `logos` and `video` (§15.1), offered to `module-blocks` when the site
+     * has it: the slider, the lightbox and the video are what they are made of, and a site would
+     * otherwise put them together again in a block of its own. Offered, not installed —
+     * `webx:blocks:offered --install --module=widgets` (and `webx:setup`) puts them on the site
+     * once, and a type the site already has by that name is never touched.
+     *
+     * Their pictures and videos are fields of the media library, so without `module-media` there
+     * is nothing to offer: a type with a field nobody registered would not survive the panel's save.
+     */
+    private function offerBlocks(): void
+    {
+        if (! class_exists(BlockOffers::class) || ! $this->app->bound(BlockOffers::class) || ! class_exists(MediaServiceProvider::class)) {
+            return;
+        }
+
+        $this->app->make(BlockOffers::class)->offer(self::OFFERS, Widgets::path().'/resources/blocks');
+    }
+
+    /**
+     * The checks of §15.2, when the site has `module-audit`: what loads before consent, the banner
+     * switched off with something third-party on the site, a lightbox link without the picture's
+     * size, a moving slider without its pause button, both quick-contact widgets on one page. The
+     * page's HTML is not kept by the audit, so the reader takes what they need while it parses.
+     */
+    private function registerAudit(): void
+    {
+        if (! class_exists(AuditChecks::class) || ! class_exists(PageReaders::class)) {
+            return;
+        }
+
+        $this->app->make(PageReaders::class)->register(new WidgetsPageReader);
+
+        $checks = $this->app->make(AuditChecks::class);
+
+        foreach ([new BeforeConsent, new BannerOff, new LightboxSize, new SliderPause, new ContactBoth] as $check) {
+            $checks->register($check);
+        }
+
+        $fixes = $this->app->make(AuditFixes::class);
+        $fixes->register($this->app->make(WaitForConsent::class));
+        $fixes->register(new BannerOn);
     }
 
     /** HTML with the marker: JSON could carry a rendered page inside a string, and must stay JSON. */

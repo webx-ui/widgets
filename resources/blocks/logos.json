@@ -1,0 +1,78 @@
+{
+  "slug": "logos",
+  "title": "Logos",
+  "description": "A running strip of logos — clients, partners, certificates — each with a link if it has one. It stops on hover, on focus and with its pause button.",
+  "icon": null,
+  "group": "media",
+  "sort": 0,
+  "allow": null,
+  "allowed_in": null,
+  "max_per_entity": null,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "heading",
+      "type": "wx-input",
+      "label": "Heading",
+      "localized": true
+    },
+    {
+      "id": "logos",
+      "type": "wx-repeater",
+      "label": "Logos",
+      "props": {
+        "itemLabel": "name",
+        "addLabel": "Add a logo",
+        "max": 40,
+        "sortable": true
+      },
+      "children": [
+        {
+          "id": "name",
+          "type": "wx-input",
+          "label": "Name",
+          "help": "What a screen reader says for the logo, and what is printed when there is no picture."
+        },
+        {
+          "id": "logo",
+          "type": "wx-media",
+          "label": "Logo",
+          "props": {
+            "accept": "image"
+          }
+        },
+        {
+          "id": "link",
+          "type": "wx-link",
+          "label": "Link",
+          "props": {
+            "allowNone": true
+          }
+        }
+      ]
+    }
+  ],
+  "template": "@php\n    // A row with neither a picture nor a name has nothing to show.\n    $shown = array_values(array_filter(is_array($logos) ? $logos : [], static fn ($item): bool => is_array($item) && (! empty($item['logo']['url']) || trim((string) ($item['name'] ?? '')) !== '')));\n    $label = $heading ? wx_text($heading)->plain() : null;\n@endphp\n@if ($shown)\n<section class=\"b-logos\" data-wx-block=\"logos\">\n    @if ($heading)\n        <h2 class=\"b-logos__heading\">{{ $heading }}</h2>\n    @endif\n    <x-webx-slider variant=\"logos\" :label=\"$label\">\n        @foreach ($shown as $item)\n            @php\n                $picture = is_array($item['logo'] ?? null) && ! empty($item['logo']['url']) ? $item['logo'] : null;\n                $name = trim((string) ($item['name'] ?? '')) ?: (string) ($picture['alt'] ?? '');\n                $link = is_array($item['link'] ?? null) && ! empty($item['link']['url']) && ($item['link']['available'] ?? true) !== false ? $item['link'] : null;\n            @endphp\n            <x-webx-slide>\n                @if ($link)\n                    <a class=\"b-logos__item\" href=\"{{ $link['url'] }}\" @if (! empty($link['new_tab'])) target=\"_blank\" @endif @if (! empty($link['rel'])) rel=\"{{ $link['rel'] }}\" @endif>\n                @else\n                    <span class=\"b-logos__item\">\n                @endif\n                @if ($picture)\n                    <img class=\"b-logos__logo\" src=\"{{ $picture['url'] }}\" alt=\"{{ $name }}\" @if ($picture['width']) width=\"{{ $picture['width'] }}\" height=\"{{ $picture['height'] }}\" @endif>\n                @else\n                    <span class=\"b-logos__name\">{{ $name }}</span>\n                @endif\n                @if ($link)\n                    </a>\n                @else\n                    </span>\n                @endif\n            </x-webx-slide>\n        @endforeach\n    </x-webx-slider>\n</section>\n@endif\n",
+  "styles": ".b-logos {\n    container-type: inline-size;\n}\n\n.b-logos__heading {\n    margin: 0 0 1em;\n    text-align: center;\n}\n\n/* A slide of the strip: the logo in the middle of it, the link as tall as a finger. */\n.b-logos__item {\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    box-sizing: border-box;\n    height: 100%;\n    min-height: 4em;\n    padding: 0.5em;\n    color: inherit;\n    text-decoration: none;\n}\n\n/* Logos come in every shape: held to one height, never wider than their slide. */\n.b-logos__logo {\n    display: block;\n    width: auto;\n    max-width: 100%;\n    min-width: 0;\n    height: 2.5em;\n    object-fit: contain;\n    opacity: 0.8;\n    transition: opacity 0.2s;\n}\n\na.b-logos__item:hover .b-logos__logo,\na.b-logos__item:focus-visible .b-logos__logo {\n    opacity: 1;\n}\n\n.b-logos__name {\n    font-weight: 600;\n    text-align: center;\n    white-space: nowrap;\n    opacity: 0.8;\n}\n",
+  "script": null,
+  "sample": {
+    "heading": "They trust us",
+    "logos": [
+      {
+        "name": "Strategy Co.",
+        "logo": null,
+        "link": null
+      },
+      {
+        "name": "Design Co.",
+        "logo": null,
+        "link": null
+      },
+      {
+        "name": "Hosting Co.",
+        "logo": null,
+        "link": null
+      }
+    ]
+  }
+}

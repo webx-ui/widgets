@@ -1,0 +1,196 @@
+/*
+ * The map (spec §11): a frame of the map's height before anything loads — the place, the notice
+ * of §9.4 and the map all stand inside it, so nothing below moves when one replaces another.
+ * Leaflet's own stylesheet comes before this one and keeps its `.leaflet-*` rules; here only the
+ * package's classes, one flat class per rule (the prose of the theme styles <p> and <a> in <main>).
+ */
+
+:where(:root) {
+  --webx-map-height: 24rem;
+  --webx-map-bg: var(--site-color-surface-muted);
+  --webx-map-radius: var(--site-radius-md);
+  --webx-map-marker: var(--site-color-accent);
+  --webx-map-notice-bg: var(--site-color-surface-muted);
+  --webx-map-notice-color: var(--site-color-text);
+  --webx-map-button-bg: var(--site-color-accent);
+  --webx-map-button-color: var(--site-color-accent-contrast);
+  --webx-map-attribution-bg: color-mix(in srgb, var(--site-color-bg) 85%, transparent);
+  --webx-map-hint-bg: color-mix(in srgb, var(--site-color-text) 55%, transparent);
+  --webx-map-hint-color: var(--site-color-bg);
+}
+
+.webx-map {
+  container: webx-map / inline-size;
+  position: relative;
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  height: var(--webx-map-height);
+  margin: 0;
+  overflow: hidden;
+  border-radius: var(--webx-map-radius);
+  background: var(--webx-map-bg);
+}
+
+/* An address with no coordinates: the place alone, as tall as its lines. */
+.webx-map--place {
+  height: auto;
+}
+
+/* Its own stacking context: Leaflet's panes and controls (z-index up to 1000) stay inside the
+   frame instead of rising over the site's sticky header. */
+.webx-map__canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  background: var(--webx-map-bg);
+  font: inherit;
+}
+
+.webx-map__canvas:focus-visible {
+  outline: 3px solid var(--site-color-accent);
+  outline-offset: -3px;
+}
+
+/* The place, and before consent the notice: centred, scrolling inside itself in a frame too small for it. */
+.webx-map__place {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: safe center;
+  gap: var(--site-space-3);
+  box-sizing: border-box;
+  margin: 0;
+  padding: var(--site-space-4) var(--site-space-3) var(--site-space-6);
+  overflow: auto;
+  background: var(--webx-map-notice-bg);
+  color: var(--webx-map-notice-color);
+  text-align: center;
+}
+
+.webx-map__place[hidden] {
+  display: none;
+}
+
+/* The place of an address with no coordinates stands in the flow. */
+.webx-map__place--static {
+  position: static;
+}
+
+.webx-map__address {
+  max-width: 32em;
+  margin: 0;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.webx-map__open {
+  color: inherit;
+  text-decoration: underline;
+}
+
+.webx-map__notice {
+  max-width: 32em;
+  margin: 0;
+  font-size: calc(var(--site-font-size-base) * 0.875);
+  line-height: 1.4;
+}
+
+/* The notice's buttons work only with the script; without it the address and its link are the map. */
+html:not(.webx-js) .webx-map__notice,
+html:not(.webx-js) .webx-map__actions {
+  display: none;
+}
+
+.webx-map__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--site-space-2);
+  margin: 0;
+  padding: 0;
+}
+
+.webx-map__button {
+  min-height: 44px;
+  margin: 0;
+  padding: var(--site-space-2) var(--site-space-4);
+  border: 1px solid var(--webx-map-button-bg);
+  border-radius: var(--site-radius-md);
+  background: var(--webx-map-button-bg);
+  color: var(--webx-map-button-color);
+  font: inherit;
+  font-size: calc(var(--site-font-size-base) * 0.875);
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.webx-map__button--always {
+  background: var(--site-color-bg);
+  color: var(--site-color-text);
+  border-color: var(--site-color-border);
+}
+
+.webx-map__button:focus-visible {
+  outline: 2px solid var(--site-color-accent);
+  outline-offset: 2px;
+}
+
+/* Printed under every map, before the map and over it. */
+.webx-map__attribution {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0.125rem 0.375rem;
+  border-top-left-radius: var(--site-radius-sm);
+  background: var(--webx-map-attribution-bg);
+  color: var(--site-color-text);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.webx-map__marker {
+  color: var(--webx-map-marker);
+  filter: drop-shadow(0 1px 2px color-mix(in srgb, var(--site-color-text) 50%, transparent));
+}
+
+.webx-map__hint {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: var(--site-space-4);
+  background: var(--webx-map-hint-bg);
+  color: var(--webx-map-hint-color);
+  font-weight: 600;
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--site-duration) var(--site-easing);
+}
+
+.webx-map__hint.is-visible {
+  opacity: 1;
+}
+
+@container webx-map (max-width: 22rem) {
+  .webx-map__place {
+    gap: var(--site-space-2);
+    padding: var(--site-space-2) var(--site-space-2) var(--site-space-6);
+  }
+
+  .webx-map__button {
+    padding: var(--site-space-1) var(--site-space-3);
+  }
+}

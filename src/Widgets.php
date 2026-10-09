@@ -11,6 +11,7 @@ use WebxUi\Themes\BottomLayers;
 use WebxUi\Themes\Contracts\HeadPart;
 use WebxUi\Themes\ThemeAssets;
 use WebxUi\Themes\ThemeManifest;
+use WebxUi\Widgets\View\Components\Lightbox;
 
 /**
  * What the page asked for, and the tags that load it (spec §4).
@@ -138,6 +139,16 @@ final class Widgets implements HeadPart
             if ($this->consent->enabled()) {
                 $styles[] = $this->consent->googleDefault();
             }
+        }
+
+        // A link to a picture with `data-webx-lightbox` claims the lightbox wherever it was written —
+        // a block, a module's view, a theme's partial — as a form's opener claims its dialog (§8).
+        if (Lightbox::wanted($html) && $this->built('lightbox', 'js')) {
+            $this->need('lightbox');
+        }
+
+        if (isset($this->claimed['lightbox']) && $this->url('lightbox', 'js') !== null) {
+            $bottom .= view('webx-widgets::lightbox')->render()."\n";
         }
 
         foreach (['runtime', ...array_diff($this->claimed(), self::RUNTIME)] as $widget) {

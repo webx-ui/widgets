@@ -30,9 +30,12 @@
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
-        "phpunit/phpunit": "^12.0 || ^13.0"
+        "phpunit/phpunit": "^12.0 || ^13.0",
+        "webx-ui/module-audit": "^0.66.0"
     },
     "suggest": {
+        "webx-ui/module-audit": "The site audit says what loads before consent, a banner switched off with something third-party on the site, a lightbox link without the picture size, a moving slider without its pause button — and fixes the first two by a button",
+        "webx-ui/module-blocks": "The gallery, logos and video block types it offers (with webx-ui/module-media, whose pictures and videos they show)",
         "webx-ui/module-inbox": "Its forms opened in a dialog by any button (data-webx-form=\"<slug>\")",
         "webx-ui/module-settings": "The \"Cookie\" tab of the settings screen and MCP for the consent banner, without it config/webx-widgets.php; the Contacts tab the phones, hours, quick contact and networks read",
         "webx-ui/routing": "The language switcher's addresses of the same page in the other languages (with webx-ui/localization)"

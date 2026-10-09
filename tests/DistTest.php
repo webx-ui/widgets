@@ -31,6 +31,18 @@ final class DistTest extends PlainTestCase
     /** The language switcher: a stylesheet only — its dropdown is the runtime's. */
     private const int LANGUAGE_SWITCHER_BUDGET = 2 * 1024;
 
+    /** The slider, Swiper built in: 45 KB gzip (§4), only where a slider stands. */
+    private const int SLIDER_BUDGET = 45 * 1024;
+
+    /** The lightbox, PhotoSwipe built in: 25 KB gzip (§4), only where a picture opens over the page. */
+    private const int LIGHTBOX_BUDGET = 25 * 1024;
+
+    /** The video's facade and the notice before consent: 4 KB gzip — the player is the provider's, in its iframe. */
+    private const int VIDEO_BUDGET = 4 * 1024;
+
+    /** The map, Leaflet built in: 50 KB gzip without the tiles (§4), only where a map stands. */
+    private const int MAP_BUDGET = 50 * 1024;
+
     private const array LOCALES = ['en', 'ru', 'uk', 'de', 'pl', 'fr', 'es', 'it', 'pt', 'tr'];
 
     #[Test]
@@ -69,7 +81,7 @@ final class DistTest extends PlainTestCase
         ));
         sort($built);
 
-        $this->assertSame(['consent.css', 'consent.js', 'contacts.css', 'contacts.js', 'language-switcher.css', 'runtime.css', 'runtime.js', 'sources.json'], $built);
+        $this->assertSame(['consent.css', 'consent.js', 'contacts.css', 'contacts.js', 'language-switcher.css', 'lightbox.css', 'lightbox.js', 'map.css', 'map.js', 'runtime.css', 'runtime.js', 'slider.css', 'slider.js', 'sources.json', 'video.css', 'video.js'], $built);
     }
 
     #[Test]
@@ -88,6 +100,72 @@ final class DistTest extends PlainTestCase
         $size = self::gzipped('language-switcher.css');
 
         $this->assertLessThanOrEqual(self::LANGUAGE_SWITCHER_BUDGET, $size, sprintf('The language switcher is %.1f KB gzip.', $size / 1024));
+    }
+
+    #[Test]
+    public function the_slider_stays_inside_its_budget(): void
+    {
+        $size = self::gzipped('slider.js') + self::gzipped('slider.css');
+
+        $this->assertLessThanOrEqual(self::SLIDER_BUDGET, $size, sprintf('The slider is %.1f KB gzip.', $size / 1024));
+
+        // Swiper's own stylesheet stays out: its rules are not the package's classes (THEMES §8).
+        $this->assertStringNotContainsString('.swiper', (string) file_get_contents(Widgets::path().'/dist/slider.css'));
+    }
+
+    #[Test]
+    public function the_lightbox_stays_inside_its_budget_and_brings_no_rule_but_photoswipes_and_its_own(): void
+    {
+        $size = self::gzipped('lightbox.js') + self::gzipped('lightbox.css');
+
+        $this->assertLessThanOrEqual(self::LIGHTBOX_BUDGET, $size, sprintf('The lightbox is %.1f KB gzip.', $size / 1024));
+
+        // PhotoSwipe draws a DOM of its own under `.pswp*`, which it cannot rename: its stylesheet
+        // comes as it is, and nothing else foreign does. Each rule is PhotoSwipe's or the package's.
+        $css = (string) preg_replace('~/\*.*?\*/~s', '', (string) file_get_contents(Widgets::path().'/dist/lightbox.css'));
+        preg_match_all('/(?:^|[;{}])\s*([^;{}@]+?)\s*\{/', $css, $rules);
+        $this->assertNotEmpty($rules[1]);
+
+        foreach ($rules[1] as $selectors) {
+            foreach (array_map('trim', explode(',', $selectors)) as $selector) {
+                // A stop of PhotoSwipe's spinner's @keyframes.
+                if (preg_match('/^(?:\d+%|from|to)$/', $selector) === 1) {
+                    continue;
+                }
+
+                $this->assertMatchesRegularExpression('/^(?::where\(:root\)|(?:[a-z]+)?\.pswp|\.webx-lightbox)/', $selector, "lightbox.css: \"{$selector}\" is neither PhotoSwipe's nor the package's.");
+            }
+        }
+    }
+
+    #[Test]
+    public function the_video_stays_inside_its_budget(): void
+    {
+        $size = self::gzipped('video.js') + self::gzipped('video.css');
+
+        $this->assertLessThanOrEqual(self::VIDEO_BUDGET, $size, sprintf('The video is %.1f KB gzip.', $size / 1024));
+    }
+
+    #[Test]
+    public function the_map_stays_inside_its_budget_and_brings_no_rule_but_leaflets_and_its_own(): void
+    {
+        $size = self::gzipped('map.js') + self::gzipped('map.css');
+
+        $this->assertLessThanOrEqual(self::MAP_BUDGET, $size, sprintf('The map is %.1f KB gzip.', $size / 1024));
+
+        // Leaflet draws its panes and controls under `.leaflet-*`, which it cannot rename: its
+        // stylesheet comes as it is, without the pictures of a pin and a layers control the map
+        // never shows. Nothing else foreign comes with it.
+        $css = (string) preg_replace('~/\*.*?\*/~s', '', (string) file_get_contents(Widgets::path().'/dist/map.css'));
+        $this->assertStringNotContainsString('url(', $css, 'no picture of Leaflet is inlined or asked for');
+        preg_match_all('/(?:^|[;{}])\s*([^;{}@]+?)\s*\{/', $css, $rules);
+        $this->assertNotEmpty($rules[1]);
+
+        foreach ($rules[1] as $selectors) {
+            foreach (array_map('trim', explode(',', $selectors)) as $selector) {
+                $this->assertMatchesRegularExpression('/^(?::where\(:root\)|(?:html:not\(\.webx-js\) )?\.webx-map|(?:[a-z]+(?:\.[a-z-]+)?\s*)?\.leaflet-)/', $selector, "map.css: \"{$selector}\" is neither Leaflet's nor the package's.");
+            }
+        }
     }
 
     private static function gzipped(string $file): int
@@ -150,7 +228,8 @@ final class DistTest extends PlainTestCase
     public function every_locale_has_every_word(): void
     {
         // The visitor's words and the panel's ("Cookie" tab of the settings, §9.5).
-        foreach (['widgets', 'panel'] as $group) {
+        // And the site audit's (§15.2): its checks, their summaries and their fixes.
+        foreach (['widgets', 'panel', 'checks', 'audit', 'fixes'] as $group) {
             $english = self::keys(require Widgets::path()."/lang/en/{$group}.php");
 
             foreach (self::LOCALES as $locale) {
