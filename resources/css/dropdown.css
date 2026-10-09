@@ -1,0 +1,115 @@
+/*
+ * `<x-webx-dropdown>` (spec §6.3). Without the runtime the panel stands under its trigger,
+ * absolutely inside the <details>, where `--webx-dropdown-*` of the placement modifier puts
+ * it. With the runtime it is a popover placed from the trigger's box, and those are overridden
+ * on the element itself.
+ */
+
+:where(:root) {
+  --webx-dropdown-offset: var(--site-space-2);
+  --webx-dropdown-min-width: 12rem;
+  --webx-dropdown-top: calc(100% + var(--webx-dropdown-offset));
+  --webx-dropdown-bottom: auto;
+  --webx-dropdown-left: 0;
+  --webx-dropdown-right: auto;
+  --webx-dropdown-shift: 0;
+}
+
+.webx-dropdown {
+  display: inline-block;
+  position: relative;
+}
+
+.webx-dropdown--bottom-end {
+  --webx-dropdown-left: auto;
+  --webx-dropdown-right: 0;
+}
+
+.webx-dropdown--bottom {
+  --webx-dropdown-left: 50%;
+  --webx-dropdown-shift: -50%;
+}
+
+.webx-dropdown--top-start {
+  --webx-dropdown-top: auto;
+  --webx-dropdown-bottom: calc(100% + var(--webx-dropdown-offset));
+}
+
+.webx-dropdown--top-end {
+  --webx-dropdown-top: auto;
+  --webx-dropdown-bottom: calc(100% + var(--webx-dropdown-offset));
+  --webx-dropdown-left: auto;
+  --webx-dropdown-right: 0;
+}
+
+.webx-dropdown--top {
+  --webx-dropdown-top: auto;
+  --webx-dropdown-bottom: calc(100% + var(--webx-dropdown-offset));
+  --webx-dropdown-left: 50%;
+  --webx-dropdown-shift: -50%;
+}
+
+.webx-dropdown__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--site-space-2);
+  min-height: 44px;
+  color: inherit;
+  cursor: pointer;
+  list-style: none;
+}
+
+.webx-dropdown__trigger::-webkit-details-marker {
+  display: none;
+}
+
+.webx-dropdown__trigger::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  margin-block-start: -3px;
+  border-block-end: 2px solid currentColor;
+  border-inline-end: 2px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform var(--site-duration) var(--site-easing);
+}
+
+.webx-dropdown__trigger[aria-expanded='true']::after {
+  margin-block-start: 3px;
+  transform: rotate(225deg);
+}
+
+.webx-dropdown__panel {
+  position: absolute;
+  inset: var(--webx-dropdown-top) var(--webx-dropdown-right) var(--webx-dropdown-bottom)
+    var(--webx-dropdown-left);
+  z-index: 20;
+  box-sizing: border-box;
+  width: max-content;
+  min-width: var(--webx-dropdown-min-width);
+  max-width: calc(100vw - 2 * var(--site-gutter));
+  height: auto;
+  margin: 0;
+  padding: var(--site-space-3);
+  overflow: visible;
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-surface);
+  color: var(--site-color-text);
+  box-shadow: var(--site-shadow-md);
+  translate: var(--webx-dropdown-shift) 0;
+}
+
+/* In the top layer the script places it from the trigger's box, relative to the window. */
+.webx-dropdown__panel:popover-open {
+  position: fixed;
+  max-height: calc(100dvh - 2 * var(--webx-dropdown-offset));
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .webx-dropdown__trigger::after {
+    transition: none;
+  }
+}

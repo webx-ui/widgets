@@ -1,0 +1,14 @@
+{
+  "name": "fixture/widgets-theme-override",
+  "type": "webx-theme",
+  "extra": {
+    "webx": {
+      "theme": {
+        "title": "Fixture that overrides a widget",
+        "uses": [
+          "fixture/widgets-theme"
+        ]
+      }
+    }
+  }
+}

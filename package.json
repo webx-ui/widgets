@@ -1,0 +1,10 @@
+{
+  "name": "@webx-ui/widgets-build",
+  "private": true,
+  "type": "module",
+  "description": "Not published: the build of the Composer package's dist/. Uses the Vite of the monorepo or of the site it is linked into.",
+  "scripts": {
+    "build": "vite build",
+    "watch": "vite build --watch"
+  }
+}

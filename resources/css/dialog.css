@@ -1,0 +1,70 @@
+:where(:root) {
+  --webx-dialog-width: min(100% - 2 * var(--site-gutter), 40rem);
+  --webx-dialog-padding: var(--site-space-5);
+  --webx-dialog-backdrop: color-mix(in srgb, var(--site-color-text) 55%, transparent);
+}
+
+.webx-dialog {
+  box-sizing: border-box;
+  width: var(--webx-dialog-width);
+  max-width: none;
+  max-height: calc(100dvh - 2 * var(--site-space-4));
+  margin: auto;
+  padding: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-lg);
+  background: var(--site-color-bg);
+  color: var(--site-color-text);
+  box-shadow: var(--site-shadow-md);
+}
+
+.webx-dialog::backdrop {
+  background: var(--webx-dialog-backdrop);
+}
+
+.webx-dialog__header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--site-space-4);
+  padding: var(--webx-dialog-padding) var(--webx-dialog-padding) 0;
+}
+
+.webx-dialog__title {
+  flex: 1;
+  margin: 0;
+  font-family: var(--site-font-heading);
+  font-size: var(--site-font-size-4);
+}
+
+.webx-dialog__close {
+  display: inline-grid;
+  place-items: center;
+  min-width: 44px;
+  min-height: 44px;
+  margin: calc(-1 * var(--site-space-3)) calc(-1 * var(--site-space-3)) 0 auto;
+  border-radius: var(--site-radius-full);
+  color: var(--site-color-text-muted);
+  font-size: var(--site-font-size-4);
+  line-height: 1;
+  text-decoration: none;
+}
+
+.webx-dialog__close:hover {
+  color: var(--site-color-text);
+  background: var(--site-color-surface);
+}
+
+.webx-dialog__body {
+  padding: var(--site-space-4) var(--webx-dialog-padding) var(--webx-dialog-padding);
+}
+
+/* Without the runtime a link to #<id> shows the dialog over the page through :target. */
+html:not(.webx-js) .webx-dialog:target {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  box-shadow: 0 0 0 100vmax var(--webx-dialog-backdrop);
+}

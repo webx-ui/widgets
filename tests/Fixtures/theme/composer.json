@@ -1,0 +1,11 @@
+{
+  "name": "fixture/widgets-theme",
+  "type": "webx-theme",
+  "extra": {
+    "webx": {
+      "theme": {
+        "title": "Fixture"
+      }
+    }
+  }
+}

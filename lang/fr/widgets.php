@@ -1,0 +1,83 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'dialog' => [
+        'close' => 'Fermer',
+    ],
+    'mobile_menu' => [
+        'open' => 'Ouvrir le menu',
+        'close' => 'Fermer le menu',
+        'title' => 'Menu',
+        'back' => 'Retour',
+    ],
+    'header' => [
+        'skip' => 'Aller au contenu',
+        'nav' => 'Menu principal',
+        'submenu' => 'Sous-menu : :label',
+    ],
+    'consent' => [
+        'accept' => 'Tout accepter',
+        'reject' => 'Tout refuser',
+        'customize' => 'Personnaliser',
+        'save' => 'Enregistrer mes choix',
+        'policy' => 'Politique de cookies',
+        'link' => 'Paramètres des cookies',
+        'dialog' => 'Paramètres des cookies',
+        'always' => 'Toujours actifs',
+        'gpc' => 'Votre navigateur demande aux sites de ne pas vous suivre (Global Privacy Control) : le marketing reste désactivé tant que vous ne l’activez pas ici.',
+        'categories' => [
+            'necessary' => 'Nécessaires',
+            'preferences' => 'Préférences',
+            'statistics' => 'Statistiques',
+            'marketing' => 'Marketing',
+            'media' => 'Médias intégrés',
+        ],
+        'texts' => [
+            'title' => 'Les cookies sur ce site',
+            'text' => 'Nous utilisons les cookies dont le site a besoin pour fonctionner et, seulement avec votre accord, d’autres pour les statistiques, le marketing et les médias intégrés.',
+            'necessary' => 'La session, la protection contre les requêtes falsifiées et cette réponse elle-même. Le site ne fonctionne pas sans eux.',
+            'preferences' => 'Mémorisent votre langue et vos autres choix d’une visite à l’autre.',
+            'statistics' => 'Comptent les visites et montrent comment le site est utilisé, pour l’améliorer.',
+            'marketing' => 'Pixels publicitaires et remarketing : des publicités fondées sur vos visites ici.',
+            'media' => 'Vidéos, cartes et autres contenus d’autres sites, qui peuvent déposer leurs propres cookies.',
+        ],
+    ],
+    'phones' => [
+        'label' => 'Numéros de téléphone',
+        'more' => 'Autres numéros',
+        'callback' => 'Être rappelé',
+        'chat' => ':messenger, :number',
+    ],
+    'hours' => [
+        'label' => 'Horaires d’ouverture',
+        'open' => 'Ouvert jusqu’à :time',
+        'always' => 'Ouvert 24 h/24, 7 j/7',
+        'today' => 'Fermé, ouvre à :time',
+        'tomorrow' => 'Fermé, ouvre demain à :time',
+        'later' => 'Fermé, ouvre :day à :time',
+        'closed' => 'Fermé',
+        'off' => 'Fermé aujourd’hui',
+        'off-tomorrow' => 'Fermé aujourd’hui, ouvre demain à :time',
+        'off-later' => 'Fermé aujourd’hui, ouvre :day à :time',
+        'day-off' => 'Fermé',
+        'all-day' => '24 h/24',
+        'special' => 'Dates particulières',
+    ],
+    'contact' => [
+        'open' => 'Nous contacter',
+        'form' => 'Envoyer une demande',
+        'bar' => 'Contact',
+        'call' => 'Appeler',
+        'write' => 'Écrire',
+        'request' => 'Demande',
+    ],
+    'socials' => [
+        'label' => 'Réseaux sociaux',
+    ],
+    'language' => [
+        'label' => 'Langue',
+        'fallback' => 'Pas encore traduit : la page d’accueil dans cette langue',
+    ],
+];

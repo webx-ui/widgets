@@ -1,0 +1,298 @@
+:where(:root) {
+  /* Kept live by the runtime: what of the header stays on screen when it sticks, and the topbar above it. */
+  --webx-header-height: 0px;
+  --webx-header-topbar-height: 0px;
+  --webx-header-bg: var(--site-color-bg);
+  --webx-header-overlay-color: var(--site-color-accent-contrast);
+  --webx-header-gap: var(--site-space-5);
+  /* Open dropdowns: none until hovered without the runtime, which opens them with is-open. */
+  --webx-header-nav-panel: none;
+}
+
+/* On <html> while the header sticks: an anchor stops below it rather than under it. */
+.webx-header-sticky {
+  scroll-padding-top: var(--webx-header-height);
+}
+
+/* First in the document for the keyboard, off-screen until it has the focus. */
+.webx-header__skip {
+  position: absolute;
+  inset-block-start: var(--site-space-2);
+  inset-inline-start: var(--site-space-2);
+  z-index: 200;
+  padding: var(--site-space-2) var(--site-space-4);
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-accent);
+  color: var(--site-color-accent-contrast);
+  transform: translateY(-200%);
+}
+
+.webx-header__skip:focus {
+  transform: none;
+}
+
+.webx-header {
+  container: webx-header / inline-size;
+  position: relative;
+  z-index: 50;
+  border-block-end: 1px solid var(--site-color-border);
+  background: var(--webx-header-bg);
+  color: var(--site-color-text);
+  transition:
+    transform var(--site-duration) var(--site-easing),
+    background-color var(--site-duration) var(--site-easing),
+    color var(--site-duration) var(--site-easing);
+}
+
+/* The topbar scrolls away; the bar under it stays. */
+.webx-header--sticky {
+  position: sticky;
+  top: calc(-1 * var(--webx-header-topbar-height));
+}
+
+.webx-header.is-hidden {
+  transform: translateY(-100%);
+}
+
+/* Over the first screen, transparent, until scrolled past its own height. */
+.webx-header--overlay {
+  margin-block-end: calc(-1 * (var(--webx-header-height) + var(--webx-header-topbar-height)));
+  border-block-end-color: transparent;
+  background: transparent;
+  color: var(--webx-header-overlay-color);
+}
+
+.webx-header--overlay.is-scrolled {
+  border-block-end-color: var(--site-color-border);
+  background: var(--webx-header-bg);
+  color: var(--site-color-text);
+}
+
+.webx-header__topbar {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: var(--site-container-width);
+  margin-inline: auto;
+  padding: var(--site-space-1) var(--site-gutter);
+  font-size: var(--site-font-size-6);
+}
+
+/*
+ * The bar: a grid of named areas a theme rearranges here — logo in the middle, two rows —
+ * without overriding the view.
+ */
+.webx-header__bar {
+  box-sizing: border-box;
+  position: relative;
+  display: grid;
+  grid-template-areas: 'brand nav actions trigger';
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--site-space-2) var(--webx-header-gap);
+  width: 100%;
+  max-width: var(--site-container-width);
+  min-height: 64px;
+  margin-inline: auto;
+  padding: var(--site-space-2) var(--site-gutter);
+}
+
+.webx-header__brand {
+  grid-area: brand;
+  min-width: 0;
+}
+
+.webx-header__nav {
+  grid-area: nav;
+  display: flex;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.webx-header__actions {
+  grid-area: actions;
+  display: flex;
+  align-items: center;
+  gap: var(--site-space-3);
+  white-space: nowrap;
+}
+
+/* Shown only once the navigation has folded into the mobile menu. */
+.webx-header__trigger {
+  grid-area: trigger;
+  display: none;
+}
+
+.webx-header__nav.is-collapsed,
+.webx-header__actions.is-collapsed {
+  display: none;
+}
+
+.webx-header__trigger.is-collapsed {
+  display: inline-flex;
+}
+
+/* Navigation: <x-webx-header.nav>. */
+
+.webx-header-nav {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--site-space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.webx-header-nav__item {
+  position: relative;
+  display: flex;
+  flex: none;
+  align-items: center;
+  margin: 0;
+}
+
+/* A mega panel spans the bar, not its item. */
+.webx-header-nav__item--mega {
+  position: static;
+}
+
+.webx-header-nav__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--site-space-2);
+  border: 0;
+  border-radius: var(--site-radius-sm);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.webx-header-nav__link:hover,
+.webx-header-nav__link.is-current {
+  color: var(--site-color-accent);
+}
+
+.webx-header-nav__link--button {
+  margin-inline-start: var(--site-space-2);
+  padding: 0 var(--site-space-4);
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-accent);
+  color: var(--site-color-accent-contrast);
+}
+
+.webx-header-nav__link--button:hover {
+  color: var(--site-color-accent-contrast);
+}
+
+.webx-header-nav__toggle {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  min-height: 44px;
+  margin-inline-start: calc(-1 * var(--site-space-2));
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.webx-header-nav__toggle::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  margin-block-start: -3px;
+  border-block-end: 2px solid currentColor;
+  border-inline-end: 2px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform var(--site-duration) var(--site-easing);
+}
+
+.webx-header-nav__toggle[aria-expanded='true']::before {
+  margin-block-start: 3px;
+  transform: rotate(225deg);
+}
+
+.webx-header-nav__dropdown,
+.webx-header-nav__mega {
+  display: var(--webx-header-nav-panel);
+  position: absolute;
+  inset-block-start: 100%;
+  z-index: 1;
+  box-sizing: border-box;
+  margin: 0;
+  border: 1px solid var(--site-color-border);
+  background: var(--webx-header-bg);
+  color: var(--site-color-text);
+  box-shadow: var(--site-shadow-md);
+}
+
+.webx-header-nav__dropdown.is-open,
+.webx-header-nav__mega.is-open {
+  display: block;
+}
+
+.webx-header-nav__dropdown {
+  inset-inline-start: 0;
+  min-width: 14rem;
+  max-width: min(24rem, 100vw - 2 * var(--site-gutter));
+  padding: var(--site-space-2);
+  border-radius: var(--site-radius-md);
+  list-style: none;
+}
+
+.webx-header-nav__dropdown.is-flipped {
+  inset-inline: auto 0;
+}
+
+.webx-header-nav__mega {
+  inset-inline: 0;
+  padding: var(--site-space-5) var(--site-gutter);
+  border-radius: 0 0 var(--site-radius-md) var(--site-radius-md);
+}
+
+.webx-header-nav__subitem {
+  margin: 0;
+}
+
+.webx-header-nav__sublink {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--site-space-3);
+  border-radius: var(--site-radius-sm);
+  color: var(--site-color-text);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.webx-header-nav__sublink:hover {
+  background: var(--site-color-surface);
+}
+
+.webx-header-nav__sublink[aria-current='page'] {
+  color: var(--site-color-accent);
+}
+
+.webx-header-nav__sublist {
+  margin: 0;
+  padding: 0 0 0 var(--site-space-3);
+  list-style: none;
+}
+
+/* Without the runtime a dropdown opens on hover and on focus inside its item. */
+html:not(.webx-js) .webx-header-nav__item:hover,
+html:not(.webx-js) .webx-header-nav__item:focus-within {
+  --webx-header-nav-panel: block;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .webx-header,
+  .webx-header-nav__toggle::before {
+    transition: none;
+  }
+}

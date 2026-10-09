@@ -1,0 +1,171 @@
+[
+  {
+    "op": "add",
+    "target": "tabs",
+    "node": {
+      "id": "consent",
+      "type": "wx-tab",
+      "label": "trans::webx-widgets::panel.tab",
+      "children": [
+        {
+          "id": "consent-card",
+          "type": "wx-card",
+          "children": [
+            {
+              "id": "consent-enabled",
+              "type": "wx-switch",
+              "name": "consent.enabled",
+              "label": "trans::webx-widgets::panel.enabled",
+              "help": "trans::webx-widgets::panel.enabled-help",
+              "default": true
+            },
+            {
+              "id": "consent-policy",
+              "type": "wx-link",
+              "name": "consent.policy",
+              "label": "trans::webx-widgets::panel.policy",
+              "help": "trans::webx-widgets::panel.policy-help"
+            },
+            {
+              "id": "consent-version",
+              "type": "wx-input-number",
+              "name": "consent.version",
+              "label": "trans::webx-widgets::panel.version",
+              "help": "trans::webx-widgets::panel.version-help",
+              "default": 1,
+              "props": {
+                "min": 1,
+                "max": 100000
+              }
+            },
+            {
+              "id": "consent-ask-again",
+              "type": "wx-switch",
+              "name": "consent.ask-again",
+              "label": "trans::webx-widgets::panel.ask-again",
+              "help": "trans::webx-widgets::panel.ask-again-help"
+            },
+            {
+              "id": "consent-categories",
+              "type": "wx-checkbox-group",
+              "name": "consent.categories",
+              "label": "trans::webx-widgets::panel.categories",
+              "help": "trans::webx-widgets::panel.categories-help",
+              "props": {
+                "options": [
+                  {
+                    "value": "preferences",
+                    "label": "trans::webx-widgets::widgets.consent.categories.preferences"
+                  },
+                  {
+                    "value": "statistics",
+                    "label": "trans::webx-widgets::widgets.consent.categories.statistics"
+                  },
+                  {
+                    "value": "marketing",
+                    "label": "trans::webx-widgets::widgets.consent.categories.marketing"
+                  },
+                  {
+                    "value": "media",
+                    "label": "trans::webx-widgets::widgets.consent.categories.media"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "consent-texts",
+          "type": "wx-card",
+          "label": "trans::webx-widgets::panel.texts",
+          "help": "trans::webx-widgets::panel.texts-help",
+          "children": [
+            {
+              "id": "consent-text-title",
+              "type": "wx-input",
+              "name": "consent.text-title",
+              "label": "trans::webx-widgets::panel.text-title",
+              "localized": true,
+              "props": {
+                "maxlength": 120,
+                "placeholder": "trans::webx-widgets::widgets.consent.texts.title"
+              }
+            },
+            {
+              "id": "consent-text-text",
+              "type": "wx-textarea",
+              "name": "consent.text-text",
+              "label": "trans::webx-widgets::panel.text-text",
+              "localized": true,
+              "props": {
+                "rows": 3,
+                "maxlength": 600,
+                "placeholder": "trans::webx-widgets::widgets.consent.texts.text"
+              }
+            },
+            {
+              "id": "consent-text-necessary",
+              "type": "wx-textarea",
+              "name": "consent.text-necessary",
+              "label": "trans::webx-widgets::widgets.consent.categories.necessary",
+              "localized": true,
+              "props": {
+                "rows": 2,
+                "maxlength": 400,
+                "placeholder": "trans::webx-widgets::widgets.consent.texts.necessary"
+              }
+            },
+            {
+              "id": "consent-text-preferences",
+              "type": "wx-textarea",
+              "name": "consent.text-preferences",
+              "label": "trans::webx-widgets::widgets.consent.categories.preferences",
+              "localized": true,
+              "props": {
+                "rows": 2,
+                "maxlength": 400,
+                "placeholder": "trans::webx-widgets::widgets.consent.texts.preferences"
+              }
+            },
+            {
+              "id": "consent-text-statistics",
+              "type": "wx-textarea",
+              "name": "consent.text-statistics",
+              "label": "trans::webx-widgets::widgets.consent.categories.statistics",
+              "localized": true,
+              "props": {
+                "rows": 2,
+                "maxlength": 400,
+                "placeholder": "trans::webx-widgets::widgets.consent.texts.statistics"
+              }
+            },
+            {
+              "id": "consent-text-marketing",
+              "type": "wx-textarea",
+              "name": "consent.text-marketing",
+              "label": "trans::webx-widgets::widgets.consent.categories.marketing",
+              "localized": true,
+              "props": {
+                "rows": 2,
+                "maxlength": 400,
+                "placeholder": "trans::webx-widgets::widgets.consent.texts.marketing"
+              }
+            },
+            {
+              "id": "consent-text-media",
+              "type": "wx-textarea",
+              "name": "consent.text-media",
+              "label": "trans::webx-widgets::widgets.consent.categories.media",
+              "localized": true,
+              "props": {
+                "rows": 2,
+                "maxlength": 400,
+                "placeholder": "trans::webx-widgets::widgets.consent.texts.media"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

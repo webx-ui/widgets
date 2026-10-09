@@ -1,0 +1,62 @@
+{
+    "name": "webx-ui/widgets",
+    "description": "The interactive pieces every site repeats — menus, dialogs, tabs, accordions, cookie consent and, next, sliders, video and maps — with their logic and accessibility done and their look left to the theme, loaded only on the pages that use them.",
+    "keywords": [
+        "laravel",
+        "blade",
+        "widgets",
+        "accessibility",
+        "webx-ui"
+    ],
+    "homepage": "https://github.com/webx-ui/webx-ui",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "WebX UI",
+            "homepage": "https://github.com/webx-ui"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/webx-ui/webx-ui/issues",
+        "source": "https://github.com/webx-ui/webx-ui/tree/main/php/packages/widgets"
+    },
+    "require": {
+        "php": "^8.4",
+        "illuminate/contracts": "^13.0",
+        "illuminate/http": "^13.0",
+        "illuminate/support": "^13.0",
+        "illuminate/view": "^13.0",
+        "webx-ui/themes": "^0.65.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^11.0",
+        "phpunit/phpunit": "^12.0 || ^13.0"
+    },
+    "suggest": {
+        "webx-ui/module-inbox": "Its forms opened in a dialog by any button (data-webx-form=\"<slug>\")",
+        "webx-ui/module-settings": "The \"Cookie\" tab of the settings screen and MCP for the consent banner, without it config/webx-widgets.php; the Contacts tab the phones, hours, quick contact and networks read",
+        "webx-ui/routing": "The language switcher's addresses of the same page in the other languages (with webx-ui/localization)"
+    },
+    "autoload": {
+        "psr-4": {
+            "WebxUi\\Widgets\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "WebxUi\\Widgets\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "WebxUi\\Widgets\\WidgetsServiceProvider"
+            ]
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

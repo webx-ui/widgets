@@ -1,0 +1,16 @@
+/* While a modal is open the page does not scroll, and keeps its scrollbar's gutter so it does not jump. */
+.webx-scroll-locked {
+  overflow: hidden;
+  scrollbar-gutter: stable;
+}
+
+:where(:root) {
+  --webx-icon-size: 1.25rem;
+}
+
+/* `<x-webx-icon>`: the contacts' icons, the language switcher's globe — any widget's. */
+.webx-icon {
+  flex: none;
+  width: var(--webx-icon-size);
+  height: var(--webx-icon-size);
+}

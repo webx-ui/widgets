@@ -1,0 +1,1 @@
+Mega of {{ $item->label }} with {{ count($item->children) }}

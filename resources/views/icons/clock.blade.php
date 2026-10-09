@@ -1,0 +1,2 @@
+{{-- clock: the package's own, on a 24px grid --}}
+<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></g>

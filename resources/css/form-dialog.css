@@ -1,0 +1,42 @@
+/*
+ * The form in a dialog (spec §6.4) is a dialog of the runtime (`webx-dialog`, dialog.css) with
+ * classes of its own for a theme to reach it by. A long form scrolls inside the dialog, and its
+ * title and close button stay on top while it does. The form inside is module-inbox's
+ * (`wx-form wx-form--modal`) and looks the way the site styles that module.
+ */
+
+.webx-form-dialog__header {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 1;
+  padding-block-end: var(--site-space-3);
+  background: var(--site-color-bg);
+}
+
+.webx-form-dialog__body {
+  overflow-wrap: anywhere;
+}
+
+.webx-form-dialog__done {
+  min-height: 44px;
+  margin-block-start: var(--site-space-4);
+  padding: 0 var(--site-space-5);
+  border: 0;
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-accent);
+  color: var(--site-color-accent-contrast);
+  font: inherit;
+  cursor: pointer;
+}
+
+.webx-form-dialog__done[hidden] {
+  display: none;
+}
+
+/* Printed open (the page came back from it) and no runtime: over the page, like :target. */
+html:not(.webx-js) .webx-form-dialog[open] {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  box-shadow: 0 0 0 100vmax var(--webx-dialog-backdrop);
+}

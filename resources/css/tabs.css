@@ -1,0 +1,48 @@
+:where(:root) {
+  --webx-tabs-gap: var(--site-space-1);
+  --webx-tabs-indicator: var(--site-color-accent);
+}
+
+.webx-tabs__list {
+  display: flex;
+  gap: var(--webx-tabs-gap);
+  margin-block-end: var(--site-space-4);
+  overflow-x: auto;
+  scrollbar-width: thin;
+  border-block-end: 1px solid var(--site-color-border);
+}
+
+.webx-tabs__tab {
+  flex: none;
+  min-height: 44px;
+  margin-block-end: -1px;
+  padding: var(--site-space-2) var(--site-space-4);
+  border: 0;
+  border-block-end: 2px solid transparent;
+  background: none;
+  color: var(--site-color-text-muted);
+  font: inherit;
+  cursor: pointer;
+  transition:
+    color var(--site-duration) var(--site-easing),
+    border-color var(--site-duration) var(--site-easing);
+}
+
+.webx-tabs__tab:hover {
+  color: var(--site-color-text);
+}
+
+.webx-tabs__tab[aria-selected='true'] {
+  color: var(--site-color-text);
+  border-block-end-color: var(--webx-tabs-indicator);
+}
+
+.webx-tabs__panel:focus-visible {
+  outline-offset: var(--site-space-1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .webx-tabs__tab {
+    transition: none;
+  }
+}
