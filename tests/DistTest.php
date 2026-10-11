@@ -43,6 +43,12 @@ final class DistTest extends PlainTestCase
     /** The map, Leaflet built in: 50 KB gzip without the tiles (§4), only where a map stands. */
     private const int MAP_BUDGET = 50 * 1024;
 
+    /** Each of the small widgets of §14 with a file of its own: a table's shadows, back to top, share, counter, countdown, the notice bar. */
+    private const int PAGE_TOOL_BUDGET = 2 * 1024;
+
+    /** Before and after, the table of contents and show more: 3 KB gzip each — a layout of their own as well as a few lines of script. */
+    private const int CONTENT_WIDGET_BUDGET = 3 * 1024;
+
     private const array LOCALES = ['en', 'ru', 'uk', 'de', 'pl', 'fr', 'es', 'it', 'pt', 'tr'];
 
     #[Test]
@@ -81,7 +87,31 @@ final class DistTest extends PlainTestCase
         ));
         sort($built);
 
-        $this->assertSame(['consent.css', 'consent.js', 'contacts.css', 'contacts.js', 'language-switcher.css', 'lightbox.css', 'lightbox.js', 'map.css', 'map.js', 'runtime.css', 'runtime.js', 'slider.css', 'slider.js', 'sources.json', 'video.css', 'video.js'], $built);
+        $this->assertSame(['back-to-top.css', 'back-to-top.js', 'compare.css', 'compare.js', 'consent.css', 'consent.js', 'contacts.css', 'contacts.js', 'countdown.css', 'countdown.js', 'counter.css', 'counter.js', 'language-switcher.css', 'lightbox.css', 'lightbox.js', 'load-more.css', 'load-more.js', 'map.css', 'map.js', 'notice-bar.css', 'notice-bar.js', 'pagination.css', 'runtime.css', 'runtime.js', 'share.css', 'share.js', 'slider.css', 'slider.js', 'sources.json', 'table.css', 'table.js', 'toc.css', 'toc.js', 'video.css', 'video.js', 'zoom.css', 'zoom.js'], $built);
+    }
+
+    /**
+     * The small page tools of §14 — the shadows of a table of prose, back to top, share, the counter
+     * the countdown and the notice bar: 2 KB gzip each. §4 names no budget for them; this one says they stay what they are, a few lines.
+     */
+    #[Test]
+    public function the_page_tools_stay_inside_their_budgets(): void
+    {
+        foreach (['table', 'back-to-top', 'share', 'counter', 'countdown', 'notice-bar'] as $widget) {
+            $size = self::gzipped("{$widget}.js") + self::gzipped("{$widget}.css");
+
+            $this->assertLessThanOrEqual(self::PAGE_TOOL_BUDGET, $size, sprintf('%s is %.1f KB gzip.', $widget, $size / 1024));
+        }
+    }
+
+    #[Test]
+    public function the_content_widgets_stay_inside_their_budgets(): void
+    {
+        foreach (['compare', 'toc', 'load-more', 'zoom'] as $widget) {
+            $size = self::gzipped("{$widget}.js") + self::gzipped("{$widget}.css");
+
+            $this->assertLessThanOrEqual(self::CONTENT_WIDGET_BUDGET, $size, sprintf('%s is %.1f KB gzip.', $widget, $size / 1024));
+        }
     }
 
     #[Test]
@@ -100,6 +130,17 @@ final class DistTest extends PlainTestCase
         $size = self::gzipped('language-switcher.css');
 
         $this->assertLessThanOrEqual(self::LANGUAGE_SWITCHER_BUDGET, $size, sprintf('The language switcher is %.1f KB gzip.', $size / 1024));
+    }
+
+    /** The links of the pages: a stylesheet and no script, inside the language switcher's 2 KB. */
+    #[Test]
+    public function the_pagination_is_a_stylesheet_inside_its_budget(): void
+    {
+        $this->assertFileDoesNotExist(Widgets::path().'/dist/pagination.js');
+
+        $size = self::gzipped('pagination.css');
+
+        $this->assertLessThanOrEqual(self::LANGUAGE_SWITCHER_BUDGET, $size, sprintf('The pagination is %.1f KB gzip.', $size / 1024));
     }
 
     #[Test]

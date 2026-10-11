@@ -108,6 +108,8 @@ return [
         'notice' => 'Das Video wird von :provider geladen, das Cookies setzen kann.',
         'load' => 'Laden',
         'always' => 'Videos immer laden',
+        'pause' => 'Hintergrundvideo anhalten',
+        'resume' => 'Hintergrundvideo abspielen',
     ],
     'map' => [
         'untitled' => 'Karte',
@@ -117,5 +119,55 @@ return [
         'always' => 'Karten immer laden',
         'open' => 'In Karten öffnen',
         'hint' => 'Klicken Sie auf die Karte, um mit dem Mausrad zu zoomen',
+    ],
+    'table' => [
+        'label' => 'Tabelle',
+    ],
+    'back_to_top' => [
+        'label' => 'Nach oben',
+    ],
+    'share' => [
+        'label' => 'Teilen',
+        'on' => 'Auf :network teilen',
+        'email' => 'Per E-Mail senden',
+        'copy' => 'Link kopieren',
+        'copied' => 'Link kopiert',
+        'failed' => 'Der Link konnte nicht kopiert werden',
+    ],
+    'countdown' => [
+        'ends' => 'Endet am :date',
+        'days' => 'Tage',
+        'hours' => 'Stunden',
+        'minutes' => 'Minuten',
+        'seconds' => 'Sekunden',
+    ],
+    'compare' => [
+        'before' => 'Vorher',
+        'after' => 'Nachher',
+        'label' => 'Trennlinie zwischen „:before“ und „:after“',
+    ],
+    'toc' => [
+        'title' => 'Auf dieser Seite',
+    ],
+    'pagination' => [
+        'label' => 'Seiten',
+        'previous' => 'Zurück',
+        'next' => 'Weiter',
+    ],
+    'load_more' => [
+        'label' => 'Mehr anzeigen',
+        'loading' => 'Wird geladen…',
+        'loaded' => 'Seite :page von :last geladen.',
+        'loaded_page' => 'Seite :page geladen.',
+        'end' => 'Das ist alles.',
+        'failed' => 'Die nächste Seite konnte nicht geladen werden. Versuchen Sie es erneut oder nutzen Sie die Links zu den Seiten.',
+    ],
+    'notice_bar' => [
+        'label' => 'Hinweis',
+        'close' => 'Hinweis schließen',
+    ],
+    'zoom' => [
+        'label' => 'Vergrößern',
+        'named' => 'Vergrößern: :name',
     ],
 ];

@@ -1,0 +1,84 @@
+{
+  "slug": "countdown",
+  "title": "Countdown",
+  "description": "A timer to a date and time in the site’s time zone — the end of a sale, the start of an event. At the end it says what you wrote, or the block goes.",
+  "icon": null,
+  "group": "content",
+  "sort": 0,
+  "allow": null,
+  "allowed_in": null,
+  "max_per_entity": null,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "heading",
+      "type": "wx-input",
+      "label": "Heading",
+      "localized": true
+    },
+    {
+      "id": "text",
+      "type": "wx-textarea",
+      "label": "Text",
+      "localized": true,
+      "props": {
+        "rows": 2
+      }
+    },
+    {
+      "id": "date",
+      "type": "wx-date-picker",
+      "label": "Date",
+      "help": "The day it runs to."
+    },
+    {
+      "id": "time",
+      "type": "wx-time-picker",
+      "label": "Time",
+      "default": "00:00",
+      "help": "In the site’s time zone (Settings › Contacts), wherever the visitor reads it."
+    },
+    {
+      "id": "end",
+      "type": "wx-segmented",
+      "label": "At the end",
+      "default": "text",
+      "props": {
+        "options": [
+          {
+            "value": "text",
+            "label": "Say something"
+          },
+          {
+            "value": "hide",
+            "label": "Hide the block"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ended",
+      "type": "wx-input",
+      "label": "What it says",
+      "localized": true,
+      "props": {
+        "placeholder": "The sale is over"
+      },
+      "visible": {
+        "when": "end",
+        "is": "text"
+      }
+    }
+  ],
+  "template": "@php\n    // The date and the time are a wall clock of the site's time zone; a moment nobody can read is none.\n    $day = substr(is_string($date) ? trim($date) : '', 0, 10);\n    $clock = is_string($time) && preg_match('/^\\d{1,2}:\\d{2}(:\\d{2})?$/', trim($time)) === 1 ? trim($time) : '00:00';\n    $moment = null;\n    if (preg_match('/^\\d{4}-\\d{2}-\\d{2}$/', $day) === 1 && checkdate((int) substr($day, 5, 2), (int) substr($day, 8, 2), (int) substr($day, 0, 4))) {\n        try {\n            $moment = \\WebxUi\\Widgets\\View\\Components\\Countdown::moment($day.' '.$clock);\n        } catch (\\Throwable) {\n            $moment = null;\n        }\n    }\n    // \"Hide the block\", or nothing written to say: when it ends, the block goes.\n    $message = $end !== 'hide' && $ended ? wx_text($ended)->plain() : '';\n    $message = trim($message) !== '' ? $message : null;\n@endphp\n@if ($moment && ($message !== null || $moment->isFuture()))\n<section class=\"b-countdown\" data-wx-block=\"countdown\" data-webx-countdown-scope>\n    @if ($heading)\n        <h2 class=\"b-countdown__heading\">{{ $heading }}</h2>\n    @endif\n    @if ($text)\n        <p class=\"b-countdown__text\">{{ $text }}</p>\n    @endif\n    <x-webx-countdown class=\"b-countdown__timer\" :to=\"$moment\" :ended=\"$message\" />\n</section>\n@endif\n",
+  "styles": ".b-countdown {\n    container-type: inline-size;\n    text-align: center;\n    --webx-countdown-justify: center;\n}\n\n.b-countdown__heading {\n    margin: 0 0 0.5em;\n}\n\n.b-countdown__text {\n    margin: 0 auto 1.25em;\n    max-width: 40em;\n    opacity: 0.8;\n}\n\n.b-countdown__timer {\n    margin: 0 auto;\n}\n",
+  "script": null,
+  "sample": {
+    "heading": "The sale ends in",
+    "text": "",
+    "date": "2026-12-31",
+    "time": "18:00",
+    "end": "text",
+    "ended": "The sale is over"
+  }
+}

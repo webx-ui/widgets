@@ -14,8 +14,7 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
   shows/hides `#<id>` (Esc, a click outside close); `data-webx-dialog="<id>"` opens `<dialog id>` as
   a modal (`[data-webx-dialog-close]` inside closes it, a URL ending in `#<id>` opens it on load);
   `data-webx-tabs` on a container of `[data-webx-tab]` panels (label: the value or the first heading;
-  `data-webx-tab-selected` first shown); `data-webx-accordion="single"` on `<details>` — one open.
-- **Components** — `<x-webx-dialog id title close>`, `<x-webx-tabs label>` with `<x-webx-tabs.panel title selected level>`.
+  `data-webx-tab-selected` first shown); `data-webx-accordion="single"` on `<details>` — one open. Components: `<x-webx-dialog id title close>`, `<x-webx-tabs label>` with `<x-webx-tabs.panel title selected level>`.
 - **Header** — `<x-webx-header>` with slots `topbar`, `brand`, the default (the navigation),
   `actions`, `mobile-bottom`, `mobile`, `trigger`; props `collapse` (`auto` | a width in px |
   `never`), `breakpoint` (where `auto` folds without JavaScript, 960), `sticky` (`none` |
@@ -23,21 +22,17 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
   its own skip link), `mode` and `side` of the mobile menu it builds. Inside it
   `<x-webx-header.nav :items="menu('header')" :mega="['services' => 'components.mega']">` — dropdowns; a `mega`
   view gets `$item`. `:items` takes `menu()` trees or arrays `['label', 'url', 'children', 'current', 'variant']`.
-- **Mobile menu** — `<x-webx-mobile-menu side breakpoint close-on-navigate history>`, slots `top`, the default (the
-  body), `bottom`, `trigger`; `<x-webx-mobile-menu.nav :items mode="accordion|drill">` in its body. The header builds
-  one of its brand, navigation and actions unless given `mobile` or `collapse="never"`.
+- **Mobile menu** — `<x-webx-mobile-menu side breakpoint close-on-navigate history>`, slots `top`, default (body), `bottom`,
+  `trigger`; `<x-webx-mobile-menu.nav :items mode="accordion|drill">` inside. A header builds one unless given `mobile` or `collapse="never"`.
 - **Dropdown panel** — `<x-webx-dropdown placement="bottom-start|bottom-end|bottom|top-start|top-end|top"
 open-on="click|hover" label open>` with slot `trigger` (its attributes go on the `<summary>`).
   A `<details>`: without JavaScript a click opens it; with it the panel is a popover placed from
   the trigger and turned over at the window's edge (`is-flipped`), Esc / Tab out / a click
-  elsewhere close it, one is open on the page. Phones, hours, languages, "share" are built on it.
-- **Form in a dialog** — any `<a>` or `<button>` with `data-webx-form="<slug>"`, or a link to
-  `#webx-form-<slug>` (typed into a menu item or a block's button in the panel), opens that
-  `module-inbox` form in `<dialog id="webx-form-<slug>">`, printed once per slug before
-  `</body>`, the form inside `placement="modal"`. `data-webx-form-value-<field>="…"` fills the
-  form's field `fields[<field>]` (a hidden field of the form). An opener the server does not
-  print: `Widgets::form('<slug>')`. Without `module-inbox` or with no enabled form by that slug
-  there is no dialog. View `webx-widgets::form-dialog`.
+  elsewhere close it, one is open on the page. Phones, hours, languages are built on it.
+- **Form in a dialog** — any `<a>`/`<button>` with `data-webx-form="<slug>"`, or a link to `#webx-form-<slug>` (a menu
+  item, a block's button), opens that `module-inbox` form in `<dialog id="webx-form-<slug>">`, printed once per slug
+  before `</body>`, form `placement="modal"`. `data-webx-form-value-<field>="…"` fills `fields[<field>]` (a hidden field).
+  An opener the server does not print: `Widgets::form('<slug>')`. No inbox or no enabled form — no dialog. View `webx-widgets::form-dialog`.
 - **Cookie consent** — `dist/consent.js|css`, on every page with a theme. The banner and its
   dialog (`#webx-consent`) are printed before `</body>` by the package itself — no component to
   place; the theme's footer has `<x-webx-consent-link />` ("Cookie settings"). Categories
@@ -72,22 +67,26 @@ variant="cards|hero|gallery|logos" :per-view="['sm' => 1.2, 'md' => 2, 'lg' => 3
   page: `<x-webx-lightbox :image="$picture" group>` (a media field's value or an object with `url()`,
   `width`, `height`; or `src width height thumb alt`; the slot replaces the thumbnail), or by hand
   `<a href data-webx-lightbox="<group>" data-width data-height>`. A group pages together, an empty
-  one is alone, a slider's slides too. No JavaScript: the link opens the file. Write the sizes.
+  one is alone, a slider's slides too. No JavaScript: the link opens the file. Write the sizes. **Zoom** — `dist/zoom.js|css`: `<x-webx-zoom :image src large mode="inner|side" scale group alt label :eager>` is a lightbox link to the original (the keyboard's way in) whose picture a mouse magnifies inside its frame or, `side`, as a lens and a panel beside it where its nearest container (not a `webx-*` one) has room — else inside; two fingers pinch and pan, a double tap is 2×, one finger at its own size is the page's and the slider's, a tap opens the lightbox 300ms later. The original is fetched on the first hover or touch. `data-webx-zoom` (`data-zoom-mode`, `data-zoom-scale`) on any element holding a picture and a link does the same — the gallery block's slider, `module-catalog`'s product page.
 - **Video** — `dist/video.js|css`, only where one stands: `<x-webx-video src="<YouTube or Vimeo>"
 :poster="$picture" title ratio="16/9">` — a poster and a play button, the player (youtube-nocookie)
   only on a click; before consent to `media` the server prints the notice with "Load" / "Always load
-  videos". No poster: the video's preview, fetched once into the library (folder "Video posters").
-  `<x-webx-video :file="$media" :poster>` — a `<video preload="none">`, no consent. No JS: a link.
+  videos". No poster: its preview, fetched once into the library ("Video posters"). `:file="$media"` — `<video preload="none">`; `variant="background"` (a file only) — a first screen's backdrop behind what the tag wraps: muted loop, a pause button always, played only on screen, the poster under reduced motion / saveData / without JavaScript.
 - **Map** — `dist/map.js|css` (Leaflet), only where one stands: `<x-webx-map :lat :lng :zoom marker height title link>`
   or `<x-webx-map from="settings">` (main address of the Contacts tab; no coordinates — the address alone). The server
   prints the address, "Open in maps" and, before consent to `media`, "Load" / "Always load maps"; tiles only after. The
   wheel scrolls the page until the map is clicked. Tiles: `webx-widgets.map.provider` (OpenStreetMap; `{key}` entries).
+- **Page tools** — every `<table>` without a class (what a rich text field stores) the server puts in `.webx-table`
+  (`__caption` above `__frame` > `__scroller` > `__table`; `dist/table.js` adds the shadows `is-more-left|right`);
+  `data-webx-reveal="up|fade|scale"`, or `"stagger"` + `data-webx-reveal-effect` (runtime; only the script hides, below the
+  fold); `<x-webx-back-to-top corner :after>`; `<x-webx-share title url :networks>` — plain links, Copy link, a phone's sheet.
+- **Numbers** — `<x-webx-counter :value prefix suffix decimals duration>` (`dist/counter.*`): the final number printed, counted up to only below the fold; `<x-webx-countdown to ended>` (`dist/countdown.*`): a wall time of the site's zone (the Contacts tab's, else `app.timezone`) or a moment with its offset; ticks each second; at the end `ended`, or it goes with the nearest `[data-webx-countdown-scope]`; without JavaScript the date. `<x-webx-compare :before :after start ratio before-label after-label>` (`dist/compare.*`): after over before, the divider a range input (arrows, a sideways finger), side by side under `scripting: none`. `<x-webx-toc for depth title side fold>` (`dist/toc.*`): list and heading ids made in `Widgets::finish()` from its slot, `for` (an id) or `<main>`; beside the text and sticky from 48rem, a folded bar below. **Lists** — `<x-webx-pagination :paginator around>` (`dist/pagination.css`, no script): previous, numbers, next; page 1 without `?page=1`. `<x-webx-load-more :paginator pages="covered|shown">` (`dist/load-more.*`) around the items or a list marked `data-webx-load-more-list` (a module's own links in the `links` slot): fetches the next page's HTML, appends that list's items, focus on the first new one, `replaceState` to `?page=N`; links without JavaScript. `<x-webx-notice-bar place="notice" version :closable>` (`dist/notice-bar.*`): above the header, the first banner of the `module-banners` place `notice` (words only) else its slot; closed versions in `localStorage`, hidden by a line `finish()` writes into the head.
 - **Blocks** — offered with `module-media` (`webx:setup`, or `webx:blocks:offered --install --module=widgets`),
-  then the site's: `gallery` (library pictures, grid or slider, zoom = lightbox, a group per block, title = caption),
-  `logos` (name, logo, link each, a strip), `video` (link or file by a switch, poster, caption, 16:9|4:3|1:1|9:16), `map` (contacts or coordinates, zoom, height); nothing to show prints nothing.
+  then the site's: `gallery` (library pictures, grid or slider, zoom = lightbox, magnify = zoom on the slider, a group per block, title = caption),
+  `logos` (name, logo, link each, a strip), `video` (link or file by a switch, poster, caption, 16:9|4:3|1:1|9:16), `map` (contacts or coordinates, zoom, height), `counters` (number, before, after, label each), `countdown` (date, time of the site's zone, at the end: a text or hide), `compare` (before, after, labels, start), `toc` (the whole page or a text of its own, side, depth); nothing to show prints nothing.
 - **Audit** (with `module-audit`): `widgets.before_consent` (a known player, map, counter or pixel asked at once —
   fix `widgets.wait-for-consent` rewrites it where content stores it), `widgets.banner_off` (fix `widgets.banner-on`),
-  `widgets.lightbox_size`, `widgets.slider_pause`, `widgets.contact_both`. Own third parties: `webx-widgets.audit.third-party`.
+  `widgets.lightbox_size`, `widgets.slider_pause`, `widgets.video_pause`, `widgets.counter_number`, `widgets.compare_range`, `widgets.toc_target`, `widgets.load_more_link`, `widgets.zoom_link`, `widgets.contact_both`. Own third parties: `webx-widgets.audit.third-party`.
 - **Classes** — public contract: `webx-<name>`, `webx-<name>__<element>`, states `is-*`
   (`webx-dialog__header|title|close|body`, `webx-tabs__list|tab|panel|title`, `is-enhanced`;
   `webx-header`, `--sticky|--hide-on-scroll|--overlay`, `__skip|topbar|bar|brand|nav|actions|trigger`,
@@ -103,7 +102,7 @@ body|done`, `is-sent`; `webx-phones__*`, `webx-hours__*` (`is-open|is-closed|is-
   `__viewport|track|slide|controls|button|prev|next|pause|pagination|bullet|thumbs|thumb`,
   `is-ready|is-active`; `webx-lightbox-link`, `__image`, `is-ready`, the viewer PhotoSwipe's `.pswp`
   with `webx-lightbox`; `webx-video`, `--youtube|vimeo|file`, `__facade|poster|play|consent|notice|
-button|frame|player`, `is-blocked|is-ready|is-playing`; `webx-map`, `--place`, `__place|address|open|notice|button|attribution|canvas|marker|hint`, `is-loaded|is-active` — in each view). `html.webx-js` once the runtime runs; `html.webx-scroll-locked`
+button|frame|player|backdrop|background|over|pause`, `is-blocked|is-ready|is-playing|is-paused`; `webx-counter__prefix|number|suffix|final`, `is-counting`; `webx-countdown__date|units|unit|value|label|ended`, `is-over`; `webx-compare__frame|side|picture|label|handle|range|caption`, `is-dragging|is-focused`; `webx-toc__layout|content|nav|title|toggle|current|panel|list|item|link`, `is-ready|is-open|is-current`; `webx-pagination__link|gap`, `--prev|--next`, `is-current|is-loaded`; `webx-load-more`, `--shown`, `__list|more|button|status|pages`, `is-covered|is-loading`; `webx-notice-bar__inner|content|title|text|link|close|icon`; `webx-zoom`, `webx-zoom-link`, `--inner|--side`, `__picture|badge|icon|view|large|lens|panel` (the panel on `<body>`), `is-active|is-side|is-zoomed|is-hidden|is-easing`; `webx-map`, `--place`, `__place|address|open|notice|button|attribution|canvas|marker|hint`, `is-loaded|is-active` — in each view). `html.webx-js` once the runtime runs; `html.webx-scroll-locked`
   while a modal is open; `html.webx-header-sticky` while a header sticks (scroll padding = its height).
 - **Local tokens** — `--webx-<name>-*` of each widget (`--webx-slider-per-view`, `--webx-lightbox-backdrop`…),
   on `:root` from `--site-*`; `--webx-header-height|-topbar-height` kept live by the runtime — `top` of anything sticky.

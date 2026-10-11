@@ -34,5 +34,41 @@ return [
             'why' => 'Oferecem duas vezes as mesmas chamadas e conversas, e no telemóvel o botão tapa a barra.',
             'fix' => 'Mantenha apenas um dos dois no layout do tema.',
         ],
+        'video_pause' => [
+            'title' => 'Vídeos de fundo sem botão de pausa',
+            'found' => 'Um vídeo de fundo reproduz-se sozinho e não tem botão de pausa.',
+            'why' => 'Um movimento que dura mais de cinco segundos tem de poder ser parado (WCAG 2.2.2): distrai, e alguns visitantes não conseguem ler o texto por cima.',
+            'fix' => 'A vista do pacote tem sempre o botão: uma substituição de webx-widgets::components.video no tema perdeu .webx-video__pause. Reponha-o ou remova a substituição.',
+        ],
+        'counter_number' => [
+            'title' => 'Contadores sem o seu número',
+            'found' => 'A marcação de um contador não contém o número até ao qual conta.',
+            'why' => 'Motores de busca, leitores de ecrã e uma página sem JavaScript leem a marcação: recebem um zero ou nada em vez do número.',
+            'fix' => 'A vista do pacote imprime o número final e o script conta até ele: uma substituição de webx-widgets::components.counter no tema imprime outra coisa. Imprima o número ou remova a substituição.',
+        ],
+        'compare_range' => [
+            'title' => 'Antes e depois sem controle deslizante',
+            'found' => 'Uma divisória de antes e depois não tem campo range: só o rato e o dedo a podem mover.',
+            'why' => 'O teclado não chega à divisória e um leitor de ecrã não a consegue nomear: parte da imagem fica escondida para esses visitantes.',
+            'fix' => 'A vista do pacote faz da divisória um <input type="range">: uma substituição de webx-widgets::components.compare no tema perdeu-o. Reponha-o ou remova a substituição.',
+        ],
+        'toc_target' => [
+            'title' => 'Índice que não leva a lado nenhum',
+            'found' => 'Uma ligação do índice leva a uma secção que a página não tem.',
+            'why' => 'O visitante clica numa secção e nada acontece: a página não se move e o índice parece avariado.',
+            'fix' => 'O servidor monta o índice com os títulos da página e dá-lhes os seus id. Um índice escrito à mão, ou uma substituição da lista no tema, aponta para um id que desapareceu: use <x-webx-toc> ou corrija a ligação.',
+        ],
+        'load_more_link' => [
+            'title' => '«Mostrar mais» sem ligação para a página seguinte',
+            'found' => 'Uma lista com «Mostrar mais» tem uma página seguinte, mas nenhuma ligação para ela: só o botão leva até lá.',
+            'why' => 'Os motores de busca não carregam em botões, e uma página sem JavaScript também não: o que vem depois da primeira página não é encontrado.',
+            'fix' => 'O pacote imprime as ligações das páginas por baixo da lista e o botão apenas as cobre: uma substituição de webx-widgets::components.load-more no tema, ou um slot links vazio, perdeu-as. Reponha-as ou retire a substituição.',
+        ],
+        'zoom_link' => [
+            'title' => 'Zoom sem ligação',
+            'found' => 'Uma imagem ampliada sob o rato não é uma ligação nem contém uma: o teclado não a consegue abrir.',
+            'why' => 'O teclado e os leitores de ecrã não têm passagem do rato: a ligação para a imagem, aberta no visualizador, é a sua única forma de a ver de perto.',
+            'fix' => 'A vista do pacote faz da imagem uma ligação para o original: uma substituição de webx-widgets::components.zoom no tema perdeu-a, ou data-webx-zoom foi escrito numa imagem sem ligação. Ponha o atributo na ligação do visualizador ou retire a substituição.',
+        ],
     ],
 ];

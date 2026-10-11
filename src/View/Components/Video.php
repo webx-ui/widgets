@@ -26,6 +26,12 @@ use WebxUi\Widgets\Video\VideoProviders;
  * `poster` and `file` take what a template has in hand: a value of a media field (`url`, `width`,
  * `height`, `mime`), an object with `url()`, or an address. The frame keeps its `ratio` — `16/9`
  * unless told — before anything has loaded. Without JavaScript the facade is a link to the video.
+ *
+ * `variant="background"` is the backdrop of a first screen: a file of the site only (a provider's
+ * would be a third-party request on every showing), muted, looping, no controls, behind whatever
+ * the tag wraps — the text over it is the page's. Decor, so hidden from screen readers; the pause
+ * button of WCAG 2.2.2 is not. The script plays it only on screen, and never under reduced motion
+ * or on a connection saving data: then the poster is all there is, as it is without JavaScript.
  */
 final class Video extends Component
 {
@@ -34,8 +40,13 @@ final class Video extends Component
     /** The file types a `<video>` is told, by extension. */
     private const array TYPES = ['mp4' => 'video/mp4', 'm4v' => 'video/mp4', 'webm' => 'video/webm', 'ogv' => 'video/ogg', 'mov' => 'video/quicktime'];
 
+    public const array VARIANTS = ['background'];
+
     /** `youtube`, `vimeo`, … — or `file`. */
     public string $kind;
+
+    /** The backdrop of a first screen rather than a video to watch. */
+    public bool $background = false;
 
     public string $ratio;
 
@@ -66,9 +77,20 @@ final class Video extends Component
         mixed $poster = null,
         ?string $title = null,
         float|int|string|null $ratio = null,
+        ?string $variant = null,
     ) {
         $src = self::filled($src);
         $fileUrl = self::filled(is_string($file) ? $file : (self::read($file, 'url') ?? self::read($file, 'src')));
+
+        if ($variant !== null && ! in_array($variant, self::VARIANTS, true)) {
+            throw new InvalidArgumentException("<x-webx-video variant=\"{$variant}\">: the one variant is \"background\".");
+        }
+
+        $this->background = $variant === 'background';
+
+        if ($this->background && ($src !== null || $fileUrl === null)) {
+            throw new InvalidArgumentException('<x-webx-video variant="background">: a `file` of the site, never a `src` — a video of YouTube or Vimeo behind a first screen would ask a third party on every showing.');
+        }
 
         if (($src === null) === ($fileUrl === null)) {
             throw new InvalidArgumentException('<x-webx-video>: either `src` — an address of YouTube or Vimeo — or `file`, a video of the site.');

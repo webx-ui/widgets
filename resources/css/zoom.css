@@ -1,0 +1,136 @@
+/*
+ * The zoom of a picture (spec §14). Its own file, claimed by `<x-webx-zoom>` and by
+ * `data-webx-zoom`.
+ *
+ * `.webx-zoom` is the element that holds the picture — the component's link, or whatever carries
+ * the attribute, which gets the class from the script. The view over the picture (`__view`), the
+ * lens (`__lens`) and the panel beside (`__panel`, on the page's body so that a slider's frame
+ * does not clip it) are the script's. One flat class per rule (THEMES §8).
+ */
+
+:where(:root) {
+  --webx-zoom-bg: var(--site-color-bg);
+  --webx-zoom-gap: var(--site-space-4);
+  --webx-zoom-lens: var(--site-color-bg);
+  --webx-zoom-border: var(--site-color-border);
+  --webx-zoom-badge-size: 2.75rem;
+  --webx-zoom-badge-bg: var(--site-color-bg);
+  --webx-zoom-badge-color: var(--site-color-text);
+  --webx-zoom-focus: var(--site-color-accent);
+  --webx-zoom-duration: var(--site-duration);
+  /* Over the content beside the frame, under the header, the dialogs and the lightbox. */
+  --webx-zoom-z: 30;
+}
+
+.webx-zoom {
+  position: relative;
+  cursor: zoom-in;
+  /* One finger is the page's and the slider's; two are the zoom's — the browser does not pinch here. */
+  touch-action: pan-x pan-y;
+}
+
+/* Magnified: every finger is the zoom's, and the page under it holds still. */
+.webx-zoom.is-zoomed {
+  touch-action: none;
+}
+
+/* The component's link: a block as wide as its picture. */
+.webx-zoom-link {
+  display: block;
+  max-width: 100%;
+  color: inherit;
+}
+
+.webx-zoom-link:focus-visible {
+  outline: 3px solid var(--webx-zoom-focus);
+  outline-offset: 2px;
+}
+
+.webx-zoom__picture {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.webx-zoom__badge {
+  position: absolute;
+  inset-block-end: var(--site-space-3);
+  inset-inline-end: var(--site-space-3);
+  display: grid;
+  place-items: center;
+  width: var(--webx-zoom-badge-size);
+  height: var(--webx-zoom-badge-size);
+  border-radius: var(--site-radius-full);
+  background: var(--webx-zoom-badge-bg);
+  color: var(--webx-zoom-badge-color);
+  box-shadow: var(--site-shadow-sm);
+  pointer-events: none;
+}
+
+.webx-zoom__badge.is-hidden {
+  opacity: 0;
+}
+
+.webx-zoom__view {
+  position: absolute;
+  z-index: 1;
+  overflow: hidden;
+  background: var(--webx-zoom-bg);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--webx-zoom-duration);
+}
+
+.webx-zoom__view.is-active {
+  opacity: 1;
+}
+
+.webx-zoom__large {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  max-width: none;
+  border-radius: 0;
+}
+
+.webx-zoom__large.is-easing {
+  transition: all var(--webx-zoom-duration);
+}
+
+.webx-zoom__lens {
+  position: absolute;
+  z-index: 1;
+  display: none;
+  border: 1px solid var(--webx-zoom-border);
+  background: color-mix(in srgb, var(--webx-zoom-lens) 35%, transparent);
+  pointer-events: none;
+}
+
+.webx-zoom__lens.is-active {
+  display: block;
+}
+
+.webx-zoom__panel {
+  position: fixed;
+  z-index: var(--webx-zoom-z);
+  display: none;
+  overflow: hidden;
+  margin-inline: var(--webx-zoom-gap);
+  border: 1px solid var(--webx-zoom-border);
+  background: var(--webx-zoom-bg);
+  box-shadow: var(--site-shadow-md);
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+.webx-zoom__panel.is-active {
+  display: block;
+}
+
+/* Reduced motion: the magnified picture comes and goes without easing. */
+@media (prefers-reduced-motion: reduce) {
+  :where(:root) {
+    --webx-zoom-duration: 0s;
+  }
+}

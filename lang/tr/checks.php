@@ -34,5 +34,41 @@ return [
             'why' => 'Aynı aramaları ve sohbetleri iki kez sunarlar, telefonda düğme çubuğun üstüne biner.',
             'fix' => 'Temanın düzeninde ikisinden birini bırakın.',
         ],
+        'video_pause' => [
+            'title' => 'Duraklatma düğmesi olmayan arka plan videoları',
+            'found' => 'Bir arka plan videosu kendiliğinden oynuyor ve duraklatma düğmesi yok.',
+            'why' => 'Beş saniyeden uzun süren hareketin durdurulabilmesi gerekir (WCAG 2.2.2): dikkat dağıtır ve bazı ziyaretçiler üzerindeki metni okuyamaz.',
+            'fix' => 'Paketin görünümünde düğme her zaman vardır: temadaki webx-widgets::components.video geçersiz kılması .webx-video__pause öğesini kaybetmiş. Geri ekleyin ya da geçersiz kılmayı kaldırın.',
+        ],
+        'counter_number' => [
+            'title' => 'Sayısı olmayan sayaçlar',
+            'found' => 'Bir sayacın işaretlemesinde saydığı sayı yok.',
+            'why' => 'Arama motorları, ekran okuyucular ve JavaScript’siz bir sayfa işaretlemeyi okur: sayı yerine sıfır ya da hiçbir şey alır.',
+            'fix' => 'Paketin görünümü son sayıyı yazar ve betik ona kadar sayar: temadaki webx-widgets::components.counter geçersiz kılması başka bir şey yazıyor. Sayıyı yazın ya da geçersiz kılmayı kaldırın.',
+        ],
+        'compare_range' => [
+            'title' => 'Kaydırıcısız önce ve sonra',
+            'found' => 'Bir önce-sonra ayırıcısının range alanı yok: onu yalnızca fare ve parmak hareket ettirebilir.',
+            'why' => 'Klavye ayırıcıya ulaşamaz, ekran okuyucu da onu adlandıramaz: resmin bir kısmı bu ziyaretçilerden gizli kalır.',
+            'fix' => 'Paketin görünümü ayırıcıyı bir <input type="range"> yapar: temadaki webx-widgets::components.compare geçersiz kılması onu kaybetmiş. Geri ekleyin ya da geçersiz kılmayı kaldırın.',
+        ],
+        'toc_target' => [
+            'title' => 'Hiçbir yere gitmeyen içindekiler',
+            'found' => 'İçindekiler bağlantısı, sayfada olmayan bir bölüme gidiyor.',
+            'why' => 'Ziyaretçi bir bölüme tıklar ve hiçbir şey olmaz: sayfa kımıldamaz, liste bozuk görünür.',
+            'fix' => 'Sunucu listeyi sayfanın başlıklarından kurar ve onlara id verir. Elle yazılmış bir liste ya da temadaki liste geçersiz kılması artık olmayan bir id’yi gösteriyor: <x-webx-toc> kullanın ya da bağlantıyı düzeltin.',
+        ],
+        'load_more_link' => [
+            'title' => 'Sonraki sayfaya bağlantısı olmayan “Daha fazla göster”',
+            'found' => '“Daha fazla göster” listesinin sonraki bir sayfası var ama ona bağlantı yok: oraya yalnızca düğmesi götürüyor.',
+            'why' => 'Arama motorları düğmelere basmaz, JavaScript olmayan bir sayfa da basamaz: ilk sayfadan sonrakiler bulunmaz.',
+            'fix' => 'Paket sayfa bağlantılarını listenin altına basar, düğme yalnızca onları örter: temadaki webx-widgets::components.load-more geçersiz kılması ya da boş bir links yuvası onları kaybetti. Geri koyun ya da geçersiz kılmayı kaldırın.',
+        ],
+        'zoom_link' => [
+            'title' => 'Bağlantısız yakınlaştırma',
+            'found' => 'Fareyle büyütülen bir görsel bağlantı değil ve bağlantı içermiyor: klavye onu açamaz.',
+            'why' => 'Klavye ve ekran okuyucuların üzerine gelme hareketi yoktur: görsele giden ve görüntüleyicide açılan bağlantı, onu yakından görmenin tek yoludur.',
+            'fix' => 'Paketin görünümü görseli orijinale bağlantı yapar: temadaki webx-widgets::components.zoom geçersiz kılması bunu kaybetti ya da data-webx-zoom çıplak bir görsele yazıldı. Özniteliği görselin görüntüleyici bağlantısına koyun veya geçersiz kılmayı kaldırın.',
+        ],
     ],
 ];

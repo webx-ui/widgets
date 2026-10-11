@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Widgets\Tests;
 
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
@@ -29,7 +30,7 @@ use WebxUi\Widgets\Facades\Widgets;
 use WebxUi\Widgets\WidgetsServiceProvider;
 
 /**
- * The blocks `gallery`, `logos`, `video` and `map` (§15.1): offered to a site with blocks and a media
+ * The blocks `gallery`, `logos`, `video`, `map`, `counters`, `countdown`, `compare` and `toc` (§15.1, §14): offered to a site with blocks and a media
  * library, installed and published by the command `webx:setup` runs, and printed with the
  * slider, the lightbox and the video inside — pictures of the library with their sizes, one
  * group per block; a video of a provider behind the consent, a file of the library as is; a
@@ -99,7 +100,7 @@ final class BlocksTest extends TestCase
     #[Test]
     public function both_are_installed_and_published_on_their_samples(): void
     {
-        foreach (['gallery', 'logos', 'video', 'map'] as $slug) {
+        foreach (['gallery', 'logos', 'video', 'map', 'counters', 'countdown', 'compare', 'toc'] as $slug) {
             $block = Block::query()->where('slug', $slug)->with('publishedVersion')->firstOrFail();
 
             $this->assertSame('Offered by widgets', $block->publishedVersion?->comment, "{$slug} is published — it draws on its sample");
@@ -145,6 +146,23 @@ final class BlocksTest extends TestCase
 
         // Two galleries on a page page through their own pictures.
         $this->assertStringContainsString('data-webx-lightbox="gallery-k2"', $this->render('gallery', ['pictures' => $pictures, 'view' => 'slider']));
+        $this->assertStringNotContainsString('data-webx-zoom', $html, 'no magnifying unless asked');
+    }
+
+    #[Test]
+    public function the_slider_magnifies_its_pictures_through_the_lightboxs_link_when_asked(): void
+    {
+        $pictures = array_map(fn (int $n): array => ['path' => $this->picture("photo-{$n}")->path], [1, 2, 3]);
+
+        $html = $this->render('gallery', ['pictures' => $pictures, 'view' => 'slider', 'magnify' => 'side']);
+
+        // The attribute on the link: a mouse magnifies, a click and a key still open the lightbox.
+        $this->assertSame(3, preg_match_all('~<a [^>]*data-webx-lightbox="gallery-k1"[^>]* data-webx-zoom="" data-zoom-mode="side">~', $html));
+        $this->assertSame(1, substr_count($this->render('gallery', ['pictures' => [$pictures[0]], 'view' => 'slider', 'magnify' => 'inner']), 'data-zoom-mode="inner"'));
+
+        // A grid's cells are too small to magnify; without the lightbox a keyboard would have no way in.
+        $this->assertStringNotContainsString('data-webx-zoom', $this->render('gallery', ['pictures' => $pictures, 'magnify' => 'side']));
+        $this->assertStringNotContainsString('data-webx-zoom', $this->render('gallery', ['pictures' => $pictures, 'view' => 'slider', 'magnify' => 'side', 'zoom' => false]));
     }
 
     #[Test]
@@ -305,6 +323,136 @@ final class BlocksTest extends TestCase
         }
     }
 
+    #[Test]
+    public function the_counters_count_each_number_with_its_words_and_skip_a_row_without_one(): void
+    {
+        $html = $this->render('counters', ['heading' => 'In numbers', 'numbers' => [
+            ['value' => '15', 'prefix' => '', 'suffix' => ' years', 'label' => 'on the market'],
+            ['value' => '3,000', 'prefix' => '', 'suffix' => '+', 'label' => 'clients'],
+            ['value' => '4,9', 'label' => 'average rating'],
+            ['value' => '12 500', 'prefix' => '$', 'label' => 'saved'],
+            ['value' => 'many', 'label' => 'not a number'],
+            ['value' => '', 'label' => 'empty'],
+        ]]);
+
+        $this->assertStringContainsString('<section class="b-counters" data-wx-block="counters">', $html);
+        $this->assertStringContainsString('<h2 class="b-counters__heading">In numbers</h2>', $html);
+        $this->assertSame(4, substr_count($html, '<li class="b-counters__item">'));
+        $this->assertStringContainsString('<span class="webx-counter__number">15</span><span class="webx-counter__suffix"> years</span>', $html);
+        $this->assertStringContainsString('{&quot;value&quot;:3000,&quot;decimals&quot;:0,&quot;duration&quot;:2000}"><span class="webx-counter__number">3,000</span><span class="webx-counter__suffix">+</span>', $html, '3,000 is three thousand');
+        $this->assertStringContainsString('<span class="webx-counter__number">4.9</span>', $html, '4,9 is four point nine');
+        $this->assertStringContainsString('<span class="webx-counter__prefix">$</span><span class="webx-counter__number">12,500</span>', $html);
+        $this->assertStringContainsString('<span class="b-counters__label">average rating</span>', $html);
+        $this->assertStringNotContainsString('not a number', $html);
+        $this->assertContains('counter', Widgets::claimed());
+
+        $this->assertStringNotContainsString('b-counters', $this->render('counters', ['heading' => 'Nothing', 'numbers' => [['value' => 'x']]]));
+        $this->assertStringNotContainsString('b-counters', $this->render('counters', ['heading' => 'Nothing']));
+    }
+
+    #[Test]
+    public function the_countdown_runs_to_a_wall_time_of_the_site_zone_from_the_contacts(): void
+    {
+        app(Settings::class)->save(['contacts.timezone' => 'Asia/Tokyo']);
+        CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-12-30 09:00', 'UTC'));
+
+        try {
+            $html = $this->render('countdown', ['heading' => 'The sale ends in', 'text' => 'Everything at half price.', 'date' => '2026-12-31', 'time' => '18:00', 'end' => 'text', 'ended' => 'The sale is over']);
+
+            $this->assertStringContainsString('<section class="b-countdown" data-wx-block="countdown" data-webx-countdown-scope>', $html);
+            $this->assertStringContainsString('<p class="b-countdown__text">Everything at half price.</p>', $html);
+            // 18:00 in Tokyo is 09:00 UTC: one day exactly from now.
+            $this->assertStringContainsString('<time datetime="2026-12-31T18:00:00+09:00">', $html);
+            $this->assertStringContainsString('{&quot;end&quot;:1798707600000}', $html);
+            $this->assertStringContainsString('data-unit="days">1</span>', $html);
+            $this->assertStringContainsString('data-unit="hours">00</span>', $html);
+            $this->assertStringContainsString('<p class="webx-countdown__ended"  hidden >The sale is over</p>', $html);
+            $this->assertContains('countdown', Widgets::claimed());
+
+            // No time: midnight. "Hide the block": no text, whatever the field says.
+            $midnight = $this->render('countdown', ['date' => '2026-12-31', 'end' => 'hide', 'ended' => 'Ignored']);
+            $this->assertStringContainsString('<time datetime="2026-12-31T00:00:00+09:00">', $midnight);
+            $this->assertStringNotContainsString('Ignored', $midnight);
+            $this->assertStringNotContainsString('b-countdown__heading', $midnight);
+        } finally {
+            CarbonImmutable::setTestNow();
+        }
+    }
+
+    #[Test]
+    public function a_countdown_that_is_over_says_its_text_or_is_not_there(): void
+    {
+        CarbonImmutable::setTestNow(CarbonImmutable::parse('2027-02-01 00:00', 'UTC'));
+
+        try {
+            $said = $this->render('countdown', ['heading' => 'The sale', 'date' => '2027-01-01', 'time' => '18:00', 'ended' => 'The sale is over']);
+            $this->assertStringContainsString('<h2 class="b-countdown__heading">The sale</h2>', $said);
+            $this->assertStringContainsString('<p class="webx-countdown__ended" >The sale is over</p>', $said);
+            $this->assertStringNotContainsString('webx-countdown__units', $said);
+
+            $nothing = [
+                'hidden at the end' => ['heading' => 'Sale', 'date' => '2027-01-01', 'end' => 'hide'],
+                'nothing to say' => ['heading' => 'Sale', 'date' => '2027-01-01', 'ended' => ''],
+                'no date' => ['heading' => 'Sale', 'ended' => 'Over'],
+                'not a date' => ['heading' => 'Sale', 'date' => 'soon', 'ended' => 'Over'],
+                'not a day' => ['heading' => 'Sale', 'date' => '2027-02-31', 'ended' => 'Over'],
+            ];
+
+            foreach ($nothing as $case => $values) {
+                $this->assertStringNotContainsString('b-countdown', $this->render('countdown', $values), $case);
+            }
+        } finally {
+            CarbonImmutable::setTestNow();
+        }
+    }
+
+    #[Test]
+    public function before_and_after_are_two_pictures_of_the_library_with_their_sizes_and_labels(): void
+    {
+        $old = $this->picture('old');
+        $new = $this->picture('new');
+
+        $html = $this->render('compare', ['heading' => 'The kitchen', 'before' => ['path' => $old->path, 'alt' => '2019'], 'after' => ['path' => $new->path], 'after_label' => 'Now', 'start' => 30, 'caption' => 'Two weeks apart']);
+
+        $this->assertStringContainsString('<section class="b-compare" data-wx-block="compare">', $html);
+        $this->assertStringContainsString('<h2 class="b-compare__heading">The kitchen</h2>', $html);
+        $this->assertStringContainsString('<figure style="--webx-compare-ratio: 1800 / 1200; --webx-compare-position: 30%" class="webx-compare b-compare__compare" data-webx-compare>', $html);
+        $this->assertMatchesRegularExpression('#src="[^"]*/'.preg_quote($old->path, '#').'[^"]*" alt="2019"\s+width="1800" height="1200"#', $html);
+        $this->assertStringContainsString('webx-compare__label--before">Before</span>', $html, 'an empty label is the word of the page');
+        $this->assertStringContainsString('webx-compare__label--after">Now</span>', $html);
+        $this->assertStringContainsString('<figcaption class="webx-compare__caption">Two weeks apart</figcaption>', $html);
+        $this->assertContains('compare', Widgets::claimed());
+
+        // The middle when the field was never saved; one picture alone compares nothing.
+        $this->assertStringContainsString('--webx-compare-position: 50%', $this->render('compare', ['before' => ['path' => $old->path], 'after' => ['path' => $new->path]]));
+
+        foreach ([['before' => ['path' => $old->path]], ['before' => ['path' => $old->path], 'after' => ['path' => 'media/gone.webp']], []] as $case => $values) {
+            $this->assertStringNotContainsString('b-compare', $this->render('compare', $values), "case {$case}");
+        }
+    }
+
+    #[Test]
+    public function the_contents_list_the_page_where_the_block_stands_or_stand_beside_a_text_of_their_own(): void
+    {
+        // The list is made once the page is finished: here, in the block, its marker.
+        $page = $this->render('toc', ['heading' => 'In this guide', 'depth' => '2']);
+        $this->assertStringContainsString('<section class="b-toc" data-wx-block="toc">', $page);
+        $this->assertStringContainsString('<div class="webx-toc__layout webx-toc__layout--alone">', $page);
+        $this->assertSame(['from' => '<main>', 'depth' => 2, 'title' => 'In this guide', 'beside' => false], $this->marker($page));
+        $this->assertContains('toc', Widgets::claimed());
+
+        $text = $this->render('toc', ['source' => 'text', 'body' => '<h2>Who we are</h2><p>…</p>', 'side' => 'start']);
+        $this->assertStringContainsString('<section class="b-toc b-toc--text" data-wx-block="toc">', $text);
+        $this->assertStringContainsString('<div class="webx-toc__layout webx-toc__layout--start">', $text);
+        $this->assertStringContainsString('<div class="b-toc__body"><h2>Who we are</h2><p>…</p></div>', $text);
+        $settings = $this->marker($text);
+        $this->assertMatchesRegularExpression('~^webx-toc-\d+-content$~', (string) $settings['from'], 'its own slot');
+        $this->assertSame(['depth' => 3, 'title' => 'On this page', 'beside' => true], array_diff_key($settings, ['from' => true]));
+
+        // A text of its own with nothing in it: no block.
+        $this->assertStringNotContainsString('b-toc', $this->render('toc', ['source' => 'text', 'body' => '  ']));
+    }
+
     /** A picture in the library, the way an upload leaves one — the bytes need not be there. */
     private function picture(string $name, string $mime = 'image/webp'): MediaFile
     {
@@ -328,6 +476,16 @@ final class BlocksTest extends TestCase
             'width' => $extension === 'webp' ? 1800 : null,
             'height' => $extension === 'webp' ? 1200 : null,
         ]);
+    }
+
+    /** @return array<string, mixed> What a table of contents left for the finished page to fill. */
+    private function marker(string $html): array
+    {
+        $this->assertSame(1, preg_match('~<!--webx-toc:([A-Za-z0-9+/=]+)-->~', $html, $found));
+        $settings = (array) json_decode((string) base64_decode($found[1]), true);
+        unset($settings['id']);
+
+        return $settings;
     }
 
     /**

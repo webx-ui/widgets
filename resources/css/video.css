@@ -16,6 +16,13 @@
   --webx-video-notice-color: var(--site-color-text);
   --webx-video-button-bg: var(--site-color-accent);
   --webx-video-button-color: var(--site-color-accent-contrast);
+  --webx-video-pause-size: 44px;
+  --webx-video-pause-inset: var(--site-space-3);
+  --webx-video-pause-bg: color-mix(in srgb, var(--site-color-text) 55%, transparent);
+  --webx-video-pause-color: var(--site-color-bg);
+  --webx-video-pause-border: color-mix(in srgb, var(--site-color-bg) 40%, transparent);
+  --webx-video-pause-shown: block;
+  --webx-video-play-shown: none;
 }
 
 .webx-video {
@@ -174,4 +181,107 @@ html:not(.webx-js) .webx-video__consent {
   .webx-video__button {
     padding: var(--site-space-1) var(--site-space-3);
   }
+}
+
+/*
+ * The background of a first screen (variant="background"): the poster and the video behind what
+ * the tag wraps. The ratio is the least it takes — the content makes it taller (an aspect-ratio
+ * box grows to its content while it does not clip), so the root does not hide its overflow: the
+ * backdrop does, and keeps the corners. One grid cell: what the tag wraps fills the frame.
+ */
+.webx-video--background {
+  display: grid;
+  grid-template-rows: 1fr;
+  grid-template-columns: minmax(0, 1fr);
+  isolation: isolate;
+  overflow: visible;
+}
+
+.webx-video__backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  border-radius: inherit;
+  background: var(--webx-video-bg);
+}
+
+.webx-video__background {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity var(--site-duration) var(--site-easing);
+}
+
+/* The poster stays until the first frame is up: the screen never empties while the file loads. */
+.webx-video__background.is-playing {
+  opacity: 1;
+}
+
+.webx-video__over {
+  position: relative;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+/* WCAG 2.2.2: motion that lasts gets a way to stop it — quiet, in the corner, but always there. */
+.webx-video__pause {
+  position: absolute;
+  right: var(--webx-video-pause-inset);
+  bottom: var(--webx-video-pause-inset);
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: var(--webx-video-pause-size);
+  height: var(--webx-video-pause-size);
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--webx-video-pause-border);
+  border-radius: var(--site-radius-full);
+  background: var(--webx-video-pause-bg);
+  color: var(--webx-video-pause-color);
+  font: inherit;
+  cursor: pointer;
+  opacity: 0.75;
+  transition: opacity var(--site-duration) var(--site-easing);
+}
+
+.webx-video__pause:hover {
+  opacity: 1;
+}
+
+.webx-video__pause:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--site-color-accent);
+  outline-offset: 2px;
+}
+
+/* Without JavaScript nothing plays, and the button would have nothing to stop. */
+html:not(.webx-js) .webx-video__pause {
+  display: none;
+}
+
+/* Which of the two icons the button shows: the state is on the button, the icons inherit. */
+.webx-video__pause-icon {
+  display: var(--webx-video-pause-shown);
+  width: 45%;
+  height: 45%;
+}
+
+.webx-video__play-icon {
+  display: var(--webx-video-play-shown);
+  width: 45%;
+  height: 45%;
+}
+
+.webx-video__pause.is-paused {
+  --webx-video-pause-shown: none;
+  --webx-video-play-shown: block;
 }

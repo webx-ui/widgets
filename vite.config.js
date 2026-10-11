@@ -93,9 +93,30 @@ export default {
         // PhotoSwipe, the same way: only where a picture opens over the page.
         lightbox: join(root, 'resources/js/lightbox.js'),
         // The facade and the notice before consent: no player library, the provider's is in its iframe.
+        // The background variant too: a few lines more, and a hero claims one file, not two.
         video: join(root, 'resources/js/video.js'),
         // Leaflet, built in here and only here: tiles wait for consent to media (§11).
         map: join(root, 'resources/js/map.js'),
+        // The shadows at the edge of a table of prose, claimed by the server when it wrapped one.
+        table: join(root, 'resources/js/table.js'),
+        'back-to-top': join(root, 'resources/js/back-to-top.js'),
+        // Plain links: no network's script, and nothing to ask consent for.
+        share: join(root, 'resources/js/share.js'),
+        // Counts up in view; the number itself is the server's.
+        counter: join(root, 'resources/js/counter.js'),
+        countdown: join(root, 'resources/js/countdown.js'),
+        // Before and after: the divider for a mouse and a finger; the keyboard has its range input.
+        compare: join(root, 'resources/js/compare.js'),
+        // The section being read and the fold; the list and the ids are the server's.
+        toc: join(root, 'resources/js/toc.js'),
+        // The links of the pages: a stylesheet, no script.
+        pagination: join(root, 'resources/css/pagination.css'),
+        // Show more: the next page fetched as it is, its items taken out of its HTML.
+        'load-more': join(root, 'resources/js/load-more.js'),
+        // The close button; the head hides a closed bar before this arrives.
+        'notice-bar': join(root, 'resources/js/notice-bar.js'),
+        // A picture magnified under the mouse or two fingers; the keyboard's way in is the lightbox.
+        zoom: join(root, 'resources/js/zoom.js'),
       },
       output: {
         entryFileNames: '[name].js',

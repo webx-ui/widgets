@@ -34,5 +34,41 @@ return [
             'why' => 'Dwa razy proponują te same połączenia i czaty, a na telefonie przycisk zasłania pasek.',
             'fix' => 'Zostaw w układzie motywu jedno z nich.',
         ],
+        'video_pause' => [
+            'title' => 'Wideo w tle bez przycisku pauzy',
+            'found' => 'Wideo w tle odtwarza się samo i nie ma przycisku pauzy.',
+            'why' => 'Ruch trwający dłużej niż pięć sekund musi dać się zatrzymać (WCAG 2.2.2): rozprasza, a niektórzy odwiedzający nie mogą przeczytać tekstu na nim.',
+            'fix' => 'Widok pakietu zawsze ma przycisk: nadpisanie webx-widgets::components.video w motywie zgubiło .webx-video__pause. Przywróć go lub usuń nadpisanie.',
+        ],
+        'counter_number' => [
+            'title' => 'Liczniki bez swojej liczby',
+            'found' => 'Znaczniki licznika nie zawierają liczby, do której liczy.',
+            'why' => 'Wyszukiwarki, czytniki ekranu i strona bez JavaScriptu czytają znaczniki: zamiast liczby dostają zero albo nic.',
+            'fix' => 'Widok pakietu wypisuje liczbę końcową, a skrypt do niej odlicza: nadpisanie webx-widgets::components.counter w motywie wypisuje coś innego. Wypisz liczbę lub usuń nadpisanie.',
+        ],
+        'compare_range' => [
+            'title' => 'Przed i po bez suwaka',
+            'found' => 'Linia podziału przed i po nie ma pola range: przesunąć ją można tylko myszą i palcem.',
+            'why' => 'Klawiatura nie dosięga linii podziału, a czytnik ekranu nie może jej nazwać: część obrazu pozostaje dla tych odwiedzających ukryta.',
+            'fix' => 'Widok pakietu robi z linii podziału <input type="range">: nadpisanie webx-widgets::components.compare w motywie je zgubiło. Przywróć pole albo usuń nadpisanie.',
+        ],
+        'toc_target' => [
+            'title' => 'Spis treści prowadzi donikąd',
+            'found' => 'Link spisu treści prowadzi do sekcji, której na stronie nie ma.',
+            'why' => 'Odwiedzający klika sekcję i nic się nie dzieje: strona się nie przesuwa, a spis wygląda na zepsuty.',
+            'fix' => 'Serwer buduje spis z nagłówków strony i sam nadaje im id. Spis napisany ręcznie albo nadpisanie listy w motywie wskazuje na id, którego już nie ma: użyj <x-webx-toc> albo popraw link.',
+        ],
+        'load_more_link' => [
+            'title' => '„Pokaż więcej” bez linku do następnej strony',
+            'found' => 'Lista z „Pokaż więcej” ma następną stronę, ale nie ma do niej linku: prowadzi tam tylko przycisk.',
+            'why' => 'Wyszukiwarki nie naciskają przycisków, strona bez JavaScriptu też nie: to, co jest za pierwszą stroną, nie zostaje znalezione.',
+            'fix' => 'Pakiet drukuje linki do stron pod listą, a przycisk tylko je zasłania: nadpisanie webx-widgets::components.load-more w motywie lub pusty slot links je zgubiło. Przywróć je albo usuń nadpisanie.',
+        ],
+        'zoom_link' => [
+            'title' => 'Powiększenie bez linku',
+            'found' => 'Obraz powiększany pod myszą nie jest linkiem i nie zawiera linku: klawiatura nie może go otworzyć.',
+            'why' => 'Klawiatura i czytnik ekranu nie mają najechania: link do obrazu, otwarty w przeglądarce zdjęć, to ich jedyny sposób, by obejrzeć go z bliska.',
+            'fix' => 'Widok pakietu robi z obrazu link do oryginału: nadpisanie webx-widgets::components.zoom w motywie go zgubiło albo data-webx-zoom napisano na gołym obrazie. Umieść atrybut na linku przeglądarki zdjęć albo usuń nadpisanie.',
+        ],
     ],
 ];

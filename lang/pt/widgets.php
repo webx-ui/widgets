@@ -108,6 +108,8 @@ return [
         'notice' => 'O vídeo é carregado a partir de :provider, que pode definir cookies.',
         'load' => 'Carregar',
         'always' => 'Carregar sempre os vídeos',
+        'pause' => 'Pausar o vídeo de fundo',
+        'resume' => 'Reproduzir o vídeo de fundo',
     ],
     'map' => [
         'untitled' => 'Mapa',
@@ -117,5 +119,55 @@ return [
         'always' => 'Carregar mapas sempre',
         'open' => 'Abrir nos mapas',
         'hint' => 'Clique no mapa para ampliar com a roda',
+    ],
+    'table' => [
+        'label' => 'Tabela',
+    ],
+    'back_to_top' => [
+        'label' => 'Voltar ao topo',
+    ],
+    'share' => [
+        'label' => 'Partilhar',
+        'on' => 'Partilhar no :network',
+        'email' => 'Enviar por e-mail',
+        'copy' => 'Copiar link',
+        'copied' => 'Link copiado',
+        'failed' => 'Não foi possível copiar o link',
+    ],
+    'countdown' => [
+        'ends' => 'Termina em :date',
+        'days' => 'Dias',
+        'hours' => 'Horas',
+        'minutes' => 'Minutos',
+        'seconds' => 'Segundos',
+    ],
+    'compare' => [
+        'before' => 'Antes',
+        'after' => 'Depois',
+        'label' => 'Divisória entre «:before» e «:after»',
+    ],
+    'toc' => [
+        'title' => 'Nesta página',
+    ],
+    'pagination' => [
+        'label' => 'Páginas',
+        'previous' => 'Anterior',
+        'next' => 'Seguinte',
+    ],
+    'load_more' => [
+        'label' => 'Mostrar mais',
+        'loading' => 'A carregar…',
+        'loaded' => 'Página :page de :last carregada.',
+        'loaded_page' => 'Página :page carregada.',
+        'end' => 'É tudo.',
+        'failed' => 'Não foi possível carregar a página seguinte. Tente de novo ou use as ligações para as páginas.',
+    ],
+    'notice_bar' => [
+        'label' => 'Aviso',
+        'close' => 'Fechar o aviso',
+    ],
+    'zoom' => [
+        'label' => 'Ampliar',
+        'named' => 'Ampliar: :name',
     ],
 ];

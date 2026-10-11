@@ -8,6 +8,12 @@ return [
     'lightbox-size' => 'Links sem tamanho: :count',
     'slider-pause' => 'Sliders sem botão de pausa: :count',
     'contact-both' => 'Os dois widgets de contacto rápido na página',
+    'video-pause' => 'Vídeos de fundo sem botão de pausa: :count',
+    'counter-number' => 'Contadores sem o seu número: :count',
+    'compare-range' => 'Antes e depois sem controle deslizante: :count',
+    'toc-target' => 'Índice que não leva a lado nenhum: :count',
+    'load-more-link' => '«Mostrar mais» sem ligação para a página seguinte: :count',
+    'zoom-link' => 'Zoom sem ligação: :count',
     'on' => 'Ligado',
     'off' => 'Desligado',
 ];

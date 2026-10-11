@@ -108,6 +108,8 @@ return [
         'notice' => 'The video loads from :provider, which may set cookies.',
         'load' => 'Load',
         'always' => 'Always load videos',
+        'pause' => 'Pause the background video',
+        'resume' => 'Play the background video',
     ],
     'map' => [
         'untitled' => 'Map',
@@ -117,5 +119,55 @@ return [
         'always' => 'Always load maps',
         'open' => 'Open in maps',
         'hint' => 'Click the map to zoom with the wheel',
+    ],
+    'table' => [
+        'label' => 'Table',
+    ],
+    'back_to_top' => [
+        'label' => 'Back to top',
+    ],
+    'share' => [
+        'label' => 'Share',
+        'on' => 'Share on :network',
+        'email' => 'Send by email',
+        'copy' => 'Copy link',
+        'copied' => 'Link copied',
+        'failed' => 'The link could not be copied',
+    ],
+    'countdown' => [
+        'ends' => 'Ends on :date',
+        'days' => 'Days',
+        'hours' => 'Hours',
+        'minutes' => 'Minutes',
+        'seconds' => 'Seconds',
+    ],
+    'compare' => [
+        'before' => 'Before',
+        'after' => 'After',
+        'label' => 'Divider between :before and :after',
+    ],
+    'toc' => [
+        'title' => 'On this page',
+    ],
+    'pagination' => [
+        'label' => 'Pages',
+        'previous' => 'Previous',
+        'next' => 'Next',
+    ],
+    'load_more' => [
+        'label' => 'Show more',
+        'loading' => 'Loading…',
+        'loaded' => 'Page :page of :last loaded.',
+        'loaded_page' => 'Page :page loaded.',
+        'end' => 'That is everything.',
+        'failed' => 'The next page could not be loaded. Try again, or use the links to the pages.',
+    ],
+    'notice_bar' => [
+        'label' => 'Announcement',
+        'close' => 'Close the announcement',
+    ],
+    'zoom' => [
+        'label' => 'Zoom',
+        'named' => 'Zoom: :name',
     ],
 ];

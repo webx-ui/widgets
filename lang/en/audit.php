@@ -8,6 +8,12 @@ return [
     'lightbox-size' => 'Links without the size: :count',
     'slider-pause' => 'Sliders without a pause button: :count',
     'contact-both' => 'Both quick-contact widgets on the page',
+    'video-pause' => 'Background videos without a pause button: :count',
+    'counter-number' => 'Counters without their number: :count',
+    'compare-range' => 'Before and after without a slider: :count',
+    'toc-target' => 'Table of contents links to nowhere: :count',
+    'load-more-link' => 'Show more without a link to the next page: :count',
+    'zoom-link' => 'Zoom without a link: :count',
     'on' => 'On',
     'off' => 'Off',
 ];

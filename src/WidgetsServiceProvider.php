@@ -25,17 +25,27 @@ use WebxUi\Themes\Contracts\HeadPart;
 use WebxUi\Widgets\Audit\BannerOff;
 use WebxUi\Widgets\Audit\BannerOn;
 use WebxUi\Widgets\Audit\BeforeConsent;
+use WebxUi\Widgets\Audit\CompareRange;
 use WebxUi\Widgets\Audit\ContactBoth;
+use WebxUi\Widgets\Audit\CounterNumber;
 use WebxUi\Widgets\Audit\LightboxSize;
+use WebxUi\Widgets\Audit\LoadMoreLink;
 use WebxUi\Widgets\Audit\SliderPause;
+use WebxUi\Widgets\Audit\TocTarget;
+use WebxUi\Widgets\Audit\VideoPause;
 use WebxUi\Widgets\Audit\WaitForConsent;
 use WebxUi\Widgets\Audit\WidgetsPageReader;
+use WebxUi\Widgets\Audit\ZoomLink;
 use WebxUi\Widgets\Video\Posters;
 use WebxUi\Widgets\Video\VideoProviders;
+use WebxUi\Widgets\View\Components\BackToTop;
+use WebxUi\Widgets\View\Components\Compare;
 use WebxUi\Widgets\View\Components\ConsentGate;
 use WebxUi\Widgets\View\Components\ConsentLink;
 use WebxUi\Widgets\View\Components\ContactBar;
 use WebxUi\Widgets\View\Components\ContactButton;
+use WebxUi\Widgets\View\Components\Countdown;
+use WebxUi\Widgets\View\Components\Counter;
 use WebxUi\Widgets\View\Components\Dialog;
 use WebxUi\Widgets\View\Components\Dropdown;
 use WebxUi\Widgets\View\Components\Header;
@@ -43,17 +53,23 @@ use WebxUi\Widgets\View\Components\HeaderNav;
 use WebxUi\Widgets\View\Components\Icon;
 use WebxUi\Widgets\View\Components\LanguageSwitcher;
 use WebxUi\Widgets\View\Components\Lightbox;
+use WebxUi\Widgets\View\Components\LoadMore;
 use WebxUi\Widgets\View\Components\Map;
 use WebxUi\Widgets\View\Components\MobileMenu;
 use WebxUi\Widgets\View\Components\MobileMenuNav;
+use WebxUi\Widgets\View\Components\NoticeBar;
 use WebxUi\Widgets\View\Components\OpeningHours;
+use WebxUi\Widgets\View\Components\Pagination;
 use WebxUi\Widgets\View\Components\Phones;
+use WebxUi\Widgets\View\Components\Share;
 use WebxUi\Widgets\View\Components\Slide;
 use WebxUi\Widgets\View\Components\Slider;
 use WebxUi\Widgets\View\Components\Socials;
 use WebxUi\Widgets\View\Components\Tabs;
 use WebxUi\Widgets\View\Components\TabsPanel;
+use WebxUi\Widgets\View\Components\Toc;
 use WebxUi\Widgets\View\Components\Video;
+use WebxUi\Widgets\View\Components\Zoom;
 use WebxUi\Widgets\View\HeaderNavigation;
 use WebxUi\Widgets\View\Sliders;
 
@@ -131,6 +147,16 @@ class WidgetsServiceProvider extends ServiceProvider
         Blade::component('webx-lightbox', Lightbox::class);
         Blade::component('webx-video', Video::class);
         Blade::component('webx-map', Map::class);
+        Blade::component('webx-back-to-top', BackToTop::class);
+        Blade::component('webx-share', Share::class);
+        Blade::component('webx-counter', Counter::class);
+        Blade::component('webx-countdown', Countdown::class);
+        Blade::component('webx-compare', Compare::class);
+        Blade::component('webx-toc', Toc::class);
+        Blade::component('webx-pagination', Pagination::class);
+        Blade::component('webx-load-more', LoadMore::class);
+        Blade::component('webx-notice-bar', NoticeBar::class);
+        Blade::component('webx-zoom', Zoom::class);
 
         if ($this->app->runningInConsole()) {
             $this->publishes([Widgets::path().'/config/webx-widgets.php' => config_path('webx-widgets.php')], 'webx-widgets-config');
@@ -190,7 +216,8 @@ class WidgetsServiceProvider extends ServiceProvider
     }
 
     /**
-     * The blocks `gallery`, `logos` and `video` (§15.1), offered to `module-blocks` when the site
+     * The blocks of §15.1 and §14 — `gallery`, `logos`, `video`, `map`, `counters`, `countdown`,
+     * `compare`, `toc` — offered to `module-blocks` when the site
      * has it: the slider, the lightbox and the video are what they are made of, and a site would
      * otherwise put them together again in a block of its own. Offered, not installed —
      * `webx:blocks:offered --install --module=widgets` (and `webx:setup`) puts them on the site
@@ -211,8 +238,10 @@ class WidgetsServiceProvider extends ServiceProvider
     /**
      * The checks of §15.2, when the site has `module-audit`: what loads before consent, the banner
      * switched off with something third-party on the site, a lightbox link without the picture's
-     * size, a moving slider without its pause button, both quick-contact widgets on one page. The
-     * page's HTML is not kept by the audit, so the reader takes what they need while it parses.
+     * size, a moving slider or a background video without its pause button, a counter without its
+     * number, before and after without its slider, a table of contents linking nowhere, show more
+     * without a link to its next page, both quick-contact widgets on one page. The page's HTML is
+     * not kept by the audit, so the reader takes what they need while it parses.
      */
     private function registerAudit(): void
     {
@@ -224,7 +253,7 @@ class WidgetsServiceProvider extends ServiceProvider
 
         $checks = $this->app->make(AuditChecks::class);
 
-        foreach ([new BeforeConsent, new BannerOff, new LightboxSize, new SliderPause, new ContactBoth] as $check) {
+        foreach ([new BeforeConsent, new BannerOff, new LightboxSize, new SliderPause, new ContactBoth, new VideoPause, new CounterNumber, new CompareRange, new TocTarget, new LoadMoreLink, new ZoomLink] as $check) {
             $checks->register($check);
         }
 

@@ -1,0 +1,45 @@
+/*
+ * `data-webx-reveal` (spec §14). Nothing here hides an element by its attribute: the script adds
+ * `webx-reveal` and `is-pending` to what is below the fold and takes them off as it comes into
+ * view, so a page without JavaScript, or with reduced motion, shows everything at once.
+ */
+
+:where(:root) {
+  --webx-reveal-duration: calc(var(--site-duration) * 4);
+  --webx-reveal-easing: var(--site-easing);
+  --webx-reveal-distance: var(--site-space-6);
+  --webx-reveal-scale: 0.94;
+  /* Between two children of a `stagger` container; the script multiplies it by the child's place. */
+  --webx-reveal-stagger: 90ms;
+  --webx-reveal-delay: 0ms;
+}
+
+.webx-reveal {
+  transition:
+    opacity var(--webx-reveal-duration) var(--webx-reveal-easing) var(--webx-reveal-delay),
+    translate var(--webx-reveal-duration) var(--webx-reveal-easing) var(--webx-reveal-delay),
+    scale var(--webx-reveal-duration) var(--webx-reveal-easing) var(--webx-reveal-delay);
+}
+
+.webx-reveal.is-pending {
+  opacity: 0;
+  /* Hidden at once — below the fold, and a fade-out nobody sees would still be running when it
+     comes in. The transition is the shown state's: a change takes the transition it ends in. */
+  transition: none;
+}
+
+.webx-reveal--up.is-pending {
+  translate: 0 var(--webx-reveal-distance);
+}
+
+.webx-reveal--scale.is-pending {
+  scale: var(--webx-reveal-scale);
+}
+
+@media print {
+  .webx-reveal.is-pending {
+    opacity: 1;
+    translate: none;
+    scale: none;
+  }
+}

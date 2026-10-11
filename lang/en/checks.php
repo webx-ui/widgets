@@ -34,5 +34,41 @@ return [
             'why' => 'They offer the same calls and chats twice, and on a phone the button sits over the bar.',
             'fix' => 'Keep one of the two in the theme’s layout.',
         ],
+        'video_pause' => [
+            'title' => 'Background videos without a pause button',
+            'found' => 'A background video plays by itself and has no pause button.',
+            'why' => 'Motion that lasts more than five seconds must have a way to stop it (WCAG 2.2.2): it distracts, and some visitors cannot read the text over it.',
+            'fix' => 'The package’s view always has the button: a theme’s override of webx-widgets::components.video lost .webx-video__pause. Put it back, or remove the override.',
+        ],
+        'counter_number' => [
+            'title' => 'Counters without their number',
+            'found' => 'A counter’s markup does not hold the number it counts to.',
+            'why' => 'Search engines, screen readers and a page without JavaScript read the markup: they get a zero or nothing instead of the number.',
+            'fix' => 'The package’s view prints the final number and the script counts up to it: a theme’s override of webx-widgets::components.counter prints something else. Print the number, or remove the override.',
+        ],
+        'compare_range' => [
+            'title' => 'Before and after without its slider',
+            'found' => 'A before-and-after divider has no range input: only a mouse and a finger can move it.',
+            'why' => 'A keyboard cannot reach the divider and a screen reader cannot name it: part of the picture stays hidden from those visitors.',
+            'fix' => 'The package’s view makes the divider an <input type="range">: a theme’s override of webx-widgets::components.compare lost it. Put it back, or remove the override.',
+        ],
+        'toc_target' => [
+            'title' => 'Table of contents links to nowhere',
+            'found' => 'A link of a table of contents leads to a section the page does not have.',
+            'why' => 'A visitor clicks a section and nothing happens: the page does not move, and the list looks broken.',
+            'fix' => 'The server makes the list from the page’s headings and gives them their ids. A list written by hand, or a theme’s override of the list, points at an id that is gone: use <x-webx-toc>, or fix the link.',
+        ],
+        'load_more_link' => [
+            'title' => 'Show more without a link to the next page',
+            'found' => 'A “Show more” list has a next page but no link to it: only its button leads there.',
+            'why' => 'Search engines do not press buttons, and a page without JavaScript cannot either: the items past the first page are not found.',
+            'fix' => 'The package prints the links of the pages under the list and the button only covers them: a theme’s override of webx-widgets::components.load-more, or an empty links slot, lost them. Put them back, or remove the override.',
+        ],
+        'zoom_link' => [
+            'title' => 'Zoom without a link',
+            'found' => 'A picture magnified under the mouse is no link and holds none: a keyboard cannot open it.',
+            'why' => 'A keyboard and a screen reader have no hover: the link to the picture, opened in the lightbox, is their only way to see it closer.',
+            'fix' => 'The package’s view makes the picture a link to the original: a theme’s override of webx-widgets::components.zoom lost it, or data-webx-zoom was written on a bare picture. Put the attribute on the picture’s lightbox link, or remove the override.',
+        ],
     ],
 ];

@@ -11,7 +11,11 @@ use WebxUi\Themes\BottomLayers;
 use WebxUi\Themes\Contracts\HeadPart;
 use WebxUi\Themes\ThemeAssets;
 use WebxUi\Themes\ThemeManifest;
+use WebxUi\Widgets\Prose\Contents;
+use WebxUi\Widgets\Prose\Tables;
 use WebxUi\Widgets\View\Components\Lightbox;
+use WebxUi\Widgets\View\Components\NoticeBar;
+use WebxUi\Widgets\View\Components\Zoom;
 
 /**
  * What the page asked for, and the tags that load it (spec §4).
@@ -34,7 +38,7 @@ final class Widgets implements HeadPart
     public const string MARKER = '<!--webx-widgets-->';
 
     /** The behaviours inside the runtime: claiming one is allowed and loads nothing more. */
-    public const array RUNTIME = ['disclosure', 'dialog', 'tabs', 'accordion', 'mobile-menu', 'header', 'dropdown', 'form-dialog'];
+    public const array RUNTIME = ['disclosure', 'dialog', 'tabs', 'accordion', 'mobile-menu', 'header', 'dropdown', 'form-dialog', 'reveal'];
 
     /** A form's slug, the shape `module-inbox` gives it. */
     private const string SLUG = '/^[a-z0-9][a-z0-9_-]*$/i';
@@ -46,6 +50,9 @@ final class Widgets implements HeadPart
     private array $forms = [];
 
     private bool $dialogsDone = false;
+
+    /** @var array<string, int> */
+    private array $sequences = [];
 
     public function __construct(
         private readonly BottomLayers $layers,
@@ -96,6 +103,15 @@ final class Widgets implements HeadPart
         return array_keys($this->forms);
     }
 
+    /**
+     * 1, 2, 3… per name for this page: an id two widgets of a kind on one page do not share, and
+     * the same on every rendering of it.
+     */
+    public function sequence(string $name): int
+    {
+        return $this->sequences[$name] = ($this->sequences[$name] ?? 0) + 1;
+    }
+
     /** @return list<string> What this page claimed, in the order it did. */
     public function claimed(): array
     {
@@ -119,12 +135,33 @@ final class Widgets implements HeadPart
 
         // A response that never went through the router has not had its dialogs yet.
         $html = $this->withDialogs($html);
+
+        // Every table of prose in a scroller of its own (§14), whichever module printed the
+        // prose: the shadows at its edges are a file of their own, claimed when there is one.
+        [$html, $tables] = Tables::wrap($html, (string) __('webx-widgets::widgets.table.label'));
+
+        if ($tables > 0) {
+            $this->need('table');
+        }
+
+        // The lists of `<x-webx-toc>`, made of headings that may be printed after them, by any
+        // module: the headings get their ids here, so the links work without JavaScript (§14).
+        if (str_contains($html, '<!--webx-toc:')) {
+            [$html] = Contents::fill($html, static fn (array $list): string => view('webx-widgets::toc', $list)->render(), app()->getLocale());
+        }
+
         $at = (int) strpos($html, self::MARKER);
         $styles = [];
         $scripts = [];
 
         if ($this->assets->current($this->layer()) === null) {
             $styles[] = $this->config->get('app.debug') ? '<!-- webx-widgets: not published: php artisan webx:theme:sync -->' : '';
+        }
+
+        // An announcement bar the visitor closed is hidden before the body is painted (§14): its
+        // script comes at the end of the page, too late not to flash it.
+        if (isset($this->claimed['notice-bar']) && preg_match_all('/data-webx-notice-bar="([A-Za-z0-9-]+)"/', $html, $bars) > 0) {
+            $styles[] = NoticeBar::head(array_values(array_unique($bars[1])));
         }
 
         // The consent banner is on every page (§9): it asks until answered, and its script is
@@ -145,6 +182,11 @@ final class Widgets implements HeadPart
         // a block, a module's view, a theme's partial — as a form's opener claims its dialog (§8).
         if (Lightbox::wanted($html) && $this->built('lightbox', 'js')) {
             $this->need('lightbox');
+        }
+
+        // A picture with `data-webx-zoom` claims the zoom the same way: a gallery's link, a slide (§14).
+        if (Zoom::wanted($html) && $this->built('zoom', 'js')) {
+            $this->need('zoom');
         }
 
         if (isset($this->claimed['lightbox']) && $this->url('lightbox', 'js') !== null) {
@@ -207,6 +249,7 @@ final class Widgets implements HeadPart
         $this->claimed = [];
         $this->forms = [];
         $this->dialogsDone = false;
+        $this->sequences = [];
     }
 
     private function built(string $widget, string $extension): bool

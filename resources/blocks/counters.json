@@ -1,0 +1,104 @@
+{
+  "slug": "counters",
+  "title": "Counters",
+  "description": "Numbers that tell — “15 years, 3,000 clients” — each counting up when it comes into view. The final number is in the page for search engines and screen readers.",
+  "icon": null,
+  "group": "content",
+  "sort": 0,
+  "allow": null,
+  "allowed_in": null,
+  "max_per_entity": null,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "heading",
+      "type": "wx-input",
+      "label": "Heading",
+      "localized": true
+    },
+    {
+      "id": "numbers",
+      "type": "wx-repeater",
+      "label": "Numbers",
+      "props": {
+        "itemLabel": "label",
+        "addLabel": "Add a number",
+        "max": 12,
+        "sortable": true
+      },
+      "children": [
+        {
+          "id": "value",
+          "type": "wx-input",
+          "label": "Number",
+          "help": "Digits, and a point for decimals: 3000, 4.9. Its decimals are the ones it counts in.",
+          "props": {
+            "placeholder": "3000",
+            "inputmode": "decimal",
+            "maxlength": 20
+          }
+        },
+        {
+          "id": "prefix",
+          "type": "wx-input",
+          "label": "Before the number",
+          "help": "Does not count: $, ≈, №.",
+          "props": {
+            "maxlength": 12
+          }
+        },
+        {
+          "id": "suffix",
+          "type": "wx-input",
+          "label": "After the number",
+          "help": "Does not count: +, %, k, years.",
+          "localized": true,
+          "props": {
+            "maxlength": 24
+          }
+        },
+        {
+          "id": "label",
+          "type": "wx-input",
+          "label": "What it counts",
+          "localized": true,
+          "props": {
+            "maxlength": 120
+          }
+        }
+      ]
+    }
+  ],
+  "template": "@php\n    // A row without a number has nothing to count. \"3 000\" and \"3,000\" are three thousand; \"4,9\" is four point nine.\n    $shown = [];\n    foreach (is_array($numbers) ? $numbers : [] as $item) {\n        if (! is_array($item)) {\n            continue;\n        }\n        $raw = preg_replace('/[\\s\\x{00A0}\\x{202F}]/u', '', wx_text($item['value'] ?? null)->plain());\n        $raw = preg_match('/^-?\\d{1,3}(,\\d{3})+(\\.\\d+)?$/', $raw) === 1 ? str_replace(',', '', $raw) : str_replace(',', '.', $raw);\n        if (! is_numeric($raw)) {\n            continue;\n        }\n        $shown[] = [\n            'value' => $raw,\n            'prefix' => wx_text($item['prefix'] ?? null)->plain(),\n            'suffix' => wx_text($item['suffix'] ?? null)->plain(),\n            'label' => $item['label'] ?? null,\n        ];\n    }\n@endphp\n@if ($shown)\n<section class=\"b-counters\" data-wx-block=\"counters\">\n    @if ($heading)\n        <h2 class=\"b-counters__heading\">{{ $heading }}</h2>\n    @endif\n    <ul class=\"b-counters__list\" role=\"list\">\n        @foreach ($shown as $item)\n            <li class=\"b-counters__item\">\n                <x-webx-counter class=\"b-counters__number\" :value=\"$item['value']\" :prefix=\"$item['prefix']\" :suffix=\"$item['suffix']\" />\n                @if ($item['label'])\n                    <span class=\"b-counters__label\">{{ $item['label'] }}</span>\n                @endif\n            </li>\n        @endforeach\n    </ul>\n</section>\n@endif\n",
+  "styles": ".b-counters {\n    container-type: inline-size;\n}\n\n.b-counters__heading {\n    margin: 0 0 1em;\n    text-align: center;\n}\n\n/* As many in a row as fit at ten letters each: four on a desktop, two on a phone. */\n.b-counters__list {\n    display: grid;\n    grid-template-columns: repeat(auto-fit, minmax(min(100%, 10em), 1fr));\n    gap: 1.5em 1em;\n    margin: 0;\n    padding: 0;\n    list-style: none;\n}\n\n.b-counters__item {\n    display: flex;\n    flex-direction: column;\n    align-items: center;\n    gap: 0.25em;\n    margin: 0;\n    text-align: center;\n}\n\n.b-counters__number {\n    font-size: 2.5em;\n    font-weight: 700;\n    line-height: 1.1;\n}\n\n.b-counters__label {\n    font-size: 0.9375em;\n    opacity: 0.75;\n}\n\n@container (max-width: 22em) {\n    .b-counters__list {\n        grid-template-columns: repeat(2, minmax(0, 1fr));\n    }\n\n    .b-counters__number {\n        font-size: 2em;\n    }\n}\n",
+  "script": null,
+  "sample": {
+    "heading": "In numbers",
+    "numbers": [
+      {
+        "value": "15",
+        "prefix": "",
+        "suffix": "",
+        "label": "years on the market"
+      },
+      {
+        "value": "3000",
+        "prefix": "",
+        "suffix": "+",
+        "label": "clients"
+      },
+      {
+        "value": "4.9",
+        "prefix": "",
+        "suffix": "",
+        "label": "average rating"
+      },
+      {
+        "value": "98",
+        "prefix": "",
+        "suffix": "%",
+        "label": "come back"
+      }
+    ]
+  }
+}

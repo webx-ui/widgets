@@ -1,0 +1,86 @@
+{
+  "slug": "compare",
+  "title": "Before and after",
+  "description": "Two pictures of one thing and a divider between them that a visitor drags — a mouse, a finger or the arrow keys: a treatment, a renovation, a restoration. Without JavaScript the two stand side by side.",
+  "icon": null,
+  "group": "media",
+  "sort": 0,
+  "allow": null,
+  "allowed_in": null,
+  "max_per_entity": null,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "heading",
+      "type": "wx-input",
+      "label": "Heading",
+      "localized": true
+    },
+    {
+      "id": "before",
+      "type": "wx-media",
+      "label": "Before",
+      "help": "The frame takes this picture’s shape; take both from the same place, at the same size.",
+      "props": {
+        "accept": "image"
+      }
+    },
+    {
+      "id": "after",
+      "type": "wx-media",
+      "label": "After",
+      "props": {
+        "accept": "image"
+      }
+    },
+    {
+      "id": "before_label",
+      "type": "wx-input",
+      "label": "Label of the before picture",
+      "help": "Empty: “Before” in the language of the page.",
+      "localized": true,
+      "props": {
+        "maxlength": 40
+      }
+    },
+    {
+      "id": "after_label",
+      "type": "wx-input",
+      "label": "Label of the after picture",
+      "help": "Empty: “After” in the language of the page.",
+      "localized": true,
+      "props": {
+        "maxlength": 40
+      }
+    },
+    {
+      "id": "start",
+      "type": "wx-input-number",
+      "label": "Divider starts at, %",
+      "help": "From the before side: 50 is the middle.",
+      "default": 50,
+      "props": {
+        "min": 0,
+        "max": 100
+      }
+    },
+    {
+      "id": "caption",
+      "type": "wx-input",
+      "label": "Caption",
+      "localized": true
+    }
+  ],
+  "template": "@php\n    // A picture deleted from the library resolves without an address: as if never picked, and one alone compares nothing.\n    $first = is_array($before) && ! empty($before['url']) ? $before : null;\n    $second = is_array($after) && ! empty($after['url']) ? $after : null;\n    $at = is_numeric($start) ? max(0, min(100, (float) $start)) : 50;\n    $beforeText = wx_text($before_label)->plain();\n    $afterText = wx_text($after_label)->plain();\n@endphp\n@if ($first && $second)\n<section class=\"b-compare\" data-wx-block=\"compare\">\n    @if ($heading)\n        <h2 class=\"b-compare__heading\">{{ $heading }}</h2>\n    @endif\n    <x-webx-compare class=\"b-compare__compare\" :before=\"$first\" :after=\"$second\" :start=\"$at\" :before-label=\"$beforeText ?: null\" :after-label=\"$afterText ?: null\">{{ $caption }}</x-webx-compare>\n</section>\n@endif\n",
+  "styles": ".b-compare {\n    container-type: inline-size;\n}\n\n.b-compare__heading {\n    margin: 0 0 1em;\n}\n\n/* No margin of its own: a theme's prose spaces figures, and the frame keeps to the column. */\n.b-compare__compare {\n    margin: 0 auto;\n}\n",
+  "script": null,
+  "sample": {
+    "heading": "Before and after",
+    "before": null,
+    "after": null,
+    "before_label": "",
+    "after_label": "",
+    "start": 50,
+    "caption": ""
+  }
+}

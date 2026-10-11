@@ -108,6 +108,8 @@ return [
         'notice' => 'Wideo załaduje się z serwisu :provider, który może zapisywać pliki cookie.',
         'load' => 'Załaduj',
         'always' => 'Zawsze ładuj wideo',
+        'pause' => 'Zatrzymaj wideo w tle',
+        'resume' => 'Odtwórz wideo w tle',
     ],
     'map' => [
         'untitled' => 'Mapa',
@@ -117,5 +119,55 @@ return [
         'always' => 'Zawsze wczytuj mapy',
         'open' => 'Otwórz w mapach',
         'hint' => 'Kliknij mapę, aby przybliżać kółkiem',
+    ],
+    'table' => [
+        'label' => 'Tabela',
+    ],
+    'back_to_top' => [
+        'label' => 'Do góry',
+    ],
+    'share' => [
+        'label' => 'Udostępnij',
+        'on' => 'Udostępnij w :network',
+        'email' => 'Wyślij e-mailem',
+        'copy' => 'Kopiuj link',
+        'copied' => 'Link skopiowany',
+        'failed' => 'Nie udało się skopiować linku',
+    ],
+    'countdown' => [
+        'ends' => 'Kończy się :date',
+        'days' => 'Dni',
+        'hours' => 'Godziny',
+        'minutes' => 'Minuty',
+        'seconds' => 'Sekundy',
+    ],
+    'compare' => [
+        'before' => 'Przed',
+        'after' => 'Po',
+        'label' => 'Linia podziału między „:before” a „:after”',
+    ],
+    'toc' => [
+        'title' => 'Na tej stronie',
+    ],
+    'pagination' => [
+        'label' => 'Strony',
+        'previous' => 'Poprzednia',
+        'next' => 'Następna',
+    ],
+    'load_more' => [
+        'label' => 'Pokaż więcej',
+        'loading' => 'Wczytywanie…',
+        'loaded' => 'Wczytano stronę :page z :last.',
+        'loaded_page' => 'Wczytano stronę :page.',
+        'end' => 'To wszystko.',
+        'failed' => 'Nie udało się wczytać następnej strony. Spróbuj ponownie albo użyj linków do stron.',
+    ],
+    'notice_bar' => [
+        'label' => 'Ogłoszenie',
+        'close' => 'Zamknij ogłoszenie',
+    ],
+    'zoom' => [
+        'label' => 'Powiększ',
+        'named' => 'Powiększ: :name',
     ],
 ];

@@ -108,6 +108,8 @@ return [
         'notice' => 'La vidéo se charge depuis :provider, qui peut déposer des cookies.',
         'load' => 'Charger',
         'always' => 'Toujours charger les vidéos',
+        'pause' => 'Mettre en pause la vidéo d’arrière-plan',
+        'resume' => 'Lire la vidéo d’arrière-plan',
     ],
     'map' => [
         'untitled' => 'Carte',
@@ -117,5 +119,55 @@ return [
         'always' => 'Toujours charger les cartes',
         'open' => 'Ouvrir dans une carte',
         'hint' => 'Cliquez sur la carte pour zoomer avec la molette',
+    ],
+    'table' => [
+        'label' => 'Tableau',
+    ],
+    'back_to_top' => [
+        'label' => 'Haut de page',
+    ],
+    'share' => [
+        'label' => 'Partager',
+        'on' => 'Partager sur :network',
+        'email' => 'Envoyer par e-mail',
+        'copy' => 'Copier le lien',
+        'copied' => 'Lien copié',
+        'failed' => 'Le lien n\'a pas pu être copié',
+    ],
+    'countdown' => [
+        'ends' => 'Se termine le :date',
+        'days' => 'Jours',
+        'hours' => 'Heures',
+        'minutes' => 'Minutes',
+        'seconds' => 'Secondes',
+    ],
+    'compare' => [
+        'before' => 'Avant',
+        'after' => 'Après',
+        'label' => 'Séparation entre « :before » et « :after »',
+    ],
+    'toc' => [
+        'title' => 'Sur cette page',
+    ],
+    'pagination' => [
+        'label' => 'Pages',
+        'previous' => 'Précédent',
+        'next' => 'Suivant',
+    ],
+    'load_more' => [
+        'label' => 'Afficher plus',
+        'loading' => 'Chargement…',
+        'loaded' => 'Page :page sur :last chargée.',
+        'loaded_page' => 'Page :page chargée.',
+        'end' => 'C’est tout.',
+        'failed' => 'La page suivante n’a pas pu être chargée. Réessayez, ou utilisez les liens vers les pages.',
+    ],
+    'notice_bar' => [
+        'label' => 'Annonce',
+        'close' => 'Fermer l’annonce',
+    ],
+    'zoom' => [
+        'label' => 'Agrandir',
+        'named' => 'Agrandir : :name',
     ],
 ];

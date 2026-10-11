@@ -1,0 +1,103 @@
+{
+  "slug": "toc",
+  "title": "Table of contents",
+  "description": "The sections of a long page as links, the one being read marked: a policy, a service, an article. Of the whole page, or beside a text of its own and sticky. On a phone, one line that opens the list.",
+  "icon": null,
+  "group": "content",
+  "sort": 0,
+  "allow": null,
+  "allowed_in": null,
+  "max_per_entity": null,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "heading",
+      "type": "wx-input",
+      "label": "Title",
+      "help": "Empty: “On this page” in the language of the page.",
+      "localized": true,
+      "props": {
+        "maxlength": 60
+      }
+    },
+    {
+      "id": "source",
+      "type": "wx-segmented",
+      "label": "Sections of",
+      "default": "page",
+      "props": {
+        "options": [
+          {
+            "value": "page",
+            "label": "The whole page"
+          },
+          {
+            "value": "text",
+            "label": "A text of its own"
+          }
+        ]
+      }
+    },
+    {
+      "id": "body",
+      "type": "wx-rich-text",
+      "label": "Text",
+      "help": "Its headings of the second level are the sections, the third level’s their parts. The list stands beside it on a wide screen.",
+      "localized": true,
+      "visible": {
+        "when": "source",
+        "is": "text"
+      }
+    },
+    {
+      "id": "side",
+      "type": "wx-segmented",
+      "label": "List beside the text",
+      "default": "end",
+      "props": {
+        "options": [
+          {
+            "value": "start",
+            "label": "Before it"
+          },
+          {
+            "value": "end",
+            "label": "After it"
+          }
+        ]
+      },
+      "visible": {
+        "when": "source",
+        "is": "text"
+      }
+    },
+    {
+      "id": "depth",
+      "type": "wx-segmented",
+      "label": "Depth",
+      "default": "3",
+      "props": {
+        "options": [
+          {
+            "value": "2",
+            "label": "Sections"
+          },
+          {
+            "value": "3",
+            "label": "Sections and parts"
+          }
+        ]
+      }
+    }
+  ],
+  "template": "@php\n    // The switch says where the headings are; a block saved before it had a value lists the page, as new ones do.\n    $own = $source === 'text';\n    $text = $own && is_string($body) ? trim($body) : '';\n    $levels = (string) $depth === '2' ? 2 : 3;\n    $place = $side === 'start' ? 'start' : 'end';\n    $title = $heading ? wx_text($heading)->plain() : '';\n@endphp\n@if (! $own)\n<section class=\"b-toc\" data-wx-block=\"toc\">\n    <x-webx-toc :depth=\"$levels\" :title=\"$title ?: null\" />\n</section>\n@elseif ($text !== '')\n<section class=\"b-toc b-toc--text\" data-wx-block=\"toc\">\n    <x-webx-toc :depth=\"$levels\" :title=\"$title ?: null\" :side=\"$place\"><div class=\"b-toc__body\">{!! $text !!}</div></x-webx-toc>\n</section>\n@endif\n",
+  "styles": ".b-toc {\n    container-type: inline-size;\n}\n\n.b-toc__body > :first-child {\n    margin-top: 0;\n}\n",
+  "script": null,
+  "sample": {
+    "heading": "",
+    "source": "page",
+    "body": "",
+    "side": "end",
+    "depth": "3"
+  }
+}

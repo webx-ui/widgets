@@ -1,0 +1,80 @@
+/*
+ * Tables in prose (spec §14): the scroller the server wraps each one in, the caption above it
+ * that does not scroll away, and the shadows the script switches on at the edge with more behind.
+ * The cells are the theme's prose; only what the wrapper changes is here. One flat class per rule.
+ */
+
+:where(:root) {
+  --webx-table-gap: var(--site-space-2);
+  --webx-table-caption-color: var(--site-color-text-muted);
+  --webx-table-shadow-size: var(--site-space-5);
+  --webx-table-shadow: color-mix(in srgb, var(--site-color-text) 22%, transparent);
+  --webx-table-focus: var(--site-color-accent);
+  /* The narrowest a column gets before the table scrolls; the server writes how many there are. */
+  --webx-table-column-min: 7rem;
+  --webx-table-columns: 1;
+}
+
+.webx-table {
+  max-width: 100%;
+  margin-block: 0 var(--site-space-4);
+}
+
+.webx-table__caption {
+  margin-block-end: var(--webx-table-gap);
+  color: var(--webx-table-caption-color);
+  font-size: calc(var(--site-font-size-base) * 0.875);
+  text-align: start;
+}
+
+.webx-table__frame {
+  position: relative;
+}
+
+.webx-table__scroller {
+  overflow-x: auto;
+  /* A swipe that reaches the table's edge does not go on to the page or the browser's back. */
+  overscroll-behavior-x: contain;
+}
+
+.webx-table__scroller:focus-visible {
+  outline: 2px solid var(--webx-table-focus);
+  outline-offset: 2px;
+}
+
+/* The scroller scrolls now: the table is a table again, as wide as its cells need and never so
+   narrow that a column holds a word a line. */
+.webx-table__table {
+  display: table;
+  min-width: calc(var(--webx-table-columns) * var(--webx-table-column-min));
+  max-width: none;
+  margin: 0;
+  overflow: visible;
+}
+
+.webx-table__frame::before,
+.webx-table__frame::after {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  z-index: 1;
+  width: var(--webx-table-shadow-size);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--site-duration) var(--site-easing);
+}
+
+.webx-table__frame::before {
+  left: 0;
+  background: linear-gradient(to right, var(--webx-table-shadow), transparent);
+}
+
+.webx-table__frame::after {
+  right: 0;
+  background: linear-gradient(to left, var(--webx-table-shadow), transparent);
+}
+
+.webx-table__frame.is-more-left::before,
+.webx-table__frame.is-more-right::after {
+  opacity: 1;
+}

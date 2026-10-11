@@ -34,5 +34,41 @@ return [
             'why' => 'Offrono due volte le stesse chiamate e chat, e sul telefono il pulsante copre la barra.',
             'fix' => 'Tieni uno dei due nel layout del tema.',
         ],
+        'video_pause' => [
+            'title' => 'Video di sfondo senza pulsante di pausa',
+            'found' => 'Un video di sfondo si riproduce da solo e non ha un pulsante di pausa.',
+            'why' => 'Un movimento che dura più di cinque secondi deve poter essere fermato (WCAG 2.2.2): distrae, e alcuni visitatori non riescono a leggere il testo sopra.',
+            'fix' => 'La vista del pacchetto ha sempre il pulsante: una sovrascrittura di webx-widgets::components.video nel tema ha perso .webx-video__pause. Rimettetelo o rimuovete la sovrascrittura.',
+        ],
+        'counter_number' => [
+            'title' => 'Contatori senza il loro numero',
+            'found' => 'Il markup di un contatore non contiene il numero fino a cui conta.',
+            'why' => 'Motori di ricerca, lettori di schermo e una pagina senza JavaScript leggono il markup: ottengono uno zero o niente al posto del numero.',
+            'fix' => 'La vista del pacchetto stampa il numero finale e lo script conta fino a esso: una sovrascrittura di webx-widgets::components.counter nel tema stampa altro. Stampate il numero o rimuovete la sovrascrittura.',
+        ],
+        'compare_range' => [
+            'title' => 'Prima e dopo senza cursore',
+            'found' => 'Un divisore prima/dopo non ha un campo range: solo il mouse e il dito possono spostarlo.',
+            'why' => 'La tastiera non raggiunge il divisore e uno screen reader non può nominarlo: una parte dell’immagine resta nascosta a quei visitatori.',
+            'fix' => 'La vista del pacchetto rende il divisore un <input type="range">: una sovrascrittura di webx-widgets::components.compare nel tema l’ha perso. Rimettetelo o togliete la sovrascrittura.',
+        ],
+        'toc_target' => [
+            'title' => 'Indice che non porta da nessuna parte',
+            'found' => 'Un link dell’indice porta a una sezione che la pagina non ha.',
+            'why' => 'Il visitatore clicca una sezione e non succede nulla: la pagina non si muove e l’indice sembra rotto.',
+            'fix' => 'Il server costruisce l’indice dai titoli della pagina e assegna loro gli id. Un indice scritto a mano, o una sovrascrittura dell’elenco nel tema, punta a un id sparito: usate <x-webx-toc> o correggete il link.',
+        ],
+        'load_more_link' => [
+            'title' => '«Mostra altro» senza link alla pagina successiva',
+            'found' => 'Un elenco con «Mostra altro» ha una pagina successiva ma nessun link verso di essa: ci porta solo il pulsante.',
+            'why' => 'I motori di ricerca non premono pulsanti, e nemmeno una pagina senza JavaScript: ciò che segue la prima pagina non viene trovato.',
+            'fix' => 'Il pacchetto stampa i link delle pagine sotto l’elenco e il pulsante li copre soltanto: una sovrascrittura di webx-widgets::components.load-more nel tema, o uno slot links vuoto, li ha persi. Rimetteteli o togliete la sovrascrittura.',
+        ],
+        'zoom_link' => [
+            'title' => 'Zoom senza link',
+            'found' => 'Un’immagine ingrandita sotto il mouse non è un link e non ne contiene: la tastiera non può aprirla.',
+            'why' => 'Tastiera e screen reader non hanno il passaggio del mouse: il link all’immagine, aperto nel visualizzatore, è il loro unico modo per vederla da vicino.',
+            'fix' => 'La vista del pacchetto rende l’immagine un link all’originale: una sovrascrittura di webx-widgets::components.zoom nel tema l’ha perso, oppure data-webx-zoom è scritto su un’immagine senza link. Mettete l’attributo sul link del visualizzatore o togliete la sovrascrittura.',
+        ],
     ],
 ];

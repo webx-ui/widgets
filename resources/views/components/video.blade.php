@@ -6,8 +6,29 @@
     Classes: webx-video, --youtube | --vimeo | --file, __facade, __poster, __play, __icon,
     __consent, __notice, __actions, __button, __button--always, __frame, __player;
     is-blocked (before consent), is-ready (the script took it), is-playing (the player is in).
+
+    variant="background": webx-video--background, __backdrop (decor, aria-hidden: the poster and
+    the video), __background (the <video>), __over (what the tag wraps), __pause, __pause-icon,
+    __play-icon; is-playing (a frame is up, over the poster), is-paused (on the pause button).
+    Without JavaScript the poster alone: nothing moves that nothing can stop.
 --}}
-@if ($kind === 'file')
+@if ($background)
+<div {{ $attributes->class(['webx-video', 'webx-video--background'])->merge(['style' => "--webx-video-ratio: {$ratio}"]) }} data-webx-video-background>
+    <div class="webx-video__backdrop" aria-hidden="true">
+        @if ($posterUrl)<img class="webx-video__poster" src="{{ $posterUrl }}" alt="" decoding="async" @if ($posterWidth && $posterHeight) width="{{ $posterWidth }}" height="{{ $posterHeight }}" @endif>@endif
+        <video class="webx-video__background" muted loop playsinline preload="none" disablepictureinpicture tabindex="-1" @if ($posterUrl) poster="{{ $posterUrl }}" @endif>
+            <source src="{{ $href }}" @if ($fileType) type="{{ $fileType }}" @endif>
+        </video>
+    </div>
+    @if (trim((string) $slot) !== '')
+    <div class="webx-video__over">{{ $slot }}</div>
+    @endif
+    <button type="button" class="webx-video__pause is-paused" aria-label="{{ __('webx-widgets::widgets.video.resume') }}" data-pause="{{ __('webx-widgets::widgets.video.pause') }}" data-play="{{ __('webx-widgets::widgets.video.resume') }}">
+        <x-webx-icon name="pause" class="webx-video__pause-icon" />
+        <x-webx-icon name="play" class="webx-video__play-icon" />
+    </button>
+</div>
+@elseif ($kind === 'file')
 <div {{ $attributes->class(['webx-video', 'webx-video--file'])->merge(['style' => "--webx-video-ratio: {$ratio}"]) }}>
     <video class="webx-video__player" controls preload="none" playsinline aria-label="{{ $name }}" @if ($posterUrl) poster="{{ $posterUrl }}" @endif>
         <source src="{{ $href }}" @if ($fileType) type="{{ $fileType }}" @endif>

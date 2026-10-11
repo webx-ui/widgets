@@ -35,6 +35,11 @@ final class ThirdParty
         'googleadservices.com' => 'marketing',
         'snap.licdn.com' => 'marketing',
         'analytics.tiktok.com' => 'marketing',
+        // Share buttons of a service: their script tracks the visitor across every site that has
+        // it. `<x-webx-share>` is plain links and asks nobody for anything (§14).
+        'sharethis.com' => 'marketing',
+        'addtoany.com' => 'marketing',
+        'addthis.com' => 'marketing',
     ];
 
     /** The category an address waits for, or null for an address the audit does not know. */

@@ -1,0 +1,201 @@
+/*
+ * Before and after (spec §14). The frame is one grid cell with the pictures' ratio: both sides
+ * stand in that cell, the after one cut at the divider — a percentage of a height an aspect-ratio
+ * box never defines would not fill it (docs/pitfalls/layout-and-browser.md). The divider is the
+ * custom property the server printed and the script moves.
+ *
+ * Without JavaScript (`scripting: none`, not a class the runtime sets: a class would be missing
+ * for a moment on every page, and the frame would jump from two pictures to one) the sides stand
+ * side by side, one under the other in a narrow column. One flat class per rule (THEMES §8).
+ */
+
+:where(:root) {
+  --webx-compare-ratio: 4 / 3;
+  --webx-compare-position: 50%;
+  --webx-compare-radius: var(--site-radius-md);
+  --webx-compare-line: var(--site-color-bg);
+  --webx-compare-line-width: 2px;
+  --webx-compare-knob-size: 2.75rem;
+  --webx-compare-knob-bg: var(--site-color-bg);
+  --webx-compare-knob-color: var(--site-color-text);
+  --webx-compare-focus: var(--site-color-accent);
+  --webx-compare-label-bg: var(--site-color-text);
+  --webx-compare-label-color: var(--site-color-bg);
+  --webx-compare-gap: var(--site-space-3);
+}
+
+.webx-compare {
+  container: webx-compare / inline-size;
+  margin: 0;
+}
+
+.webx-compare__frame {
+  position: relative;
+  display: grid;
+  aspect-ratio: var(--webx-compare-ratio);
+  overflow: hidden;
+  border-radius: var(--webx-compare-radius);
+  background: var(--site-color-surface-muted);
+  /* A finger scrolls the page up and down; sideways it moves the divider. */
+  touch-action: pan-y;
+  user-select: none;
+  cursor: ew-resize;
+}
+
+.webx-compare__side {
+  position: relative;
+  grid-area: 1 / 1;
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+}
+
+.webx-compare__side--after {
+  clip-path: inset(0 0 0 var(--webx-compare-position));
+}
+
+.webx-compare__picture {
+  grid-area: 1 / 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.webx-compare__label {
+  grid-area: 1 / 1;
+  align-self: start;
+  justify-self: start;
+  margin: var(--site-space-3);
+  padding: var(--site-space-1) var(--site-space-2);
+  border-radius: var(--site-radius-sm);
+  background: color-mix(in srgb, var(--webx-compare-label-bg) 70%, transparent);
+  color: var(--webx-compare-label-color);
+  font-size: var(--site-font-size-6);
+  line-height: 1.2;
+  pointer-events: none;
+}
+
+.webx-compare__label--after {
+  justify-self: end;
+}
+
+/* The line and its knob, at the divider; the double arrow inside is a cut-out shape. */
+.webx-compare__handle {
+  position: absolute;
+  inset-block: 0;
+  left: var(--webx-compare-position);
+  width: var(--webx-compare-line-width);
+  margin-left: calc(var(--webx-compare-line-width) / -2);
+  background: var(--webx-compare-line);
+  /* A thin edge of the other colour: the line stays seen on a picture as light or as dark as it. */
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--webx-compare-knob-color) 35%, transparent);
+  pointer-events: none;
+}
+
+.webx-compare__handle::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--webx-compare-knob-size);
+  height: var(--webx-compare-knob-size);
+  border-radius: var(--site-radius-full);
+  background: var(--webx-compare-knob-bg);
+  box-shadow: var(--site-shadow-md);
+  transform: translate(-50%, -50%);
+}
+
+.webx-compare__handle::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: calc(var(--webx-compare-knob-size) * 0.5);
+  height: calc(var(--webx-compare-knob-size) * 0.3);
+  clip-path: polygon(
+    0 50%,
+    30% 0,
+    30% 35%,
+    70% 35%,
+    70% 0,
+    100% 50%,
+    70% 100%,
+    70% 65%,
+    30% 65%,
+    30% 100%
+  );
+  background: var(--webx-compare-knob-color);
+  transform: translate(-50%, -50%);
+}
+
+.webx-compare__handle.is-focused::before {
+  outline: 3px solid var(--webx-compare-focus);
+  outline-offset: 2px;
+}
+
+/* A slider for the keyboard and screen readers; the mouse and the finger move the frame. */
+.webx-compare__range {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.webx-compare__caption {
+  margin-block-start: var(--site-space-2);
+  color: var(--site-color-text-muted);
+  font-size: var(--site-font-size-6);
+}
+
+@media (scripting: none) {
+  .webx-compare__frame {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--webx-compare-gap);
+    aspect-ratio: auto;
+    overflow: visible;
+    border-radius: 0;
+    background: none;
+    cursor: auto;
+    user-select: auto;
+  }
+
+  .webx-compare__side {
+    grid-area: auto;
+    aspect-ratio: var(--webx-compare-ratio);
+    overflow: hidden;
+    border-radius: var(--webx-compare-radius);
+  }
+
+  .webx-compare__side--after {
+    clip-path: none;
+  }
+
+  .webx-compare__label--after {
+    justify-self: start;
+  }
+
+  .webx-compare__handle,
+  .webx-compare__range {
+    display: none;
+  }
+}
+
+@container webx-compare (max-width: 28rem) {
+  .webx-compare__label {
+    margin: var(--site-space-2);
+  }
+}
+
+@media (scripting: none) {
+  @container webx-compare (max-width: 28rem) {
+    .webx-compare__frame {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+}

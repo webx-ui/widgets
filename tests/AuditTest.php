@@ -134,6 +134,42 @@ final class AuditTest extends TestCase
         $this->assertSame(['count' => 1], $slider->details['summary']['params']);
         $this->assertStringStartsWith('<section class="webx-slider webx-slider--hero" id="lost"', (string) $slider->details['table']['rows'][0]['markup']);
 
+        $this->assertSame(['/slider'], array_keys($this->keys('widgets.video_pause')));
+        $video = AuditIssue::query()->where('check', 'widgets.video_pause')->firstOrFail();
+        $this->assertSame('warning', $video->severity);
+        $this->assertSame(['count' => 1], $video->details['summary']['params']);
+        $this->assertStringStartsWith('<div class="webx-video webx-video--background" id="still"', (string) $video->details['table']['rows'][0]['markup']);
+
+        $this->assertSame(['/slider'], array_keys($this->keys('widgets.counter_number')), '3 000 and 4,9 are their numbers; 0 is not 3000.');
+        $counter = AuditIssue::query()->where('check', 'widgets.counter_number')->firstOrFail();
+        $this->assertSame('notice', $counter->severity);
+        $this->assertStringContainsString('<span class="webx-counter__number">0</span>', (string) $counter->details['table']['rows'][0]['markup']);
+
+        $this->assertSame(['/slider'], array_keys($this->keys('widgets.compare_range')));
+        $compare = AuditIssue::query()->where('check', 'widgets.compare_range')->firstOrFail();
+        $this->assertSame('warning', $compare->severity);
+        $this->assertStringStartsWith('<figure class="webx-compare" id="bare"', (string) $compare->details['table']['rows'][0]['markup']);
+
+        $this->assertSame(['/slider'], array_keys($this->keys('widgets.toc_target')), 'an encoded id lands');
+        $toc = AuditIssue::query()->where('check', 'widgets.toc_target')->firstOrFail();
+        $this->assertSame('warning', $toc->severity);
+        $this->assertSame(['count' => 1], $toc->details['summary']['params']);
+        $this->assertStringContainsString('href="#gone"', (string) $toc->details['table']['rows'][0]['markup']);
+        $this->assertSame('Table of contents links to nowhere: 1', __($toc->details['summary']['key'], $toc->details['summary']['params']));
+
+        $this->assertSame(['/slider'], array_keys($this->keys('widgets.load_more_link')), 'a link written whole is the same address; no next page, nothing to link');
+        $more = AuditIssue::query()->where('check', 'widgets.load_more_link')->firstOrFail();
+        $this->assertSame('warning', $more->severity);
+        $this->assertStringStartsWith('<div class="webx-load-more" id="buttoned"', (string) $more->details['table']['rows'][0]['markup']);
+        $this->assertSame('Show more without a link to the next page: 1', __($more->details['summary']['key'], $more->details['summary']['params']));
+
+        $this->assertSame(['/slider'], array_keys($this->keys('widgets.zoom_link')), 'a link, or a link inside, is the way in');
+        $zoom = AuditIssue::query()->where('check', 'widgets.zoom_link')->firstOrFail();
+        $this->assertSame('warning', $zoom->severity);
+        $this->assertSame(['count' => 1], $zoom->details['summary']['params']);
+        $this->assertStringStartsWith('<div class="slide" id="unlinked"', (string) $zoom->details['table']['rows'][0]['markup']);
+        $this->assertSame('Zoom without a link: 1', __($zoom->details['summary']['key'], $zoom->details['summary']['params']));
+
         // What the reader keeps of a page: only what is there.
         $home = AuditPage::query()->where('url', self::BASE.'/')->firstOrFail();
         $this->assertSame(['waits' => ['media' => 2, 'statistics' => 1]], $home->fact('widgets'));
@@ -229,6 +265,9 @@ final class AuditTest extends TestCase
         $this->assertNull(ThirdParty::category('/embed/own'));
         $this->assertSame('statistics', ThirdParty::category('https://www.googletagmanager.com/gtag/js?id=G-1'));
         $this->assertSame('marketing', ThirdParty::category('https://connect.facebook.net/en_US/fbevents.js'));
+        // Share buttons of a service track the visitor; the package's share is plain links.
+        $this->assertSame('marketing', ThirdParty::category('https://platform-api.sharethis.com/js/sharethis.js#property=1'));
+        $this->assertSame('marketing', ThirdParty::category('https://static.addtoany.com/menu/page.js'));
 
         config()->set('webx-widgets.audit.third-party', ['widget.example.org' => 'marketing']);
         $this->assertSame('marketing', ThirdParty::category('https://cdn.widget.example.org/w.js'), 'A site adds its own.');
@@ -291,7 +330,17 @@ final class AuditTest extends TestCase
                 .'<a href="/a.jpg" data-webx-lightbox="g" data-width="1800" data-height="1200">A</a>'
                 .'<section class="webx-slider webx-slider--logos" data-webx-slider=\'{"autoplay":0,"continuous":true}\'>'.$slide.$pause.'</section>'
                 .'<section class="webx-slider webx-slider--cards" data-webx-slider=\'{"autoplay":0,"continuous":false}\'>'.$slide.'</section>'
-                .'<div class="webx-contact-button"></div>'),
+                .'<div class="webx-contact-button"></div>'
+                // A background video with its pause button; counters that hold their numbers, however the language writes them.
+                .'<div class="webx-video webx-video--background" data-webx-video-background><video class="webx-video__background" muted loop></video><button type="button" class="webx-video__pause">Pause</button></div>'
+                .'<span class="webx-counter" data-webx-counter=\'{"value":3000,"decimals":0}\'><span class="webx-counter__number">3 000</span><span class="webx-counter__suffix">+</span></span>'
+                .'<span class="webx-counter" data-webx-counter=\'{"value":4.9,"decimals":1}\'><span class="webx-counter__number">4,9</span></span>'
+                // Before and after with its slider; a table of contents whose links all land, one by an encoded id.
+                .'<figure class="webx-compare" data-webx-compare><div class="webx-compare__frame"><input class="webx-compare__range" type="range"></div></figure>'
+                .'<div class="webx-toc" data-webx-toc><nav class="webx-toc__nav"><a class="webx-toc__link" href="#who">Who</a><a class="webx-toc__link" href="#%D0%B4%D0%B0">Да</a></nav><h2 id="who">Who</h2><h2 id="да">Да</h2></div>'
+                // Show more with its link to the next page, written whole; and one on its last page.
+                .'<div class="webx-load-more" data-webx-load-more="page" data-next="/?page=2"><div data-webx-load-more-list><p>1</p></div><nav><a rel="next" href="https://shop.example.com/?page=2">Next</a></nav></div>'
+                .'<div class="webx-load-more" data-webx-load-more="reviews"><div data-webx-load-more-list><p>1</p></div></div>'),
             '/raw' => $page('Raw', self::PASTED.self::SNIPPET
                 .'<iframe src="https://www.google.com/maps/embed?pb=1" title="Map"></iframe>'
                 .'<script src="https://www.youtube.com/s/player.js"></script>'
@@ -303,7 +352,16 @@ final class AuditTest extends TestCase
             '/lightbox' => $page('Lightbox', '<a href="/a.jpg" data-webx-lightbox="g">A</a> <a href="/b.jpg" data-webx-lightbox="g" data-width="0" data-height="900">B</a>'
                 .'<a href="/c.jpg" data-webx-lightbox="g" data-width="900" data-height="600">C</a>'),
             '/slider' => $page('Slider', '<section class="webx-slider webx-slider--hero" id="lost" data-webx-slider=\'{"autoplay":6000,"continuous":false}\'>'.$slide.'</section>'
-                .'<section class="webx-slider webx-slider--hero" data-webx-slider=\'{"autoplay":6000}\'><div class="webx-slider__slide">Only one</div></section>'),
+                .'<section class="webx-slider webx-slider--hero" data-webx-slider=\'{"autoplay":6000}\'><div class="webx-slider__slide">Only one</div></section>'
+                // An override that lost the pause button, and one that leaves the number to the script.
+                .'<div class="webx-video webx-video--background" id="still" data-webx-video-background><video class="webx-video__background" muted loop></video></div>'
+                .'<span class="webx-counter" data-webx-counter=\'{"value":3000,"decimals":0}\'><span class="webx-counter__number">0</span></span>'
+                // An override that lost the slider of before and after, and a list written by hand to a heading that is gone.
+                .'<figure class="webx-compare" id="bare" data-webx-compare><div class="webx-compare__frame"></div></figure>'
+                .'<div class="webx-toc" data-webx-toc><nav class="webx-toc__nav"><a class="webx-toc__link" href="#intro">Intro</a><a class="webx-toc__link" href="#gone">Gone</a></nav><h2 id="intro">Intro</h2></div>'
+                // Show more whose links an override lost: a button and nothing a crawler follows.
+                .'<div class="webx-load-more" id="buttoned" data-webx-load-more="page" data-next="/slider?page=2"><div data-webx-load-more-list><p>1</p></div><a href="/slider?page=3">3</a><button type="button">Show more</button></div>'
+                .'<div class="slide" id="unlinked" data-webx-zoom="/big.jpg"><img src="/small.jpg" alt=""></div><a href="/big.jpg" data-webx-zoom data-webx-lightbox="g" data-width="1800" data-height="1200"><img src="/big.jpg" alt=""></a><figure data-webx-zoom><a href="/big.jpg"><img src="/big.jpg" alt=""></a></figure>'),
             '/contacts' => $page('Contacts', '<div class="webx-contact-button"></div><div class="webx-contact-bar"></div>'),
             '/plain' => $page('Plain', '<p>Nothing of the widgets here.</p>'),
         ];

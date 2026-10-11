@@ -1,0 +1,28 @@
+/*
+ * Counter (spec §14): digits of one width, so the number does not shiver as it counts. The rest —
+ * size, weight, colour — is the block's or the theme's. One flat class per rule (THEMES §8).
+ */
+
+:where(:root) {
+  --webx-counter-numerals: tabular-nums;
+}
+
+.webx-counter {
+  font-variant-numeric: var(--webx-counter-numerals);
+  white-space: nowrap;
+}
+
+.webx-counter__number {
+  display: inline-block;
+  text-align: end;
+}
+
+/* The final number, for a screen reader while the visible one counts. */
+.webx-counter__final {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

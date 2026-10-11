@@ -108,6 +108,8 @@ return [
         'notice' => 'Video :provider üzerinden yüklenir ve çerez bırakabilir.',
         'load' => 'Yükle',
         'always' => 'Videoları her zaman yükle',
+        'pause' => 'Arka plan videosunu duraklat',
+        'resume' => 'Arka plan videosunu oynat',
     ],
     'map' => [
         'untitled' => 'Harita',
@@ -117,5 +119,55 @@ return [
         'always' => 'Haritaları her zaman yükle',
         'open' => 'Haritada aç',
         'hint' => 'Tekerlekle yakınlaştırmak için haritaya tıklayın',
+    ],
+    'table' => [
+        'label' => 'Tablo',
+    ],
+    'back_to_top' => [
+        'label' => 'Başa dön',
+    ],
+    'share' => [
+        'label' => 'Paylaş',
+        'on' => ':network üzerinde paylaş',
+        'email' => 'E-postayla gönder',
+        'copy' => 'Bağlantıyı kopyala',
+        'copied' => 'Bağlantı kopyalandı',
+        'failed' => 'Bağlantı kopyalanamadı',
+    ],
+    'countdown' => [
+        'ends' => ':date tarihinde sona eriyor',
+        'days' => 'Gün',
+        'hours' => 'Saat',
+        'minutes' => 'Dakika',
+        'seconds' => 'Saniye',
+    ],
+    'compare' => [
+        'before' => 'Önce',
+        'after' => 'Sonra',
+        'label' => '“:before” ile “:after” arasındaki ayırıcı',
+    ],
+    'toc' => [
+        'title' => 'Bu sayfada',
+    ],
+    'pagination' => [
+        'label' => 'Sayfalar',
+        'previous' => 'Önceki',
+        'next' => 'Sonraki',
+    ],
+    'load_more' => [
+        'label' => 'Daha fazla göster',
+        'loading' => 'Yükleniyor…',
+        'loaded' => 'Sayfa :page / :last yüklendi.',
+        'loaded_page' => 'Sayfa :page yüklendi.',
+        'end' => 'Hepsi bu kadar.',
+        'failed' => 'Sonraki sayfa yüklenemedi. Yeniden deneyin ya da sayfa bağlantılarını kullanın.',
+    ],
+    'notice_bar' => [
+        'label' => 'Duyuru',
+        'close' => 'Duyuruyu kapat',
+    ],
+    'zoom' => [
+        'label' => 'Yakınlaştır',
+        'named' => 'Yakınlaştır: :name',
     ],
 ];
