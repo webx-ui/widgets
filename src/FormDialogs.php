@@ -6,6 +6,8 @@ namespace WebxUi\Widgets;
 
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Contracts\View\Factory as ViewFactory;
+use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\HtmlString;
 use WebxUi\Inbox\Models\Form;
 use WebxUi\Inbox\Support\Forms;
 
@@ -15,8 +17,9 @@ use WebxUi\Inbox\Support\Forms;
  * lead to it.
  *
  * The form is printed the way it is printed anywhere — `<x-webx-inbox::form placement="modal">`
- * — so the intake, the antispam and the script are the module's, and the submission remembers
- * it came from a dialog. The library does not require the module: without it, or with a slug
+ * — so the intake, the antispam and the captcha are the module's, the submission remembers it
+ * came from a dialog, and the form is an `<x-webx-form>` that behaves in a dialog the way any of
+ * them does (spec §17.3): the thank-you in place of the fields, a button that closes it. The library does not require the module: without it, or with a slug
  * no enabled form has, there is no dialog and the opener stays a link to nowhere.
  */
 final class FormDialogs
@@ -78,11 +81,18 @@ final class FormDialogs
             $form = app(Forms::class)->enabled($slug);
 
             if ($form instanceof Form) {
+                $body = Blade::render('<x-webx-inbox::form :form="$form" placement="modal" />', ['form' => $form]);
+
                 $dialogs[] = $this->views->make('webx-widgets::form-dialog', [
                     'form' => $form,
                     'id' => self::ID.$form->slug,
                     'title' => trim((string) $form->title) !== '' ? trim((string) $form->title) : $form->slug,
-                    'open' => $this->answered($form),
+                    'body' => new HtmlString($body),
+                    // The form the page came back from says so itself; a view the site published
+                    // before W6.4 does not, and is told by the session.
+                    'open' => str_contains($body, 'data-webx-returned') || $this->answered($form),
+                    // A view of before W6.4: no shell, so the dialog brings its own Close.
+                    'legacy' => ! str_contains($body, 'data-webx-send'),
                 ])->render();
             }
         }
@@ -92,7 +102,7 @@ final class FormDialogs
 
     /**
      * Whether the page comes back from this form sent without JavaScript — with its thank-you
-     * or its errors in the session. Then the dialog is printed open: the answer is in it.
+     * or its errors in the session — when the form is a view the site published before W6.4.
      */
     private function answered(Form $form): bool
     {

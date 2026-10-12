@@ -15,6 +15,7 @@ use WebxUi\Routing\Contracts\Visible;
 use WebxUi\Routing\Models\Route;
 use WebxUi\Routing\Resolution;
 use WebxUi\Routing\SiteUrl;
+use WebxUi\Routing\Untranslated;
 use WebxUi\Routing\UrlNormaliser;
 
 /**
@@ -23,9 +24,11 @@ use WebxUi\Routing\UrlNormaliser;
  * The addresses come from where `hreflang` takes them (module-seo's `Alternates`, ROUTING §8):
  * a page the registry found is its entity's canonical row in each language; an address outside
  * the registry — a module's own route, the blog feed — is the same path under each language's
- * prefix. Where the entity has no row, or is not shown in that language, the link leads to that
- * language's home page and says so (`fallback`): a visitor who chose Polish should land on a
- * Polish page, not on a 404. Unlike `hreflang`, a page closed to the index still switches: the
+ * prefix. Where the entity has no row and its type shows it untranslated (ROUTING §8.7), the link
+ * leads to the same page under that language's prefix — the default language's words in the
+ * chosen language's frame. Where it has no row otherwise, or is not shown in that language, the
+ * link leads to that language's home page and says so (`fallback`): a visitor who chose Polish
+ * should land on a Polish page, not on a 404. Unlike `hreflang`, a page closed to the index still switches: the
  * reader is not a search engine.
  *
  * Nothing on a site with one language, without `webx-ui/routing` and `webx-ui/localization`
@@ -50,6 +53,7 @@ final class LanguageLinks
         private readonly Locales $locales,
         private readonly SiteUrl $site,
         private readonly Config $config,
+        private readonly Untranslated $untranslated,
     ) {}
 
     /** @return list<LanguageLink> */
@@ -119,6 +123,12 @@ final class LanguageLinks
             }
 
             $paths[$row->locale] = UrlNormaliser::join($this->site->prefix($row->locale), $row->path);
+        }
+
+        foreach ($this->locales->codes() as $code) {
+            if (! isset($paths[$code]) && ($untranslated = $this->untranslated->path($entity, $code)) !== null) {
+                $paths[$code] = $untranslated;
+            }
         }
 
         return $paths;

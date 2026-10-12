@@ -8,11 +8,12 @@
  * `fields[<field>]` — "Book" from a service's page arrives with the service — and the next
  * opener without it gets the field back as it was printed.
  *
- * `formDialog` — the dialog. The module's script shows the thank-you in place; here, once it
- * shows, the rest of the form steps aside and a button that closes the dialog takes its place
- * (`is-sent`): it never closes by itself, the visitor has to have time to read. Closed, the
- * dialog is a fresh form again. A dialog printed open — the page came back from it without
- * JavaScript, with its answer — is opened again as a modal.
+ * `formDialog` — the dialog around an inbox view a site published before W6.4 (an alias period:
+ * its own script, `[data-webx-message]`). Once that script shows the thank-you, the rest of the
+ * form steps aside and a button that closes the dialog takes its place (`is-sent`); closed, it is
+ * a fresh form again; printed open, it is opened again as a modal. The form of today is an
+ * <x-webx-form>, and form.js does all of that for it — here it finds no `[data-webx-message]`
+ * and leaves it alone.
  */
 
 import { listeners } from '../core.js'

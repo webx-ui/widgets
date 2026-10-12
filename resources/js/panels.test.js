@@ -242,6 +242,9 @@ describe('dropdown panel', () => {
   })
 })
 
+// The dialog around an inbox view published before W6.4 (the alias period): its own script shows the
+// thank-you in [data-webx-message], and the dialog steps the rest aside. Today's form is an
+// <x-webx-form>, and form.js does that for it (form.test.js, «in a dialog»).
 const formDialog = (open = false) => `
   <a id="call" href="#webx-form-callback" data-webx-form="callback">Request a call</a>
   <a id="book" href="#webx-form-callback" data-webx-form="callback" data-webx-form-value-service="12">Book</a>
@@ -299,7 +302,7 @@ describe('form in a dialog', () => {
     expect(service.value).toBe('')
   })
 
-  it('shows the thank-you with a button that closes it, and is a fresh form again after', async () => {
+  it('around a view of before W6.4, shows the thank-you with a button that closes it, and is a fresh form again after', async () => {
     await start(formDialog())
     const dialog = document.getElementById('webx-form-callback')
     const fields = dialog.querySelector('.wx-form__fields')

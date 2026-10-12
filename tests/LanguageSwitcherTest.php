@@ -12,8 +12,11 @@ use Illuminate\Support\Facades\Blade;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Localization\LocalizationServiceProvider;
 use WebxUi\NestedSet\NestedSetServiceProvider;
+use WebxUi\Routing\Formatters\Slug;
 use WebxUi\Routing\Models\Route;
 use WebxUi\Routing\Resolution;
+use WebxUi\Routing\RouteType;
+use WebxUi\Routing\RouteTypes;
 use WebxUi\Routing\RoutingServiceProvider;
 use WebxUi\Themes\ThemeServiceProvider;
 use WebxUi\Widgets\Tests\Fixtures\Doc;
@@ -76,10 +79,11 @@ final class LanguageSwitcherTest extends TestCase
         $this->assertStringContainsString('<nav class="webx-language-switcher webx-language-switcher--list" aria-label="Language">', $html);
         $this->assertStringContainsString('<a class="webx-language-switcher__link is-current" href="https://example.test/about-us" hreflang="en" lang="en" aria-current="page">', $html);
         $this->assertStringContainsString('<a class="webx-language-switcher__link" href="https://example.test/de/ueber-uns" hreflang="de" lang="de">', $html);
-        // Each language is named in itself.
+        // Each language is named in itself; the others are marked, to be set in the reader's font
+        // rather than download a script of the theme's for one word.
         $this->assertStringContainsString('<span class="webx-language-switcher__name">English</span>', $html);
-        $this->assertStringContainsString('<span class="webx-language-switcher__name">Deutsch</span>', $html);
-        $this->assertStringContainsString('<span class="webx-language-switcher__name">Polski</span>', $html);
+        $this->assertStringContainsString('<span class="webx-language-switcher__name is-other">Deutsch</span>', $html);
+        $this->assertStringContainsString('<span class="webx-language-switcher__name is-other">Polski</span>', $html);
         $this->assertSame(1, substr_count($html, 'aria-current'));
         $this->assertContains('language-switcher', app(Widgets::class)->claimed());
     }
@@ -99,6 +103,50 @@ final class LanguageSwitcherTest extends TestCase
         $this->assertSame(1, substr_count($html, 'is-fallback'));
         // The navigation is labelled in the page's language.
         $this->assertStringContainsString('aria-label="Sprache"', $html);
+    }
+
+    #[Test]
+    public function an_untranslated_page_of_a_type_that_shows_it_stays_on_the_page(): void
+    {
+        $this->showUntranslated();
+        $doc = $this->doc(['en' => 'about-us', 'de' => 'ueber-uns']);
+        $this->serve('/about-us', 'en', $doc);
+
+        $html = Blade::render('<x-webx-language-switcher layout="list" />');
+
+        // ROUTING §8.7: the same page under the Polish prefix, in the default language's words —
+        // not the Polish home page, and so not marked.
+        $this->assertStringContainsString('<a class="webx-language-switcher__link" href="https://example.test/pl/about-us" hreflang="pl" lang="pl">', $html);
+        $this->assertStringContainsString('href="https://example.test/de/ueber-uns" hreflang="de"', $html);
+        $this->assertStringNotContainsString('is-fallback', $html);
+    }
+
+    #[Test]
+    public function on_the_untranslated_page_itself_its_language_is_the_current_one(): void
+    {
+        $this->showUntranslated();
+        $doc = $this->doc(['en' => 'about-us', 'de' => 'ueber-uns']);
+        $this->serve('/pl/about-us', 'pl', $doc, rowLocale: 'en');
+
+        $html = Blade::render('<x-webx-language-switcher layout="list" />');
+
+        $this->assertStringContainsString('<a class="webx-language-switcher__link is-current" href="https://example.test/pl/about-us" hreflang="pl" lang="pl" aria-current="page">', $html);
+        $this->assertStringContainsString('<a class="webx-language-switcher__link" href="https://example.test/about-us" hreflang="en" lang="en">', $html);
+        $this->assertStringContainsString('href="https://example.test/de/ueber-uns" hreflang="de"', $html);
+        $this->assertStringNotContainsString('is-fallback', $html);
+    }
+
+    #[Test]
+    public function an_untranslated_page_hidden_in_the_default_language_still_leads_home(): void
+    {
+        $this->showUntranslated();
+        $doc = $this->doc(['en' => 'about-us', 'de' => 'ueber-uns']);
+        $doc->hiddenIn = ['en'];
+        $this->serve('/de/ueber-uns', 'de', $doc);
+
+        $html = Blade::render('<x-webx-language-switcher layout="list" />');
+
+        $this->assertStringContainsString('<a class="webx-language-switcher__link is-fallback" href="https://example.test/pl"', $html);
     }
 
     #[Test]
@@ -200,8 +248,14 @@ final class LanguageSwitcherTest extends TestCase
         return $doc;
     }
 
+    /** The docs as a type that shows its untranslated pages (ROUTING §8.7), the way pages do. */
+    private function showUntranslated(): void
+    {
+        app(RouteTypes::class)->register(new RouteType(type: 'doc', model: Doc::class, formatter: Slug::class, showsUntranslated: true));
+    }
+
     /** The request being answered, as the router and the registry's resolver leave it. */
-    private function serve(string $path, string $locale, ?Doc $doc = null, bool $fallback = false): void
+    private function serve(string $path, string $locale, ?Doc $doc = null, bool $fallback = false, ?string $rowLocale = null): void
     {
         $request = Request::create('https://example.test'.$path);
         $route = new LaravelRoute('GET', $doc !== null || $fallback ? '{fallbackPlaceholder}' : ltrim($path, '/'), static fn (): string => '');
@@ -209,8 +263,9 @@ final class LanguageSwitcherTest extends TestCase
         $request->setRouteResolver(static fn (): LaravelRoute => $route);
 
         if ($doc !== null) {
-            $row = Route::query()->forEntity($doc)->canonical()->where('locale', $locale)->firstOrFail();
-            $request->attributes->set(Resolution::ATTRIBUTE, new Resolution($row, '', null, $doc));
+            // A row of another language is what the resolver finds for an untranslated page.
+            $row = Route::query()->forEntity($doc)->canonical()->where('locale', $rowLocale ?? $locale)->firstOrFail();
+            $request->attributes->set(Resolution::ATTRIBUTE, new Resolution($row, '', null, $doc, $locale));
         }
 
         $this->app->instance('request', $request);

@@ -60,8 +60,12 @@
   padding: var(--site-space-4) var(--webx-dialog-padding) var(--webx-dialog-padding);
 }
 
-/* Without the runtime a link to #<id> shows the dialog over the page through :target. */
-html:not(.webx-js) .webx-dialog:target {
+/*
+ * Without the runtime a link to #<id> shows the dialog over the page through :target; a dialog
+ * printed open — the page came back from the form inside it (§6.4, §17.3) — stands there too.
+ */
+html:not(.webx-js) .webx-dialog:target,
+html:not(.webx-js) .webx-dialog[open] {
   display: block;
   position: fixed;
   inset: 0;

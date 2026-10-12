@@ -9,6 +9,8 @@ use PHPUnit\Framework\TestCase as PlainTestCase;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
+use WebxUi\Themes\Checks\CssCheck;
+use WebxUi\Themes\Checks\CssFinding;
 use WebxUi\Themes\Vocabulary;
 use WebxUi\Widgets\Widgets;
 
@@ -46,8 +48,14 @@ final class DistTest extends PlainTestCase
     /** Each of the small widgets of §14 with a file of its own: a table's shadows, back to top, share, counter, countdown, the notice bar. */
     private const int PAGE_TOOL_BUDGET = 2 * 1024;
 
-    /** Before and after, the table of contents and show more: 3 KB gzip each — a layout of their own as well as a few lines of script. */
+    /** Before and after, the table of contents, show more, the zoom and the fields of a form: 3 KB gzip each — a layout of their own as well as a few lines of script. */
     private const int CONTENT_WIDGET_BUDGET = 3 * 1024;
+
+    /** The shell of a form and, from W6.3, its checks in the browser: 8 KB gzip (§17.6), only where a form stands. */
+    private const int FORM_BUDGET = 8 * 1024;
+
+    /** Suggestions while typing (W6.5): the combobox and the panel's frame, 4 KB gzip — the HTML inside is the site's. */
+    private const int SUGGEST_BUDGET = 4 * 1024;
 
     private const array LOCALES = ['en', 'ru', 'uk', 'de', 'pl', 'fr', 'es', 'it', 'pt', 'tr'];
 
@@ -87,7 +95,7 @@ final class DistTest extends PlainTestCase
         ));
         sort($built);
 
-        $this->assertSame(['back-to-top.css', 'back-to-top.js', 'compare.css', 'compare.js', 'consent.css', 'consent.js', 'contacts.css', 'contacts.js', 'countdown.css', 'countdown.js', 'counter.css', 'counter.js', 'language-switcher.css', 'lightbox.css', 'lightbox.js', 'load-more.css', 'load-more.js', 'map.css', 'map.js', 'notice-bar.css', 'notice-bar.js', 'pagination.css', 'runtime.css', 'runtime.js', 'share.css', 'share.js', 'slider.css', 'slider.js', 'sources.json', 'table.css', 'table.js', 'toc.css', 'toc.js', 'video.css', 'video.js', 'zoom.css', 'zoom.js'], $built);
+        $this->assertSame(['back-to-top.css', 'back-to-top.js', 'compare.css', 'compare.js', 'consent.css', 'consent.js', 'contacts.css', 'contacts.js', 'countdown.css', 'countdown.js', 'counter.css', 'counter.js', 'field.css', 'field.js', 'files.css', 'files.js', 'form.css', 'form.js', 'language-switcher.css', 'lightbox.css', 'lightbox.js', 'load-more.css', 'load-more.js', 'map.css', 'map.js', 'mask.js', 'notice-bar.css', 'notice-bar.js', 'pagination.css', 'runtime.css', 'runtime.js', 'share.css', 'share.js', 'slider.css', 'slider.js', 'sources.json', 'suggest.css', 'suggest.js', 'table.css', 'table.js', 'toc.css', 'toc.js', 'video.css', 'video.js', 'zoom.css', 'zoom.js'], $built);
     }
 
     /**
@@ -107,11 +115,39 @@ final class DistTest extends PlainTestCase
     #[Test]
     public function the_content_widgets_stay_inside_their_budgets(): void
     {
-        foreach (['compare', 'toc', 'load-more', 'zoom'] as $widget) {
+        foreach (['compare', 'toc', 'load-more', 'zoom', 'field'] as $widget) {
             $size = self::gzipped("{$widget}.js") + self::gzipped("{$widget}.css");
 
             $this->assertLessThanOrEqual(self::CONTENT_WIDGET_BUDGET, $size, sprintf('%s is %.1f KB gzip.', $widget, $size / 1024));
         }
+    }
+
+    #[Test]
+    public function the_form_stays_inside_its_budget(): void
+    {
+        $size = self::gzipped('form.js') + self::gzipped('form.css');
+
+        $this->assertLessThanOrEqual(self::FORM_BUDGET, $size, sprintf('The form is %.1f KB gzip.', $size / 1024));
+
+        // The mask and the files are pieces of their own, claimed by the fields that need them
+        // (§17.6): a form with neither never loads them.
+        $this->assertLessThanOrEqual(self::CONTENT_WIDGET_BUDGET, self::gzipped('mask.js'), 'The phone mask is over its budget.');
+        $this->assertLessThanOrEqual(self::CONTENT_WIDGET_BUDGET, self::gzipped('files.js') + self::gzipped('files.css'), 'The files of a field are over their budget.');
+        $this->assertStringNotContainsString('mask', (string) file_get_contents(Widgets::path().'/dist/form.js'));
+    }
+
+    /**
+     * Suggestions while typing (W6.5): their own file, claimed by `<x-webx-suggest>` only — a page
+     * with a search box and no form does not load the form, nor a form the combobox.
+     */
+    #[Test]
+    public function the_suggestions_stay_inside_their_budget(): void
+    {
+        $size = self::gzipped('suggest.js') + self::gzipped('suggest.css');
+
+        $this->assertLessThanOrEqual(self::SUGGEST_BUDGET, $size, sprintf('The suggestions are %.1f KB gzip.', $size / 1024));
+        $this->assertStringNotContainsString('webx:suggest', (string) file_get_contents(Widgets::path().'/dist/form.js'));
+        $this->assertStringNotContainsString('webx:form', (string) file_get_contents(Widgets::path().'/dist/suggest.js'));
     }
 
     #[Test]
@@ -215,19 +251,27 @@ final class DistTest extends PlainTestCase
     }
 
     /**
-     * Site tokens of the vocabulary and the widgets' own `--webx-<name>-*`, declared here; no
-     * literal colour, no fallback in var(), no width @media, one flat class per rule.
+     * The rule of every stylesheet of the chain — the engine's check (THEMES §8): no literal
+     * colour or font, no token outside the vocabulary, no fallback in var(), no width @media.
+     * And the widgets' own on top: a variable is a site token or a `--webx-<name>-*` declared
+     * here, and a rule is one flat class.
      */
     #[Test]
     public function the_stylesheets_know_only_tokens(): void
     {
-        $vocabulary = Vocabulary::base();
         $stylesheets = [];
 
         foreach (array_keys(self::sources()) as $relative) {
             if (str_ends_with($relative, '.css')) {
-                $stylesheets[$relative] = (string) preg_replace('~/\*.*?\*/~s', '', (string) file_get_contents(Widgets::path().'/'.$relative));
+                $stylesheets[$relative] = (string) file_get_contents(Widgets::path().'/'.$relative);
             }
+        }
+
+        foreach ($stylesheets as $relative => $css) {
+            $findings = array_map(static fn (CssFinding $finding): string => "{$relative}:{$finding->line} {$finding->message()}", CssCheck::check($css, Vocabulary::base()));
+            $this->assertSame([], $findings);
+
+            $stylesheets[$relative] = (string) preg_replace('~/\*.*?\*/~s', '', $css);
         }
 
         preg_match_all('/(--webx-[a-z0-9-]+)\s*:/', implode("\n", $stylesheets), $declared);
@@ -240,14 +284,12 @@ final class DistTest extends PlainTestCase
                     $this->assertContains("--{$variable}", $declared[1], "{$relative}: --{$variable} is declared nowhere.");
                 } else {
                     $this->assertStringStartsWith('site-', $variable, "{$relative}: --{$variable} is neither a site token nor a widget's own.");
-                    $this->assertTrue($vocabulary->has(substr($variable, 5)), "{$relative}: --{$variable} is not in the vocabulary.");
                 }
 
-                $this->assertSame(')', $after, "{$relative}: var(--{$variable}, …) has a fallback that no preset repaints.");
+                // Stricter than the engine, which lets a block's own variable keep a default: a
+                // widget declares every one of its own, so a fallback here has nothing to fall to.
+                $this->assertSame(')', $after, "{$relative}: var(--{$variable}, …) has a fallback.");
             }
-
-            $this->assertDoesNotMatchRegularExpression('/#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch)\(/i', $css, "{$relative}: a literal colour.");
-            $this->assertDoesNotMatchRegularExpression('/@media[^{]*width/i', $css, "{$relative}: width is the container's to decide (@container).");
 
             preg_match_all('/(?:^|[;{}])\s*([^;{}@]+?)\s*\{/', $css, $rules);
 

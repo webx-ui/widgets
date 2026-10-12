@@ -1,0 +1,197 @@
+/*
+ * Suggestions while typing (spec §18, W6.5): the field and its button in one row, the panel under
+ * them as wide as the box, never wider than the screen and never longer than the room above the
+ * keyboard (the script measures it into --webx-suggest-room). What is inside the panel is the
+ * site's HTML; the shell styles only what it marks — sections, headings, options, the line of
+ * «nothing found» — so a site's own classes on its cards are left alone. One flat class per rule
+ * (THEMES §8).
+ */
+
+:where(:root) {
+  --webx-suggest-height: 44px;
+  --webx-suggest-radius: var(--site-radius-md);
+  --webx-suggest-border: var(--site-color-border);
+  --webx-suggest-bg: var(--site-color-bg);
+  --webx-suggest-focus: var(--site-color-accent);
+  --webx-suggest-panel-bg: var(--site-color-surface);
+  --webx-suggest-panel-shadow: var(--site-shadow-md);
+  --webx-suggest-active-bg: var(--site-color-surface-muted);
+  --webx-suggest-max: 32rem;
+  --webx-suggest-room: 70vh;
+  --webx-suggest-z: 30;
+}
+
+.webx-suggest {
+  min-width: 0;
+  margin: 0;
+}
+
+/* The label is the field's name for a screen reader; shown when the component asks. */
+.webx-suggest__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.webx-suggest__label.webx-suggest__label--shown {
+  position: static;
+  display: block;
+  width: auto;
+  height: auto;
+  margin-block-end: var(--site-space-1);
+  overflow: visible;
+  clip-path: none;
+  color: var(--site-color-text);
+  font-weight: 600;
+  white-space: normal;
+}
+
+.webx-suggest__box {
+  position: relative;
+  display: flex;
+  min-width: 0;
+}
+
+.webx-suggest__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-block-size: var(--webx-suggest-height);
+  margin: 0;
+  padding: var(--site-space-2) var(--site-space-3);
+  border: 1px solid var(--webx-suggest-border);
+  border-start-start-radius: var(--webx-suggest-radius);
+  border-end-start-radius: var(--webx-suggest-radius);
+  border-start-end-radius: 0;
+  border-end-end-radius: 0;
+  background: var(--webx-suggest-bg);
+  color: var(--site-color-text);
+  font: inherit;
+  font-size: var(--site-font-size-base);
+}
+
+/* Inside another form there is no button beside it. */
+.webx-suggest__input.webx-suggest__input--alone {
+  border-radius: var(--webx-suggest-radius);
+}
+
+.webx-suggest__input:focus-visible {
+  outline: 2px solid var(--webx-suggest-focus);
+  outline-offset: -1px;
+}
+
+.webx-suggest__submit {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: var(--webx-suggest-height);
+  min-block-size: var(--webx-suggest-height);
+  margin: 0;
+  padding: 0 var(--site-space-3);
+  border: 1px solid var(--webx-suggest-focus);
+  border-start-end-radius: var(--webx-suggest-radius);
+  border-end-end-radius: var(--webx-suggest-radius);
+  border-start-start-radius: 0;
+  border-end-start-radius: 0;
+  background: var(--webx-suggest-focus);
+  color: var(--site-color-accent-contrast);
+  font: inherit;
+  cursor: pointer;
+}
+
+.webx-suggest__submit:focus-visible {
+  outline: 2px solid var(--webx-suggest-focus);
+  outline-offset: 2px;
+}
+
+/* The magnifier says it; the words are the button's name. */
+.webx-suggest__submit-text {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.webx-suggest__panel {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: calc(100% + var(--site-space-1));
+  z-index: var(--webx-suggest-z);
+  max-block-size: min(var(--webx-suggest-max), var(--webx-suggest-room));
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: var(--site-space-2) 0;
+  border: 1px solid var(--webx-suggest-border);
+  border-radius: var(--webx-suggest-radius);
+  background: var(--webx-suggest-panel-bg);
+  box-shadow: var(--webx-suggest-panel-shadow);
+  color: var(--site-color-text);
+}
+
+.webx-suggest__panel[hidden] {
+  display: none;
+}
+
+.webx-suggest__section {
+  padding-block: var(--site-space-1);
+  border-block-start: 1px solid var(--webx-suggest-border);
+}
+
+.webx-suggest__section:first-child {
+  border-block-start: 0;
+}
+
+.webx-suggest__heading {
+  margin: 0;
+  padding: var(--site-space-1) var(--site-space-3);
+  color: var(--site-color-text-muted);
+  font-size: var(--site-font-size-6);
+  font-weight: 600;
+}
+
+/* A finger's height, a pointer, and the option chosen by keys painted the same as under the mouse. */
+.webx-suggest__option {
+  display: block;
+  min-block-size: var(--webx-suggest-height);
+  padding: var(--site-space-2) var(--site-space-3);
+  color: inherit;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.webx-suggest__option:hover {
+  background: var(--webx-suggest-active-bg);
+}
+
+.webx-suggest__option[aria-selected='true'] {
+  background: var(--webx-suggest-active-bg);
+  box-shadow: inset 3px 0 0 var(--webx-suggest-focus);
+}
+
+.webx-suggest__clear {
+  color: var(--site-color-text-muted);
+  font-size: var(--site-font-size-6);
+}
+
+.webx-suggest__empty {
+  margin: 0;
+  padding: var(--site-space-2) var(--site-space-3);
+  color: var(--site-color-text-muted);
+}
+
+/* Read by a screen reader: how many came, or that nothing did. */
+.webx-suggest__status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

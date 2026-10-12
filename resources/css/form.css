@@ -1,0 +1,114 @@
+/*
+ * The shell of a form (spec §17.3): the fields one under another, the button a finger can hit,
+ * and the places of the answer under them. The message and the alert are empty until there is
+ * something to say and take no room then, so nothing on the page moves before the answer; the
+ * button keeps its size while held back. The live regions themselves have no box: what they say
+ * comes in one (__answer, __refusals). One flat class per rule (THEMES §8).
+ */
+
+:where(:root) {
+  --webx-form-gap: var(--site-space-4);
+  --webx-form-button-height: 44px;
+}
+
+.webx-form {
+  min-width: 0;
+}
+
+.webx-form__body {
+  display: grid;
+  gap: var(--webx-form-gap);
+  min-width: 0;
+}
+
+.webx-form__body[hidden] {
+  display: none;
+}
+
+.webx-form__submit {
+  justify-self: start;
+  max-width: 100%;
+  min-height: var(--webx-form-button-height);
+  margin: 0;
+  padding: var(--site-space-2) var(--site-space-5);
+  border: 0;
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-accent);
+  color: var(--site-color-accent-contrast);
+  font: inherit;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.webx-form__submit:focus-visible {
+  outline: 2px solid var(--site-color-accent);
+  outline-offset: 2px;
+}
+
+/* Held back while the form is on its way: the same size, so nothing moves. */
+.webx-form__submit[aria-disabled='true'] {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+.webx-form__progress {
+  display: block;
+  width: 100%;
+  margin-block-start: var(--site-space-3);
+  accent-color: var(--site-color-accent);
+}
+
+.webx-form__progress[hidden] {
+  display: none;
+}
+
+/* The answer and the refusals are boxes inside the live regions: an empty region takes no room. */
+.webx-form__answer {
+  margin-block-start: var(--site-space-4);
+  padding: var(--site-space-3) var(--site-space-4);
+  border-inline-start: 4px solid var(--site-color-accent);
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-surface);
+  color: var(--site-color-text);
+}
+
+.webx-form__heading {
+  margin: 0;
+  font-weight: 700;
+}
+
+.webx-form__refusal {
+  margin: 0;
+}
+
+.webx-form__text {
+  overflow-wrap: anywhere;
+}
+
+.webx-form__refusals {
+  margin-block-start: var(--site-space-4);
+  padding: var(--site-space-3) var(--site-space-4);
+  border-inline-start: 4px solid var(--site-color-danger);
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-surface);
+  color: var(--site-color-danger);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.webx-form__done {
+  min-height: var(--webx-form-button-height);
+  margin-block-start: var(--site-space-4);
+  padding: 0 var(--site-space-5);
+  border: 0;
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-accent);
+  color: var(--site-color-accent-contrast);
+  font: inherit;
+  cursor: pointer;
+}
+
+.webx-form__done[hidden] {
+  display: none;
+}

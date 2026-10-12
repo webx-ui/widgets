@@ -117,6 +117,16 @@ export default {
         'notice-bar': join(root, 'resources/js/notice-bar.js'),
         // A picture magnified under the mouse or two fingers; the keyboard's way in is the lightbox.
         zoom: join(root, 'resources/js/zoom.js'),
+        // The fields of a form: Show on a password, the line beside a file — the rest is HTML.
+        field: join(root, 'resources/js/field.js'),
+        // The shell of a form: sending in place, the errors of a 422 by field, the answer.
+        form: join(root, 'resources/js/form.js'),
+        // The files of a field: dropping, the list with sizes and previews, removing before sending.
+        files: join(root, 'resources/js/files.js'),
+        // The phone mask, only where a field asks for it: +country code and groups of digits.
+        mask: join(root, 'resources/js/mask.js'),
+        // Suggestions while typing: the combobox over a GET search; the panel's HTML is the site's.
+        suggest: join(root, 'resources/js/suggest.js'),
       },
       output: {
         entryFileNames: '[name].js',

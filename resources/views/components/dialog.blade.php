@@ -4,9 +4,13 @@
     whatever opened it. Without JavaScript `#{{ $id }}` shows it through `:target`, and the close
     link `#` drops the target.
 
+    A form inside it (<x-webx-form>) that the page came back from without JavaScript — its
+    thank-you or its errors — prints the dialog open: over the page without the runtime, opened
+    again as a modal with it (spec §17.3).
+
     Classes: webx-dialog, __header, __title, __close, __body.
 --}}
-<dialog {{ $attributes->class(['webx-dialog'])->merge(['id' => $id, 'aria-labelledby' => $title !== null ? $id.'-title' : null]) }}>
+<dialog {{ $attributes->class(['webx-dialog'])->merge(['id' => $id, 'aria-labelledby' => $title !== null ? $id.'-title' : null]) }}@if (str_contains((string) $slot, 'data-webx-returned')) open @endif>
     <div class="webx-dialog__header">
         @if ($title !== null)
             <h2 class="webx-dialog__title" id="{{ $id }}-title">{{ $title }}</h2>

@@ -112,16 +112,20 @@ final class FormDialogTest extends TestCase
 
         // In the dialog: the module's own form, placed `modal`, under the form's title.
         $this->assertStringContainsString('<h2 class="webx-dialog__title webx-form-dialog__title" id="webx-form-callback-title">Request a call</h2>', $html);
-        $this->assertMatchesRegularExpression('~<form[^>]*data-webx-form="callback"[^>]*class="wx-form wx-form--modal"~', $html);
+        // An <x-webx-form>: in a dialog the shell shows the thank-you in place of the fields, with its Close.
+        $this->assertMatchesRegularExpression('~<form id="webx-inbox-callback"[^>]*data-webx-send=""[^>]*class="webx-form webx-inbox-form webx-inbox-form--modal" data-webx-form="callback"~', $html);
         $this->assertStringContainsString('<input type="hidden" name="webx_placement" value="modal">', $html);
-        $this->assertStringContainsString('data-webx-dialog-close hidden>Close</button>', $html);
+        $this->assertStringContainsString('<button type="button" class="webx-form__done" data-webx-dialog-close hidden>Close</button>', $html);
+        // The dialog's own Close is only for a view published before W6.4.
+        $this->assertStringNotContainsString('webx-form-dialog__done', $html);
 
         // After the page, before the scripts; the form on the page itself keeps its plain ids.
         $this->assertLessThan(strrpos($html, '</body>'), strrpos($html, '</dialog>'));
         $this->assertGreaterThan(strpos($html, 'No such form'), strpos($html, '<dialog id="webx-form-callback"'));
-        $this->assertStringContainsString('id="wx-form-contact-name"', $html);
-        $this->assertStringContainsString('id="wx-form-contact-2-name"', $html);
-        $this->assertSame(1, substr_count($html, '/inbox.js'));
+        $this->assertStringContainsString('id="webx-inbox-contact-name"', $html);
+        $this->assertStringContainsString('id="webx-inbox-contact-2-name"', $html);
+        // Sending is the widgets' form.js; the inbox's script comes only with a captcha.
+        $this->assertStringNotContainsString('/inbox.js', $html);
         $this->assertStringNotContainsString(' open>', $html);
     }
 
@@ -162,24 +166,34 @@ final class FormDialogTest extends TestCase
         // redirect — the flash is on its last request, and the session drops it when it saves,
         // before the whole response is handled. The dialog is printed before that.
         $html = (string) $this->withSession([
-            'webx-inbox' => ['ok' => true, 'form' => 'callback', 'heading' => 'We will call you', 'message' => null],
-            '_flash' => ['old' => ['webx-inbox'], 'new' => []],
+            'webx-form' => ['form' => 'webx-inbox-callback', 'heading' => 'We will call you', 'message' => null, 'html' => null],
+            '_flash' => ['old' => ['webx-form'], 'new' => []],
         ])->get('/page')->getContent();
 
         $this->assertMatchesRegularExpression('~<dialog id="webx-form-callback"[^>]* open>~', $html);
         $this->assertDoesNotMatchRegularExpression('~<dialog id="webx-form-contact"[^>]* open>~', $html);
-        $this->assertMatchesRegularExpression('~<dialog id="webx-form-callback".*data-webx-message-heading>We will call you<~s', $html);
-        $this->assertFalse(app('session.store')->has('webx-inbox'));
+        $this->assertMatchesRegularExpression('~<dialog id="webx-form-callback".*<p class="webx-form__heading">We will call you</p>~s', $html);
+        $this->assertFalse(app('session.store')->has('webx-form'));
 
         // Refused: the errors come back to the dialog the form was sent from.
         $html = (string) $this->withSession([
-            '_old_input' => ['webx_form' => 'callback', 'webx_placement' => 'modal', 'fields' => ['name' => '']],
+            '_old_input' => ['_webx_form' => 'webx-inbox-callback', 'webx_form' => 'callback', 'webx_placement' => 'modal', 'fields' => ['name' => '']],
             'errors' => (new ViewErrorBag)->put('default', new MessageBag(['fields.name' => ['Name is required.']])),
             '_flash' => ['old' => ['_old_input', 'errors'], 'new' => []],
         ])->get('/page')->getContent();
 
         $this->assertMatchesRegularExpression('~<dialog id="webx-form-callback"[^>]* open>~', $html);
         $this->assertMatchesRegularExpression('~<dialog id="webx-form-callback".*is-invalid.*Name is required\.~s', $html);
+
+        // The same form on the page and in its dialog: only the one sent opens.
+        $html = (string) $this->withSession([
+            '_old_input' => ['_webx_form' => 'webx-inbox-contact', 'webx_form' => 'contact', 'fields' => ['name' => '']],
+            'errors' => (new ViewErrorBag)->put('default', new MessageBag(['fields.name' => ['Name is required.']])),
+            '_flash' => ['old' => ['_old_input', 'errors'], 'new' => []],
+        ])->get('/page')->getContent();
+
+        $this->assertDoesNotMatchRegularExpression('~<dialog id="webx-form-contact"[^>]* open>~', $html);
+        $this->assertSame(1, substr_count($html, '>Name is required.</p>'));
 
         // The next page is a page like any other.
         $this->assertStringNotContainsString(' open>', (string) $this->get('/page')->getContent());

@@ -71,4 +71,11 @@ return [
     'audit' => [
         'third-party' => [],
     ],
+
+    /*
+     * Where the package's own routes live (spec §17.3): `GET <path>/csrf` hands a form whose
+     * page was cached with a stale token a fresh one, and while the demo is on the site
+     * `POST <path>/showcase` answers the forms of its kitchen sink.
+     */
+    'path' => 'webx/widgets',
 ];

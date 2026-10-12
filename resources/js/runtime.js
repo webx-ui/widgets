@@ -46,6 +46,9 @@ if (typeof webx.widget !== 'function') {
     unmount(root)
   }
 
+  // A dialog opened by a script of another file — a form that came back inside one (§17.3).
+  webx.openDialog = openDialog
+
   webx.widget('disclosure', '[data-webx-disclosure]', disclosure)
   webx.widget('dialog', '[data-webx-dialog]', dialog)
   webx.widget('tabs', '[data-webx-tabs]', tabs)

@@ -57,6 +57,15 @@
   font-weight: 600;
 }
 
+/*
+ * Another language's own name, in its own script, is set in the reader's font. In the theme's it
+ * would cost a whole script per page for one word: a font split by unicode-range downloads its
+ * Cyrillic file for «Русский» on every English page.
+ */
+.webx-language-switcher__name.is-other {
+  font-family: system-ui, sans-serif;
+}
+
 /* No translation of this page: the link leads to that language's home page. */
 .webx-language-switcher__link.is-fallback {
   color: var(--webx-language-switcher-fallback-color);

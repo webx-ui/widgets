@@ -190,6 +190,80 @@ nothing. Closed, it stays closed by the version of its words — a new text come
 everybody — and a closed bar is hidden by a line in the head before the page is painted. It stands
 in the flow, so the sticky header measures what it always did.
 
+## Fields of a form
+
+```blade
+<x-webx-field type="email" name="fields.email" label="Email" required />
+<x-webx-field type="radio" name="delivery" label="Delivery" :choices="$methods" inline />
+<x-webx-field type="consent" name="terms" required>I agree to <a href="/terms">the terms</a></x-webx-field>
+```
+
+One markup for every form of the site: `text`, `email`, `tel`, `url`, `password` (with Show),
+`number`, `textarea`, `select`, `radio`, `checkbox` (a group with `:choices`, one tick without),
+`consent`, `date`, `file`, `hidden`. The value is `old($name)` and the error
+`$errors->first($name)`; a dotted name is sent with brackets (`fields[email]`) and its error found
+by the dots, so a form posted without JavaScript comes back with each error under its field.
+`autocomplete`, `inputmode` and `enterkeyhint` default by type. The error is described
+(`aria-describedby`) and `aria-invalid`; a group is a `<fieldset>` with a `<legend>`.
+
+## The form
+
+```blade
+<x-webx-form :action="route('login')" class="sign-in">
+    <x-webx-field type="email" name="email" :label="__('auth.email')" required />
+    <x-webx-field type="password" name="password" :label="__('auth.password')" required />
+    <x-webx-form.submit>{{ __('auth.sign_in') }}</x-webx-form.submit>
+</x-webx-form>
+```
+
+```php
+return FormResponse::redirect(route('account'));            // or ::message($heading, $html), ::html($view), ::ok()
+```
+
+`@csrf` and `@method` are printed by the form (`:csrf="false"` for a door that guards itself).
+Without JavaScript it is a plain POST and the page comes back with the errors under the fields or
+the answer in place. With it (`dist/form.js`, only where a form stands) the same form is sent in
+place: the token from the XSRF-TOKEN cookie and one retry with a fresh one on a 419
+(`GET webx/widgets/csrf`), the errors of a 422 into their fields and the rest into the form's
+alert, no second submission while the first is on its way, the answer in a live region, files
+with progress. `FormResponse` answers JSON to the script and a redirect to the plain POST, so a
+controller writes one line. A module hooks `webx:form:submit` (cancelable), `webx:form:success`
+and `webx:form:error` on the form.
+
+## Checks in the browser
+
+```blade
+<x-webx-form :action="route('checkout.contact')" :rules="FormRules::for($rules, $attributes)">
+    <x-webx-field type="tel" name="contact.phone" :label="__('checkout.phone')" mask />
+    <x-webx-field type="file" name="documents" :label="__('checkout.documents')" multiple />
+</x-webx-form>
+```
+
+The rules are the ones the controller validates by, written once. `FormRules` hands each field its
+part: the checks a browser can run — `required`, `email`, a length, a number, `regex`, `in`, a
+file's type and size, `confirmed`, a literal date — each with the line Laravel's validator writes
+when it fails, asked of the validator itself in the page's language. So the browser says exactly
+what the server would; `unique`, `exists` and closures stay the server's. A touched field is
+checked when it is left and every field on submit; the browser's own bubbles are off while the
+script runs. `mask` on a phone field puts the number in international form (`+48 512 345 678`)
+without refusing a paste or an autofill; a file field takes files dropped on it, lists them with
+their size and a preview, and lets one go before sending. The guide:
+https://webx-ui.github.io/webx-ui/guide/forms.
+
+## Suggestions while typing
+
+```blade
+<x-webx-suggest :action="route('webx.catalog.search')" :source="route('webx.catalog.suggest')" :recent="5" />
+```
+
+A search box that asks the site as the visitor types. Without JavaScript it is a GET search to
+the results page; with it, an ARIA combobox over the HTML the site answers — its own sections,
+counts and cards — where `data-webx-option` marks what can be chosen and `data-webx-section` with a
+`data-webx-heading` a group. Arrows, Home/End, Enter, Escape; the stale request is aborted;
+recent searches in the browser with `:recent`. Without `action` it is a field to put inside another
+form: a value chosen fills it. `module-catalog` answers at `/catalog/suggest`. The guide:
+https://webx-ui.github.io/webx-ui/guide/forms#suggestions-while-typing.
+
 ## Blocks
 
 On a site with `webx-ui/module-blocks` and `webx-ui/module-media` the package offers eight block

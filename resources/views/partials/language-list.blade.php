@@ -5,7 +5,7 @@
                 @if ($codes)
                     <span class="webx-language-switcher__code">{{ strtoupper($link->tag()) }}</span>
                 @endif
-                <span class="webx-language-switcher__name">{{ $link->name }}</span>
+                <span @class(['webx-language-switcher__name', 'is-other' => ! $link->current])>{{ $link->name }}</span>
             </a>
         </li>
     @endforeach
