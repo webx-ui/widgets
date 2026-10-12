@@ -14,6 +14,7 @@ return [
     'toc-target' => 'Indice che non porta da nessuna parte: :count',
     'load-more-link' => '«Mostra altro» senza link alla pagina successiva: :count',
     'zoom-link' => 'Zoom senza link: :count',
+    'form-script' => 'Moduli senza il loro script: :count',
     'on' => 'Acceso',
     'off' => 'Spento',
 ];

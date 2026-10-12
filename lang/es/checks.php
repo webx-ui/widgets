@@ -70,5 +70,11 @@ return [
             'why' => 'El teclado y los lectores de pantalla no tienen paso del ratón: el enlace a la imagen, abierto en el visor, es su única forma de verla de cerca.',
             'fix' => 'La vista del paquete convierte la imagen en un enlace al original: una sobrescritura de webx-widgets::components.zoom en el tema lo perdió, o data-webx-zoom está en una imagen sin enlace. Ponga el atributo en el enlace del visor de la imagen o quite la sobrescritura.',
         ],
+        'form_script' => [
+            'title' => 'Un formulario sin su script',
+            'found' => 'Un formulario que se envía en el sitio está en una página que no carga form.js: recarga la página para responder y solo lo comprueba el servidor.',
+            'why' => 'Sin el script, el visitante espera una página entera, pierde el punto hasta el que se había desplazado y se entera de un error solo después de enviar.',
+            'fix' => 'La plantilla imprime los scripts con @webxTheme, o en un sitio sin tema con @webxWidgets antes de </body>; después php artisan webx:theme:sync. Un sitio que empaqueta los scripts por su cuenta puede ignorarlo.',
+        ],
     ],
 ];

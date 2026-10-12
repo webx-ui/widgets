@@ -28,6 +28,7 @@ use WebxUi\Widgets\Audit\BeforeConsent;
 use WebxUi\Widgets\Audit\CompareRange;
 use WebxUi\Widgets\Audit\ContactBoth;
 use WebxUi\Widgets\Audit\CounterNumber;
+use WebxUi\Widgets\Audit\FormScript;
 use WebxUi\Widgets\Audit\LightboxSize;
 use WebxUi\Widgets\Audit\LoadMoreLink;
 use WebxUi\Widgets\Audit\SliderPause;
@@ -128,6 +129,10 @@ class WidgetsServiceProvider extends ServiceProvider
         $this->registerAudit();
 
         $this->app->make(BottomLayers::class)->add(Widgets::NAME, Widgets::path());
+
+        // The scripts of the widgets for a layout without `@webxTheme` — a site without a theme
+        // whose forms should still send in place. Under a theme it adds nothing.
+        Blade::directive('webxWidgets', static fn (): string => Widgets::SCRIPTS);
 
         Blade::component('webx-dialog', Dialog::class);
         Blade::component('webx-tabs', Tabs::class);
@@ -264,7 +269,7 @@ class WidgetsServiceProvider extends ServiceProvider
 
         $checks = $this->app->make(AuditChecks::class);
 
-        foreach ([new BeforeConsent, new BannerOff, new LightboxSize, new SliderPause, new ContactBoth, new VideoPause, new CounterNumber, new CompareRange, new TocTarget, new LoadMoreLink, new ZoomLink] as $check) {
+        foreach ([new BeforeConsent, new BannerOff, new LightboxSize, new SliderPause, new ContactBoth, new VideoPause, new CounterNumber, new CompareRange, new TocTarget, new LoadMoreLink, new ZoomLink, new FormScript] as $check) {
             $checks->register($check);
         }
 
@@ -283,6 +288,6 @@ class WidgetsServiceProvider extends ServiceProvider
         $type = (string) $response->headers->get('Content-Type', '');
         $content = $response->getContent();
 
-        return ($type === '' || str_contains($type, 'html')) && is_string($content) && str_contains($content, Widgets::MARKER);
+        return ($type === '' || str_contains($type, 'html')) && is_string($content) && Widgets::marked($content);
     }
 }

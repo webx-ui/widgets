@@ -14,6 +14,7 @@ return [
     'toc-target' => 'Spis treści prowadzi donikąd: :count',
     'load-more-link' => '„Pokaż więcej” bez linku do następnej strony: :count',
     'zoom-link' => 'Powiększenie bez linku: :count',
+    'form-script' => 'Formularze bez swojego skryptu: :count',
     'on' => 'Wł.',
     'off' => 'Wył.',
 ];

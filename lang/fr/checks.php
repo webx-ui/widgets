@@ -70,5 +70,11 @@ return [
             'why' => 'Le clavier et les lecteurs d’écran n’ont pas de survol : le lien vers l’image, ouvert dans la visionneuse, est leur seul moyen de la voir de plus près.',
             'fix' => 'La vue du paquet fait de l’image un lien vers l’original : une surcharge de webx-widgets::components.zoom dans le thème l’a perdu, ou data-webx-zoom est écrit sur une image nue. Placez l’attribut sur le lien de visionneuse de l’image, ou retirez la surcharge.',
         ],
+        'form_script' => [
+            'title' => 'Un formulaire sans son script',
+            'found' => 'Un formulaire qui s’envoie sur place se trouve sur une page qui ne charge pas form.js : il recharge la page pour répondre et seul le serveur le vérifie.',
+            'why' => 'Sans le script, le visiteur attend une page entière, perd l’endroit où il avait défilé et n’apprend une erreur qu’après l’envoi.',
+            'fix' => 'La mise en page imprime les scripts avec @webxTheme, ou sur un site sans thème avec @webxWidgets avant </body> ; puis php artisan webx:theme:sync. Un site qui regroupe lui-même les scripts peut l’ignorer.',
+        ],
     ],
 ];

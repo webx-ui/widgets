@@ -14,6 +14,7 @@ return [
     'toc-target' => 'Table of contents links to nowhere: :count',
     'load-more-link' => 'Show more without a link to the next page: :count',
     'zoom-link' => 'Zoom without a link: :count',
+    'form-script' => 'Forms without their script: :count',
     'on' => 'On',
     'off' => 'Off',
 ];

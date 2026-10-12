@@ -70,5 +70,11 @@ return [
             'why' => 'Klavye ve ekran okuyucuların üzerine gelme hareketi yoktur: görsele giden ve görüntüleyicide açılan bağlantı, onu yakından görmenin tek yoludur.',
             'fix' => 'Paketin görünümü görseli orijinale bağlantı yapar: temadaki webx-widgets::components.zoom geçersiz kılması bunu kaybetti ya da data-webx-zoom çıplak bir görsele yazıldı. Özniteliği görselin görüntüleyici bağlantısına koyun veya geçersiz kılmayı kaldırın.',
         ],
+        'form_script' => [
+            'title' => 'Betiği olmayan bir form',
+            'found' => 'Yerinde gönderilen bir form, form.js yüklemeyen bir sayfada duruyor: yanıt vermek için sayfayı yeniden yükler ve onu yalnızca sunucu denetler.',
+            'why' => 'Betik olmadan ziyaretçi koca bir sayfayı bekler, kaydırdığı yeri kaybeder ve bir hatayı ancak gönderdikten sonra öğrenir.',
+            'fix' => 'Betikleri düzen yazdırır: @webxTheme ile, temasız bir sitede ise </body> öncesine @webxWidgets ile; ardından php artisan webx:theme:sync. Betikleri kendisi paketleyen bir site bunu yok sayabilir.',
+        ],
     ],
 ];

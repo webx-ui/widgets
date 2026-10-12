@@ -30,12 +30,20 @@ use WebxUi\Widgets\View\Components\Zoom;
  * the spot. So the head holds a marker, and the response is finished once the whole page has
  * rendered — every claim known — by `finish()`: the marker becomes the stylesheets, the scripts
  * go before `</body>`. A page rendered outside a request keeps the marker, an HTML comment.
+ *
+ * A site without a theme has no `@webxTheme` to print, and stylesheets made of a theme's tokens
+ * would be of no use to it — but `<x-webx-form>` needs its scripts to send in place and to check
+ * in the browser. Its layout writes `@webxWidgets`, which prints `SCRIPTS`: the page is finished
+ * the same way, with the scripts and without a stylesheet or the consent banner.
  */
 final class Widgets implements HeadPart
 {
     public const string NAME = 'webx-ui/widgets';
 
     public const string MARKER = '<!--webx-widgets-->';
+
+    /** What `@webxWidgets` prints: the scripts only, for a site without a theme. */
+    public const string SCRIPTS = '<!--webx-widgets:scripts-->';
 
     /** The behaviours inside the runtime: claiming one is allowed and loads nothing more. */
     public const array RUNTIME = ['disclosure', 'dialog', 'tabs', 'accordion', 'mobile-menu', 'header', 'dropdown', 'form-dialog', 'reveal'];
@@ -123,15 +131,27 @@ final class Widgets implements HeadPart
         return self::MARKER;
     }
 
+    /** Whether the page has either marker — `@webxTheme`'s or `@webxWidgets`'. */
+    public static function marked(string $html): bool
+    {
+        return str_contains($html, self::MARKER) || str_contains($html, self::SCRIPTS);
+    }
+
     /**
      * The page with the marker replaced by the stylesheets and the scripts placed before
-     * `</body>`. A page without the marker — no `@webxTheme` — is left as it is.
+     * `</body>`. A page with neither `@webxTheme` nor `@webxWidgets` is left as it is. With
+     * `@webxWidgets` alone it gets the scripts and no stylesheet: those are made of a theme's
+     * tokens, which a site without a theme does not have.
      */
     public function finish(string $html): string
     {
-        if (! str_contains($html, self::MARKER)) {
+        if (! self::marked($html)) {
             return $html;
         }
+
+        // A layout with both gets the theme's head; `@webxWidgets` then adds nothing.
+        $styled = str_contains($html, self::MARKER);
+        $html = str_replace(self::SCRIPTS, '', $html);
 
         // A response that never went through the router has not had its dialogs yet.
         $html = $this->withDialogs($html);
@@ -150,12 +170,16 @@ final class Widgets implements HeadPart
             [$html] = Contents::fill($html, static fn (array $list): string => view('webx-widgets::toc', $list)->render(), app()->getLocale());
         }
 
-        $at = (int) strpos($html, self::MARKER);
         $styles = [];
         $scripts = [];
 
-        if ($this->assets->current($this->layer()) === null) {
-            $styles[] = $this->config->get('app.debug') ? '<!-- webx-widgets: not published: php artisan webx:theme:sync -->' : '';
+        if ($this->assets->current($this->layer()) === null && $this->config->get('app.debug')) {
+            // Without a theme there are no stylesheets to stand in for: the hint goes with the scripts.
+            if ($styled) {
+                $styles[] = '<!-- webx-widgets: not published: php artisan webx:theme:sync -->';
+            } else {
+                $scripts[] = '<!-- webx-widgets: not published: php artisan webx:theme:sync -->';
+            }
         }
 
         // An announcement bar the visitor closed is hidden before the body is painted (§14): its
@@ -169,7 +193,8 @@ final class Widgets implements HeadPart
         $bottom = '';
 
         // Unpublished, its script could not answer: no banner, as no stylesheet.
-        if ($this->url('consent', 'js') !== null) {
+        // Not without a theme: an unstyled banner across the page would be worse than none.
+        if ($styled && $this->url('consent', 'js') !== null) {
             $this->need('consent');
             $bottom = $this->consent->render($html)."\n";
 
@@ -204,7 +229,10 @@ final class Widgets implements HeadPart
         }
 
         // The first marker takes the stylesheets; a second `@webxTheme` on the page prints nothing twice.
-        $html = substr($html, 0, $at).implode("\n", array_filter($styles)).str_replace(self::MARKER, '', substr($html, $at + strlen(self::MARKER)));
+        if ($styled) {
+            $at = (int) strpos($html, self::MARKER);
+            $html = substr($html, 0, $at).implode("\n", array_filter($styles)).str_replace(self::MARKER, '', substr($html, $at + strlen(self::MARKER)));
+        }
 
         if ($scripts === [] && $bottom === '') {
             return $html;
@@ -226,7 +254,7 @@ final class Widgets implements HeadPart
      */
     public function withDialogs(string $html): string
     {
-        if ($this->dialogsDone || ! str_contains($html, self::MARKER)) {
+        if ($this->dialogsDone || ! self::marked($html)) {
             return $html;
         }
 

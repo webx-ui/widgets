@@ -70,5 +70,11 @@ return [
             'why' => 'Tastatur und Screenreader kennen kein Überfahren: Der Link zum Bild, in der Bildansicht geöffnet, ist ihr einziger Weg, es näher zu sehen.',
             'fix' => 'Die Ansicht des Pakets macht das Bild zu einem Link auf das Original: Eine Überschreibung von webx-widgets::components.zoom im Theme hat ihn verloren, oder data-webx-zoom steht auf einem nackten Bild. Setzen Sie das Attribut auf den Lightbox-Link des Bildes oder entfernen Sie die Überschreibung.',
         ],
+        'form_script' => [
+            'title' => 'Ein Formular ohne sein Skript',
+            'found' => 'Ein Formular, das an Ort und Stelle sendet, steht auf einer Seite ohne form.js: Es lädt die Seite neu, um zu antworten, und nur der Server prüft es.',
+            'why' => 'Ohne das Skript wartet der Besucher auf eine ganze Seite, verliert die Stelle, bis zu der er gescrollt hat, und erfährt von einem Fehler erst nach dem Senden.',
+            'fix' => 'Das Layout gibt die Skripte mit @webxTheme aus, auf einer Website ohne Theme mit @webxWidgets vor </body>; danach php artisan webx:theme:sync. Eine Website, die die Skripte selbst bündelt, kann dies ignorieren.',
+        ],
     ],
 ];

@@ -70,5 +70,11 @@ return [
             'why' => 'Tastiera e screen reader non hanno il passaggio del mouse: il link all’immagine, aperto nel visualizzatore, è il loro unico modo per vederla da vicino.',
             'fix' => 'La vista del pacchetto rende l’immagine un link all’originale: una sovrascrittura di webx-widgets::components.zoom nel tema l’ha perso, oppure data-webx-zoom è scritto su un’immagine senza link. Mettete l’attributo sul link del visualizzatore o togliete la sovrascrittura.',
         ],
+        'form_script' => [
+            'title' => 'Un modulo senza il suo script',
+            'found' => 'Un modulo che si invia sul posto si trova su una pagina che non carica form.js: ricarica la pagina per rispondere e lo controlla solo il server.',
+            'why' => 'Senza lo script il visitatore aspetta un’intera pagina, perde il punto a cui era arrivato e scopre un errore solo dopo l’invio.',
+            'fix' => 'Il layout stampa gli script con @webxTheme, o su un sito senza tema con @webxWidgets prima di </body>; poi php artisan webx:theme:sync. Un sito che impacchetta da sé gli script può ignorarlo.',
+        ],
     ],
 ];

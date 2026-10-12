@@ -14,6 +14,7 @@ return [
     'toc-target' => 'Inhaltsverzeichnis führt ins Leere: :count',
     'load-more-link' => '„Mehr anzeigen“ ohne Link zur nächsten Seite: :count',
     'zoom-link' => 'Zoom ohne Link: :count',
+    'form-script' => 'Formulare ohne ihr Skript: :count',
     'on' => 'An',
     'off' => 'Aus',
 ];

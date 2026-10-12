@@ -170,6 +170,12 @@ final class AuditTest extends TestCase
         $this->assertStringStartsWith('<div class="slide" id="unlinked"', (string) $zoom->details['table']['rows'][0]['markup']);
         $this->assertSame('Zoom without a link: 1', __($zoom->details['summary']['key'], $zoom->details['summary']['params']));
 
+        $this->assertSame(['/contacts'], array_keys($this->keys('widgets.form_script')), 'the page that loads form.js is quiet');
+        $form = AuditIssue::query()->where('check', 'widgets.form_script')->firstOrFail();
+        $this->assertSame('warning', $form->severity);
+        $this->assertStringStartsWith('<form id="request" class="webx-form"', (string) $form->details['table']['rows'][0]['markup']);
+        $this->assertSame('Forms without their script: 1', __($form->details['summary']['key'], $form->details['summary']['params']));
+
         // What the reader keeps of a page: only what is there.
         $home = AuditPage::query()->where('url', self::BASE.'/')->firstOrFail();
         $this->assertSame(['waits' => ['media' => 2, 'statistics' => 1]], $home->fact('widgets'));
@@ -350,7 +356,9 @@ final class AuditTest extends TestCase
                 // Marked, but asking anyway: still a finding.
                 .'<iframe data-webx-consent="media" src="https://www.youtube.com/embed/abc?si=1&amp;start=5" title="Twice"></iframe>'),
             '/lightbox' => $page('Lightbox', '<a href="/a.jpg" data-webx-lightbox="g">A</a> <a href="/b.jpg" data-webx-lightbox="g" data-width="0" data-height="900">B</a>'
-                .'<a href="/c.jpg" data-webx-lightbox="g" data-width="900" data-height="600">C</a>'),
+                .'<a href="/c.jpg" data-webx-lightbox="g" data-width="900" data-height="600">C</a>'
+                // A form with its script, as the page's finish prints it: quiet.
+                .'<form class="webx-form" method="post" action="/subscribe" data-webx-send></form><script type="module" src="/themes/webx-ui/widgets/0123456789ab/form.js?v=1"></script>'),
             '/slider' => $page('Slider', '<section class="webx-slider webx-slider--hero" id="lost" data-webx-slider=\'{"autoplay":6000,"continuous":false}\'>'.$slide.'</section>'
                 .'<section class="webx-slider webx-slider--hero" data-webx-slider=\'{"autoplay":6000}\'><div class="webx-slider__slide">Only one</div></section>'
                 // An override that lost the pause button, and one that leaves the number to the script.
@@ -362,7 +370,9 @@ final class AuditTest extends TestCase
                 // Show more whose links an override lost: a button and nothing a crawler follows.
                 .'<div class="webx-load-more" id="buttoned" data-webx-load-more="page" data-next="/slider?page=2"><div data-webx-load-more-list><p>1</p></div><a href="/slider?page=3">3</a><button type="button">Show more</button></div>'
                 .'<div class="slide" id="unlinked" data-webx-zoom="/big.jpg"><img src="/small.jpg" alt=""></div><a href="/big.jpg" data-webx-zoom data-webx-lightbox="g" data-width="1800" data-height="1200"><img src="/big.jpg" alt=""></a><figure data-webx-zoom><a href="/big.jpg"><img src="/big.jpg" alt=""></a></figure>'),
-            '/contacts' => $page('Contacts', '<div class="webx-contact-button"></div><div class="webx-contact-bar"></div>'),
+            '/contacts' => $page('Contacts', '<div class="webx-contact-button"></div><div class="webx-contact-bar"></div>'
+                // A layout with neither @webxTheme nor @webxWidgets: the form never gets its script.
+                .'<form id="request" class="webx-form" method="post" action="/webx/forms/contact" data-webx-send><button>Send</button></form>'),
             '/plain' => $page('Plain', '<p>Nothing of the widgets here.</p>'),
         ];
 

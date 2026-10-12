@@ -14,6 +14,7 @@ return [
     'toc-target' => 'Table des matières qui ne mène nulle part : :count',
     'load-more-link' => '« Afficher plus » sans lien vers la page suivante : :count',
     'zoom-link' => 'Zoom sans lien : :count',
+    'form-script' => 'Formulaires sans leur script : :count',
     'on' => 'Activé',
     'off' => 'Désactivé',
 ];

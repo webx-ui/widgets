@@ -14,6 +14,7 @@ return [
     'toc-target' => 'Índice que não leva a lado nenhum: :count',
     'load-more-link' => '«Mostrar mais» sem ligação para a página seguinte: :count',
     'zoom-link' => 'Zoom sem ligação: :count',
+    'form-script' => 'Formulários sem o seu script: :count',
     'on' => 'Ligado',
     'off' => 'Desligado',
 ];

@@ -247,6 +247,69 @@ describe('the form sent in place', () => {
     expect(form.hasAttribute('aria-busy')).toBe(false)
   })
 
+  it('is held busy while a module finishes first, ignores presses meanwhile, then sends what the form holds', async () => {
+    const form = await start(shell(contact + '<input type="hidden" name="captcha" value="">'))
+    const calls = answers(json(200, { ok: true }))
+    let finish
+    let asked = 0
+    form.addEventListener('webx:form:submit', (event) => {
+      asked++
+      event.detail.data.append('extra', 'kept')
+      event.detail.wait(new Promise((resolve) => (finish = resolve)))
+    })
+
+    send(form)
+    await settle()
+    expect(form.classList.contains('is-sending')).toBe(true)
+    expect(form.getAttribute('aria-busy')).toBe('true')
+    expect(form.querySelector('.webx-form__submit').getAttribute('aria-disabled')).toBe('true')
+    expect(calls).toHaveLength(0)
+
+    // A second press while it is held: no second run of the module, nothing sent.
+    send(form)
+    await settle()
+    expect(asked).toBe(1)
+    expect(calls).toHaveLength(0)
+
+    // What the module put into the form while it was held goes along, and what it added to data.
+    form.querySelector('[name="captcha"]').value = 'token'
+    finish()
+    await settle()
+    expect(calls).toHaveLength(1)
+    expect(calls[0].body).toMatchObject({ captcha: 'token', extra: 'kept' })
+    expect(form.classList.contains('is-sending')).toBe(false)
+  })
+
+  it('lets the form go, sending nothing, when what it waited for fails — the module’s word stays', async () => {
+    const form = await start(shell(contact))
+    const calls = answers(json(200, { ok: true }))
+    let fail
+    const hold = (event) => event.detail.wait(new Promise((resolve, reject) => (fail = reject)))
+    form.addEventListener('webx:form:submit', hold)
+
+    send(form)
+    await settle()
+    expect(form.getAttribute('aria-busy')).toBe('true')
+
+    const name = form.querySelector('[data-webx-field="fields.name"]')
+    name.classList.add('is-invalid')
+    name.querySelector('.webx-field__error').textContent = 'The check could not run.'
+    fail(new Error('captcha'))
+    await settle()
+
+    expect(calls).toHaveLength(0)
+    expect(form.classList.contains('is-sending')).toBe(false)
+    expect(form.hasAttribute('aria-busy')).toBe(false)
+    expect(form.querySelector('.webx-form__submit').hasAttribute('aria-disabled')).toBe(false)
+    expect(name.querySelector('.webx-field__error').textContent).toBe('The check could not run.')
+
+    // The next press is a press again.
+    form.removeEventListener('webx:form:submit', hold)
+    send(form)
+    await settle()
+    expect(calls).toHaveLength(1)
+  })
+
   it('lets a module stop the submission, and says success with the answer', async () => {
     const form = await start(shell(contact))
     const calls = answers(

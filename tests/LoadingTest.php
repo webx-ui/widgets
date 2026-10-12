@@ -44,6 +44,23 @@ class LoadingTest extends TestCase
         ));
 
         $router->get('/json', static fn () => response()->json(['html' => Widgets::MARKER.'</body>']));
+
+        // A layout that kept `@webxWidgets` from before it had a theme.
+        $router->get('/both', static fn (): string => Blade::render('<html><head>@webxTheme</head><body><p>Hello</p>@webxWidgets</body></html>'));
+    }
+
+    #[Test]
+    public function the_directive_of_a_site_without_a_theme_adds_nothing_under_one(): void
+    {
+        $this->sync();
+        $base = $this->published();
+
+        $html = (string) $this->get('/both')->assertOk()->getContent();
+
+        $this->assertStringNotContainsString(Widgets::SCRIPTS, $html);
+        $this->assertSame(1, substr_count($html, "{$base}/runtime.js"));
+        $this->assertStringContainsString("<link rel=\"stylesheet\" href=\"{$base}/runtime.css\">", $html);
+        $this->assertStringContainsString('data-webx-consent-root', $html);
     }
 
     #[Test]

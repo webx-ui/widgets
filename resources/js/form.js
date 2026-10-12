@@ -19,7 +19,10 @@
  *  - the checks of FormRules (§17.5) before anything is sent: a touched field when it is left,
  *    every field on submit, in the validator's own words; the browser's bubbles off
  *    (`novalidate`); a button with `formnovalidate` goes straight to the server;
- *  - `webx:form:submit` (cancelable), `webx:form:success`, `webx:form:error` on the form.
+ *  - `webx:form:submit` (cancelable), `webx:form:success`, `webx:form:error` on the form. A
+ *    listener with something to finish first — a captcha to run — holds the form with
+ *    `detail.wait(promise)`: busy from the press on, the form read again and sent when it
+ *    resolves, let go as it was when it rejects.
  */
 
 import '../css/form.css'
@@ -408,6 +411,7 @@ export function form(el) {
   // An `action` input would shadow the property: the attribute is the address.
   const action = el.getAttribute('action') || location.href
   let sending = false
+  let gone = false
   // The fields the browser itself found wrong.
   const refused = new WeakSet()
 
@@ -543,20 +547,42 @@ export function form(el) {
       }
     }
 
-    let data
-    try {
-      data = new FormData(el, event.submitter ?? undefined)
-    } catch {
-      data = new FormData(el)
+    const read = () => {
+      try {
+        return new FormData(el, event.submitter ?? undefined)
+      } catch {
+        return new FormData(el)
+      }
     }
+    const data = read()
 
-    if (!emit('submit', { data, submitter: event.submitter ?? null }, true)) return
+    // Called while the event is dispatched; a promise handed over later is not waited for.
+    const waits = []
+    const wait = (promise) => void waits.push(Promise.resolve(promise))
+    if (!emit('submit', { data, submitter: event.submitter ?? null, wait }, true)) return
 
     clear(el)
     busy(true)
     let leaving = false
 
     try {
+      if (waits.length) {
+        // Rejected: the listener has said why where it belongs; the form is let go below.
+        try {
+          await Promise.all(waits)
+        } catch {
+          return
+        }
+        if (gone) return
+        // What the listener put into the form meanwhile — a captcha's token — goes along; what it
+        // added to `data` itself stays.
+        const now = read()
+        for (const name of new Set(now.keys())) {
+          data.delete(name)
+          for (const value of now.getAll(name)) data.append(name, value)
+        }
+      }
+
       const send = () => {
         // The cookie's token is the fresh one; the HTML's may have been cached with the page,
         // and Laravel would read `_token` first.
@@ -648,6 +674,7 @@ export function form(el) {
   }
 
   return () => {
+    gone = true
     on.off()
     el.noValidate = validated
     watch?.disconnect()

@@ -70,5 +70,11 @@ return [
             'why' => 'Klawiatura i czytnik ekranu nie mają najechania: link do obrazu, otwarty w przeglądarce zdjęć, to ich jedyny sposób, by obejrzeć go z bliska.',
             'fix' => 'Widok pakietu robi z obrazu link do oryginału: nadpisanie webx-widgets::components.zoom w motywie go zgubiło albo data-webx-zoom napisano na gołym obrazie. Umieść atrybut na linku przeglądarki zdjęć albo usuń nadpisanie.',
         ],
+        'form_script' => [
+            'title' => 'Formularz bez swojego skryptu',
+            'found' => 'Formularz wysyłany na miejscu stoi na stronie bez form.js: przeładowuje stronę, aby odpowiedzieć, i sprawdza go tylko serwer.',
+            'why' => 'Bez skryptu odwiedzający czeka na całą stronę, traci miejsce, do którego przewinął, i o błędzie dowiaduje się dopiero po wysłaniu.',
+            'fix' => 'Skrypty drukuje layout: @webxTheme, a na stronie bez motywu @webxWidgets przed </body>; potem php artisan webx:theme:sync. Strona, która sama pakuje skrypty, może to zignorować.',
+        ],
     ],
 ];

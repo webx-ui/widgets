@@ -25,6 +25,7 @@ use WebxUi\Audit\Crawl\PageParser;
  *     toc_dangling       a link of a table of contents to a section the page does not have
  *     load_more_linkless "Show more" with a next page and no link to it: a button only
  *     zoom_linkless      a zoom that is no link and holds none: no keyboard, no screen reader
+ *     form_scriptless    forms that send in place (`data-webx-send`) on a page that loads no form.js
  *     contact_both       the quick-contact button and the bottom bar on one page
  *
  * Only what is there: a page with none of it stores nothing.
@@ -54,6 +55,7 @@ final class WidgetsPageReader implements AuditPageReader
             'toc_dangling' => $this->dangling($document),
             'load_more_linkless' => $this->linkless($document, $url),
             'zoom_linkless' => $this->unlinked($document),
+            'form_scriptless' => $this->scriptless($document),
         ]);
 
         if ($document->querySelector('.webx-contact-button') !== null && $document->querySelector('.webx-contact-bar') !== null) {
@@ -296,6 +298,40 @@ final class WidgetsPageReader implements AuditPageReader
         }
 
         return $found['count'] === 0 ? [] : $found;
+    }
+
+    /**
+     * Forms of `<x-webx-form>` — an inbox form among them — on a page with no `form.js`: neither
+     * `@webxTheme` nor `@webxWidgets` in the layout, or the files never synced. Each still sends,
+     * with a reload, and is checked by the server only.
+     *
+     * @return array{count: int, markup: list<string>}|array{}
+     */
+    private function scriptless(HTMLDocument $document): array
+    {
+        $forms = $document->querySelectorAll('form[data-webx-send]');
+
+        if ($forms->length === 0) {
+            return [];
+        }
+
+        foreach ($document->querySelectorAll('script[src]') as $script) {
+            $path = (string) parse_url(trim((string) $script->getAttribute('src')), PHP_URL_PATH);
+
+            if (self::runs($script) && str_ends_with($path, '/form.js')) {
+                return [];
+            }
+        }
+
+        $found = ['count' => $forms->length, 'markup' => []];
+
+        foreach ($forms as $form) {
+            if (count($found['markup']) < self::EXCERPTS) {
+                $found['markup'][] = self::opening($form);
+            }
+        }
+
+        return $found;
     }
 
     /**

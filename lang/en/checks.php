@@ -70,5 +70,11 @@ return [
             'why' => 'A keyboard and a screen reader have no hover: the link to the picture, opened in the lightbox, is their only way to see it closer.',
             'fix' => 'The package’s view makes the picture a link to the original: a theme’s override of webx-widgets::components.zoom lost it, or data-webx-zoom was written on a bare picture. Put the attribute on the picture’s lightbox link, or remove the override.',
         ],
+        'form_script' => [
+            'title' => 'A form without its script',
+            'found' => 'A form that sends in place stands on a page that loads no form.js: it reloads the page to answer and is checked by the server only.',
+            'why' => 'Without the script the visitor waits for a whole page, loses the place they scrolled to, and learns of a mistake only after sending.',
+            'fix' => 'The layout prints the scripts with @webxTheme, or on a site without a theme with @webxWidgets before </body>; then run php artisan webx:theme:sync. A site that bundles the scripts itself can ignore this.',
+        ],
     ],
 ];

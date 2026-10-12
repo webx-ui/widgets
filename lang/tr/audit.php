@@ -14,6 +14,7 @@ return [
     'toc-target' => 'Hiçbir yere gitmeyen içindekiler: :count',
     'load-more-link' => 'Sonraki sayfaya bağlantısı olmayan “Daha fazla göster”: :count',
     'zoom-link' => 'Bağlantısız yakınlaştırma: :count',
+    'form-script' => 'Betiği olmayan formlar: :count',
     'on' => 'Açık',
     'off' => 'Kapalı',
 ];
