@@ -42,12 +42,18 @@ final class PagesNoticeTest extends TestCase
         $html = Blade::render('<x-webx-pagination :paginator="$p" />', ['p' => self::news(5, total: 120)]);
 
         $this->assertStringContainsString('<nav class="webx-pagination" aria-label="Pages">', $html);
-        $this->assertStringContainsString('<a class="webx-pagination__link webx-pagination__link--prev" rel="prev" href="/news?page=4">Previous</a>', $html);
+        $this->assertMatchesRegularExpression('~<a class="webx-pagination__link webx-pagination__link--prev" rel="prev" href="/news\?page=4"><svg class="webx-icon webx-pagination__arrow"[^>]*>.*?</svg>\s*<span class="webx-pagination__word">Previous</span></a>~s', $html);
         $this->assertStringContainsString('<span class="webx-pagination__link is-current" aria-current="page" data-page="5">5</span>', $html);
-        $this->assertStringContainsString('<a class="webx-pagination__link webx-pagination__link--next" rel="next" href="/news?page=6">Next</a>', $html);
+        $this->assertMatchesRegularExpression('~<a class="webx-pagination__link webx-pagination__link--next" rel="next" href="/news\?page=6"><span class="webx-pagination__word">Next</span><svg class="webx-icon webx-pagination__arrow"~', $html);
         $this->assertStringContainsString('<a class="webx-pagination__link" href="/news" data-page="1">1</a>', $html, 'not ?page=1: one address for the first page');
         // 1, then 2 rather than a gap of one page, 3–7 around 5, a gap, the last.
         $this->assertSame(['1', '2', '3', '4', '5', '6', '7', '…', '10'], self::numbers($html));
+        // The compact row of a phone: the first, this page, the last.
+        $this->assertSame(['1', '…', '5', '…', '10'], self::numbers($html, compact: true));
+        $this->assertStringContainsString('<a class="webx-pagination__link is-extra" href="/news?page=4" data-page="4">4</a>', $html);
+        $this->assertStringContainsString('<span class="webx-pagination__gap is-compact" aria-hidden="true">…</span>', $html);
+        // A gap of one page is that page in the compact row too.
+        $this->assertSame(['1', '2', '3', '…', '10'], self::numbers(Blade::render('<x-webx-pagination :paginator="$p" />', ['p' => self::news(3, total: 120)]), compact: true));
         $this->assertSame(['pagination'], Widgets::claimed());
 
         $this->assertSame(['1', '2', '3', '…', '10'], self::numbers(Blade::render('<x-webx-pagination :paginator="$p" />', ['p' => self::news(1, total: 120)])));
@@ -129,7 +135,7 @@ final class PagesNoticeTest extends TestCase
 
         $this->assertStringContainsString('>Показать ещё</button>', $html);
         $this->assertStringContainsString('aria-label="Страницы"', $html);
-        $this->assertStringContainsString('>Вперёд</a>', $html);
+        $this->assertStringContainsString('<span class="webx-pagination__word">Вперёд</span>', $html);
     }
 
     #[Test]
@@ -230,10 +236,13 @@ final class PagesNoticeTest extends TestCase
     }
 
     /** @return list<string> The numbers of a pagination and its gaps, in order. */
-    private static function numbers(string $html): array
+    private static function numbers(string $html, bool $compact = false): array
     {
-        preg_match_all('~<(?:a|span) class="webx-pagination__(?:link(?: is-current)?|gap)"[^>]*>([^<]+)</(?:a|span)>~', $html, $found);
+        preg_match_all('~<(?:a|span) class="webx-pagination__(?:link|gap)((?: is-[a-z]+)*)"[^>]*>([^<]+)</(?:a|span)>~', $html, $found, PREG_SET_ORDER);
 
-        return array_values(array_filter($found[1], static fn (string $text): bool => $text === '…' || ctype_digit($text)));
+        $hidden = $compact ? 'is-extra' : 'is-compact';
+        $shown = array_filter($found, static fn (array $match): bool => ! str_contains($match[1], $hidden));
+
+        return array_values(array_filter(array_column($shown, 2), static fn (string $text): bool => $text === '…' || ctype_digit($text)));
     }
 }

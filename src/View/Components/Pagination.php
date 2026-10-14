@@ -82,11 +82,59 @@ final class Pagination extends Component
      */
     public function numbers(): array
     {
+        return $this->sequence($this->around);
+    }
+
+    /**
+     * The full row and the compact one in a single list, for the view: each number or gap with
+     * the row it belongs to — `extra` only in the full row, `compact` only in the compact one,
+     * null in both. The compact row is the first, this page and the last, which is what fits a
+     * phone with previous and next as arrows; the stylesheet picks a row by the width the
+     * pagination has, so a page has both and no script.
+     *
+     * @return list<array{number: int|null, only: 'extra'|'compact'|null}>
+     */
+    public function items(): array
+    {
+        $full = array_values(array_filter($this->sequence($this->around), is_int(...)));
+        $compact = array_values(array_filter($this->sequence(0), is_int(...)));
+        $shown = array_values(array_unique([...$full, ...$compact]));
+        sort($shown);
+
+        $items = [];
+        $beforeFull = null;
+        $beforeCompact = null;
+
+        foreach ($shown as $number) {
+            $inFull = in_array($number, $full, true);
+            $inCompact = in_array($number, $compact, true);
+
+            $gapFull = $inFull && $beforeFull !== null && $number > $beforeFull + 1;
+            $gapCompact = $inCompact && $beforeCompact !== null && $number > $beforeCompact + 1;
+
+            if ($gapFull || $gapCompact) {
+                $items[] = ['number' => null, 'only' => $gapFull && $gapCompact ? null : ($gapFull ? 'extra' : 'compact')];
+            }
+
+            $items[] = ['number' => $number, 'only' => $inCompact ? ($inFull ? null : 'compact') : 'extra'];
+
+            $beforeFull = $inFull ? $number : $beforeFull;
+            $beforeCompact = $inCompact ? $number : $beforeCompact;
+        }
+
+        return $items;
+    }
+
+    /**
+     * @return list<int|null>
+     */
+    private function sequence(int $around): array
+    {
         if ($this->last === null || $this->last < 2) {
             return [];
         }
 
-        $shown = [1, $this->last, ...range(max(1, $this->page - $this->around), min($this->last, $this->page + $this->around))];
+        $shown = [1, $this->last, ...range(max(1, $this->page - $around), min($this->last, $this->page + $around))];
         $shown = array_values(array_unique($shown));
         sort($shown);
 

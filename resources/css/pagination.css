@@ -12,6 +12,7 @@
 }
 
 .webx-pagination {
+  container: webx-pagination / inline-size;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -47,4 +48,59 @@
 
 .webx-pagination__gap {
   color: var(--site-color-text-muted);
+}
+
+/*
+ * Previous and next: an arrow and the word. The word goes in the compact row below, where the
+ * arrow is the whole button and the word is for a screen reader.
+ */
+.webx-pagination__link--prev,
+.webx-pagination__link--next {
+  gap: var(--site-space-1);
+}
+
+.webx-pagination__arrow {
+  flex: none;
+  inline-size: 1.25em;
+  block-size: 1.25em;
+}
+
+/*
+ * Two rows in one (the view): the full row by default, and the first, this page and the last
+ * where the pagination is narrower than the full row is likely to be — a phone.
+ */
+.webx-pagination__link.is-compact,
+.webx-pagination__gap.is-compact {
+  display: none;
+}
+
+@container webx-pagination (max-width: 30rem) {
+  .webx-pagination__link.is-extra,
+  .webx-pagination__gap.is-extra {
+    display: none;
+  }
+
+  .webx-pagination__link.is-compact {
+    display: inline-flex;
+  }
+
+  .webx-pagination__gap.is-compact {
+    display: inline;
+  }
+
+  .webx-pagination__link--prev,
+  .webx-pagination__link--next {
+    padding-inline: 0;
+  }
+
+  .webx-pagination__word {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
 }

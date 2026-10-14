@@ -79,7 +79,9 @@
 
 /*
  * The bar: a grid of named areas a theme rearranges here — logo in the middle, two rows —
- * without overriding the view.
+ * without overriding the view. The gap between the columns is each part's own margin rather than
+ * the grid's: a column whose part is not shown — the trigger on a wide screen, the navigation
+ * folded away — then takes no gap, and the bar ends where its padding says.
  */
 .webx-header__bar {
   box-sizing: border-box;
@@ -88,7 +90,7 @@
   grid-template-areas: 'brand nav actions trigger';
   grid-template-columns: auto minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: var(--site-space-2) var(--webx-header-gap);
+  gap: var(--site-space-2) 0;
   width: 100%;
   max-width: var(--site-container-width);
   min-height: 64px;
@@ -106,6 +108,7 @@
   display: flex;
   justify-content: flex-end;
   min-width: 0;
+  margin-inline-start: var(--webx-header-gap);
 }
 
 .webx-header__actions {
@@ -114,12 +117,14 @@
   align-items: center;
   gap: var(--site-space-3);
   white-space: nowrap;
+  margin-inline-start: var(--webx-header-gap);
 }
 
 /* Shown only once the navigation has folded into the mobile menu. */
 .webx-header__trigger {
   grid-area: trigger;
   display: none;
+  margin-inline-start: var(--webx-header-gap);
 }
 
 .webx-header__nav.is-collapsed,

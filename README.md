@@ -167,7 +167,9 @@ slider and the catalog's product page use it.
 
 Both take what `->paginate()` answered as it is. The pagination is the links of the pages —
 previous, the numbers around this one with the first and the last, next — with a stylesheet and
-no script; the first page is the list's own address, not `?page=1`.
+no script; the first page is the list's own address, not `?page=1`. Where the pagination is
+narrower than 30rem (a phone) it shows the first, this and the last page, and previous and next
+are arrows with their word kept for a screen reader.
 
 "Show more" prints the list and those links, and its script puts a button over them: it fetches the
 next page as any visitor gets it, adds the items of the same list to this one, moves the focus to
