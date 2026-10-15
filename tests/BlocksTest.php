@@ -269,7 +269,7 @@ final class BlocksTest extends TestCase
     public function the_map_of_the_contacts_is_their_main_address_waiting_for_consent(): void
     {
         app(Settings::class)->save(['contacts.addresses' => [
-            ['address' => ['en' => '1 Example Street, London'], 'latitude' => 51.5074, 'longitude' => -0.1278, 'primary' => true],
+            ['address' => ['en' => '1 Example Street, Sample City'], 'latitude' => 12.34, 'longitude' => -34.56, 'primary' => true],
         ]]);
 
         // A block saved before the fields had values: the contacts, zoom 15, medium.
@@ -278,14 +278,14 @@ final class BlocksTest extends TestCase
         $this->assertStringContainsString('<section class="b-map" data-wx-block="map">', $html);
         $this->assertStringContainsString('<h2 class="b-map__heading">Find us</h2>', $html);
         $this->assertStringContainsString('style="--webx-map-height: 24em" class="webx-map is-blocked"', $html);
-        $this->assertStringContainsString('<p class="webx-map__address">1 Example Street, London</p>', $html);
-        $this->assertStringContainsString('&quot;lat&quot;:51.5074,&quot;lng&quot;:-0.1278,&quot;zoom&quot;:15', $html);
+        $this->assertStringContainsString('<p class="webx-map__address">1 Example Street, Sample City</p>', $html);
+        $this->assertStringContainsString('&quot;lat&quot;:12.34,&quot;lng&quot;:-34.56,&quot;zoom&quot;:15', $html);
         $this->assertStringContainsString('webx-map__attribution', $html);
         $this->assertContains('map', Widgets::claimed());
 
         $tall = $this->render('map', ['source' => 'settings', 'zoom' => 18, 'height' => 'large', 'latitude' => 1, 'longitude' => 1]);
         $this->assertStringContainsString('--webx-map-height: 32em', $tall);
-        $this->assertStringContainsString('&quot;lat&quot;:51.5074,&quot;lng&quot;:-0.1278,&quot;zoom&quot;:18', $tall, 'the switch decides, not whichever field is filled');
+        $this->assertStringContainsString('&quot;lat&quot;:12.34,&quot;lng&quot;:-34.56,&quot;zoom&quot;:18', $tall, 'the switch decides, not whichever field is filled');
         $this->assertStringNotContainsString('b-map__heading', $tall);
     }
 
@@ -312,7 +312,7 @@ final class BlocksTest extends TestCase
     {
         $nothing = [
             'empty contacts' => ['heading' => 'Map'],
-            'no coordinates' => ['heading' => 'Map', 'source' => 'coordinates', 'address' => 'London'],
+            'no coordinates' => ['heading' => 'Map', 'source' => 'coordinates', 'address' => 'Sample City'],
             'a latitude only' => ['heading' => 'Map', 'source' => 'coordinates', 'latitude' => 51.5],
             'off the earth' => ['heading' => 'Map', 'source' => 'coordinates', 'latitude' => 120, 'longitude' => 0],
             'not numbers' => ['heading' => 'Map', 'source' => 'coordinates', 'latitude' => 'north', 'longitude' => 'west'],

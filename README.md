@@ -81,7 +81,7 @@ next page. Without JavaScript: the poster, nothing moving.
 
 ```blade
 <x-webx-map from="settings" />
-<x-webx-map :lat="51.5074" :lng="-0.1278" :zoom="15" marker="1 Example Street, London" height="24rem" />
+<x-webx-map :lat="12.34" :lng="-34.56" :zoom="15" marker="1 Example Street, Sample City" height="24rem" />
 ```
 
 Leaflet over the tiles of OpenStreetMap, which need no key. `from="settings"` is the main address of

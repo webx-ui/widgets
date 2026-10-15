@@ -86,13 +86,13 @@ final class ContactsWidgetsTest extends TestCase
         $html = Blade::render('<x-webx-phones callback="callback" />');
 
         $this->assertStringContainsString('class="webx-phones webx-phones--dropdown"', $html);
-        $this->assertStringContainsString('<a class="webx-phones__number" href="tel:+44-20-7946-0958">+44 20 7946 0958</a>', $html);
+        $this->assertStringContainsString('<a class="webx-phones__number" href="tel:+800-1234-5678">+800 1234 5678</a>', $html);
         $this->assertStringContainsString('<details data-webx-dropdown="click" class="webx-dropdown webx-dropdown--bottom-end webx-phones__dropdown">', $html);
         $this->assertStringContainsString('aria-label="More numbers"', $html);
-        $this->assertStringContainsString('<a class="webx-phones__number" href="tel:+1-202-555-0143">+1 202 555 0143</a>', $html);
+        $this->assertStringContainsString('<a class="webx-phones__number" href="tel:+800-8765-4321">+800 8765 4321</a>', $html);
         $this->assertStringContainsString('<span class="webx-phones__label">Support</span>', $html);
         // A number's messengers open a chat with that number.
-        $this->assertStringContainsString('href="https://wa.me/442079460958" target="_blank" rel="noopener" aria-label="WhatsApp, +44 20 7946 0958"', $html);
+        $this->assertStringContainsString('href="https://wa.me/80012345678" target="_blank" rel="noopener" aria-label="WhatsApp, +800 1234 5678"', $html);
         $this->assertStringContainsString('<a class="webx-phones__callback" href="#webx-form-callback">Request a call</a>', $html);
 
         $this->assertSame(['dropdown', 'contacts'], array_values(array_intersect(['dropdown', 'contacts'], app(Widgets::class)->claimed())));
@@ -114,7 +114,7 @@ final class ContactsWidgetsTest extends TestCase
         $this->assertStringNotContainsString('webx-dropdown', $list);
         $this->assertSame(2, substr_count($list, 'class="webx-phones__item"'));
         // The main number first, whatever its place in the list.
-        $this->assertLessThan(strpos($list, '+1 202'), strpos($list, '+44 20'));
+        $this->assertLessThan(strpos($list, '+800 8765'), strpos($list, '+800 1234'));
 
         $this->expectExceptionMessage('<x-webx-phones layout="grid">: dropdown or list.');
         Blade::render('<x-webx-phones layout="grid" />');
@@ -194,7 +194,7 @@ final class ContactsWidgetsTest extends TestCase
         $this->assertStringContainsString('class="webx-contact-bar__spacer"', $bar);
         preg_match_all('/webx-contact-bar__item--([a-z]+)" href="([^"]+)"/', $bar, $items);
         $this->assertSame(['call', 'write', 'form'], $items[1]);
-        $this->assertSame(['tel:+44-20-7946-0958', 'https://wa.me/442079460958', '#webx-form-callback'], $items[2]);
+        $this->assertSame(['tel:+800-1234-5678', 'https://wa.me/80012345678', '#webx-form-callback'], $items[2]);
     }
 
     #[Test]
@@ -230,8 +230,8 @@ final class ContactsWidgetsTest extends TestCase
     {
         app(Settings::class)->save([
             'contacts.phones' => [
-                ['number' => '+1 202 555 0143', 'label' => ['en' => 'Support'], 'primary' => false, 'messengers' => []],
-                ['number' => '+44 20 7946 0958', 'label' => ['en' => 'Sales'], 'primary' => true, 'messengers' => ['whatsapp']],
+                ['number' => '+800 8765 4321', 'label' => ['en' => 'Support'], 'primary' => false, 'messengers' => []],
+                ['number' => '+800 1234 5678', 'label' => ['en' => 'Sales'], 'primary' => true, 'messengers' => ['whatsapp']],
             ],
             'contacts.emails' => [['email' => 'hello@example.com']],
             'contacts.hours' => [['days' => ['mon', 'tue', 'wed', 'thu', 'fri'], 'opens' => '09:00', 'closes' => '19:00']],

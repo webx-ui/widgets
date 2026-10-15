@@ -37,7 +37,7 @@ final class MapTest extends TestCase
 {
     use RefreshDatabase;
 
-    private const string LONDON = '<x-webx-map :lat="51.5074" :lng="-0.1278" marker="1 Example Street, London" />';
+    private const string LONDON = '<x-webx-map :lat="12.34" :lng="-34.56" marker="1 Example Street, Sample City" />';
 
     /**
      * @param  Application  $app
@@ -85,12 +85,12 @@ final class MapTest extends TestCase
     {
         $html = Blade::render(self::LONDON);
 
-        $this->assertStringContainsString('style="--webx-map-height: 24rem" class="webx-map is-blocked" role="region" aria-label="Map: 1 Example Street, London"', $html);
+        $this->assertStringContainsString('style="--webx-map-height: 24rem" class="webx-map is-blocked" role="region" aria-label="Map: 1 Example Street, Sample City"', $html);
         $this->assertStringContainsString('data-webx-consent="media"', $html, 'the banner offers media wherever a map waits for it');
-        $this->assertStringContainsString('data-webx-map="{&quot;lat&quot;:51.5074,&quot;lng&quot;:-0.1278,&quot;zoom&quot;:15,&quot;tiles&quot;:&quot;https://tile.openstreetmap.org/{z}/{x}/{y}.png&quot;,&quot;maxZoom&quot;:19,&quot;marker&quot;:&quot;1 Example Street, London&quot;', $html);
+        $this->assertStringContainsString('data-webx-map="{&quot;lat&quot;:12.34,&quot;lng&quot;:-34.56,&quot;zoom&quot;:15,&quot;tiles&quot;:&quot;https://tile.openstreetmap.org/{z}/{x}/{y}.png&quot;,&quot;maxZoom&quot;:19,&quot;marker&quot;:&quot;1 Example Street, Sample City&quot;', $html);
         // Without JavaScript: the address and a link to the map.
-        $this->assertStringContainsString('<p class="webx-map__address">1 Example Street, London</p>', $html);
-        $this->assertStringContainsString('<a class="webx-map__open" href="https://www.openstreetmap.org/?mlat=51.5074&amp;mlon=-0.1278#map=15/51.5074/-0.1278" target="_blank" rel="noopener">Open in maps</a>', $html);
+        $this->assertStringContainsString('<p class="webx-map__address">1 Example Street, Sample City</p>', $html);
+        $this->assertStringContainsString('<a class="webx-map__open" href="https://www.openstreetmap.org/?mlat=12.34&amp;mlon=-34.56#map=15/12.34/-34.56" target="_blank" rel="noopener">Open in maps</a>', $html);
         $this->assertStringContainsString('<p class="webx-map__notice">The map loads from OpenStreetMap, which receives your IP address.</p>', $html);
         $this->assertStringContainsString('<button type="button" class="webx-map__button" data-webx-map-load>Load</button>', $html);
         $this->assertStringContainsString('<button type="button" class="webx-map__button webx-map__button--always" data-webx-map-always>Always load maps</button>', $html);
@@ -146,27 +146,27 @@ final class MapTest extends TestCase
         app(Settings::class)->save([
             'contacts.addresses' => [
                 ['address' => ['en' => 'Warehouse, Leeds'], 'latitude' => 53.8, 'longitude' => -1.55, 'primary' => false],
-                ['address' => ['en' => '1 Example Street, London', 'de' => '1 Example Street, London (Büro)'], 'latitude' => 51.5074, 'longitude' => -0.1278, 'primary' => true],
+                ['address' => ['en' => '1 Example Street, Sample City', 'de' => '1 Example Street, Sample City (Büro)'], 'latitude' => 12.34, 'longitude' => -34.56, 'primary' => true],
             ],
         ]);
 
         $html = Blade::render('<x-webx-map from="settings" :zoom="17" height="320" />');
 
         $this->assertStringContainsString('--webx-map-height: 320px', $html);
-        $this->assertStringContainsString('<p class="webx-map__address">1 Example Street, London</p>', $html);
-        $this->assertStringContainsString('&quot;lat&quot;:51.5074,&quot;lng&quot;:-0.1278,&quot;zoom&quot;:17', $html);
-        $this->assertStringContainsString('&quot;marker&quot;:&quot;1 Example Street, London&quot;', $html, 'the pin is labelled by the address');
-        $this->assertStringContainsString('href="https://www.openstreetmap.org/?mlat=51.5074&amp;mlon=-0.1278#map=17/51.5074/-0.1278"', $html);
+        $this->assertStringContainsString('<p class="webx-map__address">1 Example Street, Sample City</p>', $html);
+        $this->assertStringContainsString('&quot;lat&quot;:12.34,&quot;lng&quot;:-34.56,&quot;zoom&quot;:17', $html);
+        $this->assertStringContainsString('&quot;marker&quot;:&quot;1 Example Street, Sample City&quot;', $html, 'the pin is labelled by the address');
+        $this->assertStringContainsString('href="https://www.openstreetmap.org/?mlat=12.34&amp;mlon=-34.56#map=17/12.34/-34.56"', $html);
 
         // On the page's language, and the link typed into the tab wins over the provider's.
         app()->setLocale('de');
         app(Settings::class)->save(['contacts.addresses' => [
-            ['address' => ['en' => 'London', 'de' => 'London (Büro)'], 'latitude' => 51.5074, 'longitude' => -0.1278, 'map' => 'https://maps.example.com/office', 'primary' => true],
+            ['address' => ['en' => 'Sample City', 'de' => 'Sample City (Büro)'], 'latitude' => 12.34, 'longitude' => -34.56, 'map' => 'https://maps.example.com/office', 'primary' => true],
         ]]);
         $this->app->forgetScopedInstances();
 
         $german = Blade::render('<x-webx-map from="settings" :marker="false" />');
-        $this->assertStringContainsString('<p class="webx-map__address">London (Büro)</p>', $german);
+        $this->assertStringContainsString('<p class="webx-map__address">Sample City (Büro)</p>', $german);
         $this->assertStringContainsString('href="https://maps.example.com/office"', $german);
         $this->assertStringContainsString('&quot;marker&quot;:null', $german, 'no pin when told');
     }
@@ -177,14 +177,14 @@ final class MapTest extends TestCase
         $this->assertSame('', trim(Blade::render('<x-webx-map from="settings" />')), 'an empty tab: nothing');
 
         app(Settings::class)->save(['contacts.addresses' => [
-            ['address' => ['en' => '1 Example Street, London'], 'map' => 'https://maps.example.com/office', 'primary' => true],
+            ['address' => ['en' => '1 Example Street, Sample City'], 'map' => 'https://maps.example.com/office', 'primary' => true],
         ]]);
         $this->app->forgetScopedInstances();
 
         $html = Blade::render('<x-webx-map from="settings" />');
 
         $this->assertStringContainsString('class="webx-map webx-map--place"', $html);
-        $this->assertStringContainsString('<p class="webx-map__address">1 Example Street, London</p>', $html);
+        $this->assertStringContainsString('<p class="webx-map__address">1 Example Street, Sample City</p>', $html);
         $this->assertStringContainsString('href="https://maps.example.com/office"', $html);
         $this->assertStringNotContainsString('data-webx-map', $html, 'nothing for the script, nothing to consent to');
         $this->assertStringNotContainsString('data-webx-consent', $html);
@@ -246,7 +246,7 @@ final class MapTest extends TestCase
 
         $html = Blade::render(self::LONDON);
 
-        $this->assertStringContainsString('aria-label="Karte: 1 Example Street, London"', $html);
+        $this->assertStringContainsString('aria-label="Karte: 1 Example Street, Sample City"', $html);
         $this->assertStringContainsString('Die Karte wird von OpenStreetMap geladen', $html);
         $this->assertStringContainsString('>Karten immer laden</button>', $html);
         $this->assertStringContainsString('>In Karten öffnen</a>', $html);

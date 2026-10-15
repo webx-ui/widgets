@@ -13,7 +13,7 @@ use WebxUi\Widgets\Facades\Widgets;
 use WebxUi\Widgets\Map\MapTiles;
 
 /**
- * `<x-webx-map :lat="51.5074" :lng="-0.1278" :zoom="15" marker="1 Example Street, London" />`
+ * `<x-webx-map :lat="12.34" :lng="-34.56" :zoom="15" marker="1 Example Street, Sample City" />`
  * and `<x-webx-map from="settings" />` — a map with a pin (spec §11).
  *
  * The server prints the place — the address and "Open in maps" — in a frame of the map's height,

@@ -10,13 +10,13 @@ afterEach(() => {
 const TILES = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
 
 // What `<x-webx-map>` prints: the place, and before consent the notice of §9.4 in it.
-const map = (n, { blocked = true, marker = '1 Example Street, London' } = {}) => `
+const map = (n, { blocked = true, marker = '1 Example Street, Sample City' } = {}) => `
   <div class="webx-map${blocked ? ' is-blocked' : ''}" id="m${n}" role="region" aria-label="Map"
-       data-webx-map='${JSON.stringify({ lat: 51.5074, lng: -0.1278, zoom: 15, tiles: TILES, maxZoom: 19, marker, hint: 'Click the map to zoom with the wheel' })}'
+       data-webx-map='${JSON.stringify({ lat: 12.34, lng: -34.56, zoom: 15, tiles: TILES, maxZoom: 19, marker, hint: 'Click the map to zoom with the wheel' })}'
        data-webx-consent="media">
     <div class="webx-map__place">
-      <p class="webx-map__address">1 Example Street, London</p>
-      <a class="webx-map__open" href="https://www.openstreetmap.org/?mlat=51.5074&amp;mlon=-0.1278">Open in maps</a>
+      <p class="webx-map__address">1 Example Street, Sample City</p>
+      <a class="webx-map__open" href="https://www.openstreetmap.org/?mlat=12.34&amp;mlon=-34.56">Open in maps</a>
       ${
         blocked
           ? `<p class="webx-map__notice">The map loads from OpenStreetMap</p>
@@ -66,14 +66,14 @@ describe('map', () => {
     expect(root(1).querySelector('.webx-map__canvas.leaflet-container')).not.toBeNull()
     expect(tiles(1).length).toBeGreaterThan(0)
     expect(tiles(1).every((src) => src.startsWith('https://tile.openstreetmap.org/15/'))).toBe(true)
-    expect(leaflet.getCenter().lat).toBeCloseTo(51.5074)
+    expect(leaflet.getCenter().lat).toBeCloseTo(12.34)
     expect(root(1).classList.contains('is-loaded')).toBe(true)
     expect(root(1).classList.contains('is-blocked')).toBe(false)
     expect(root(1).querySelector('.webx-map__place').hidden).toBe(true)
     expect(root(1).querySelector('.webx-map__notice')).toBeNull()
 
     const pin = root(1).querySelector('.webx-map__marker')
-    expect(pin.getAttribute('title')).toBe('1 Example Street, London')
+    expect(pin.getAttribute('title')).toBe('1 Example Street, Sample City')
     expect(pin.querySelector('svg')).not.toBeNull()
     // Leaflet's own attribution stays off: the server's is the one.
     expect(root(1).querySelector('.leaflet-control-attribution')).toBeNull()
