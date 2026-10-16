@@ -12,6 +12,7 @@ use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Widgets\Consent;
 use WebxUi\Widgets\Facades\Consent as ConsentFacade;
+use WebxUi\Widgets\Widgets;
 
 /**
  * Spec §9: the banner on every page, the answer read on the server, the version of the policy,
@@ -29,6 +30,8 @@ final class ConsentTest extends TestCase
         $router->get('/gate', static fn (): string => Blade::render('<x-layout><x-webx-consent category="statistics"><script src="https://counter.example/c.js"></script></x-webx-consent></x-layout>'));
         $router->get('/link', static fn (): string => Blade::render('<x-layout><footer><x-webx-consent-link class="site-footer__link" /></footer></x-layout>'));
         $router->get('/has', static fn (): string => json_encode(array_map(ConsentFacade::has(...), Consent::CATEGORIES), JSON_THROW_ON_ERROR));
+        // What the head place of the snippets module prints above `@webxTheme`: the marker, then a tag.
+        $router->get('/early', static fn (): string => Blade::render('<!doctype html><html><head><meta charset="utf-8">'.Widgets::EARLY.'<script>window.tag = 1</script>@webxTheme</head><body><p>Hello</p></body></html>'));
     }
 
     protected function setUp(): void
@@ -154,6 +157,31 @@ final class ConsentTest extends TestCase
 
         $this->withUnencryptedCookie(Consent::COOKIE, json_encode(['v' => '1', 'c' => ['statistics']], JSON_THROW_ON_ERROR));
         $this->assertStringContainsString('"analytics_storage":"granted"', (string) $this->get('/plain')->getContent());
+    }
+
+    #[Test]
+    public function the_default_goes_on_the_early_marker_above_a_tag_of_the_head_once(): void
+    {
+        $html = (string) $this->get('/early')->assertOk()->getContent();
+
+        $this->assertSame(1, substr_count($html, '"consent","default"'));
+        $this->assertLessThan(strpos($html, '<script>window.tag = 1</script>'), strpos($html, '"consent","default"'));
+        $this->assertStringNotContainsString(Widgets::EARLY, $html);
+
+        // With the banner off there is no default to give, and the marker goes all the same.
+        config()->set('webx-widgets.consent.enabled', false);
+        $html = (string) $this->get('/early')->getContent();
+        $this->assertStringNotContainsString('"consent","default"', $html);
+        $this->assertStringNotContainsString(Widgets::EARLY, $html);
+    }
+
+    #[Test]
+    public function without_the_early_marker_the_default_stays_with_the_stylesheets(): void
+    {
+        $html = (string) $this->get('/plain')->getContent();
+
+        $this->assertSame(1, substr_count($html, '"consent","default"'));
+        $this->assertGreaterThan(strpos($html, '<meta name="viewport"'), strpos($html, '"consent","default"'));
     }
 
     #[Test]

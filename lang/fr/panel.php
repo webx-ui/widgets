@@ -18,4 +18,6 @@ return [
     'texts-help' => 'Vide : les textes du paquet dans la langue du visiteur.',
     'text-title' => 'Titre du bandeau',
     'text-text' => 'Texte du bandeau',
+    'maps-at-once' => 'Cartes sans demander',
+    'maps-at-once-help' => 'Les cartes se chargent tout de suite, sans avis et avant le consentement aux médias : le service de cartes reçoit l’adresse IP du visiteur dès l’ouverture de la page. À activer seulement si vous avez décidé que le site n’a pas besoin de consentement pour cela ; la bannière et les autres catégories restent telles quelles, et l’audit du site le signale.',
 ];

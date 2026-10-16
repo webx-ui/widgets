@@ -107,6 +107,7 @@ final class AuditTest extends TestCase
         $this->artisan('webx:audit:run')->assertSuccessful();
 
         $this->assertSame([
+            '' => ['maps-at-once'],
             '/raw' => [
                 'https://www.google.com/maps/embed?pb=1',
                 'https://www.googletagmanager.com/gtm.js?id=GTM-1',
@@ -178,7 +179,7 @@ final class AuditTest extends TestCase
 
         // What the reader keeps of a page: only what is there.
         $home = AuditPage::query()->where('url', self::BASE.'/')->firstOrFail();
-        $this->assertSame(['waits' => ['media' => 2, 'statistics' => 1]], $home->fact('widgets'));
+        $this->assertSame(['waits' => ['media' => 3, 'statistics' => 1]], $home->fact('widgets'), 'a map that waits is no map at once');
         $this->assertNull(AuditPage::query()->where('url', self::BASE.'/plain')->firstOrFail()->fact('widgets'));
 
         // Every check has its three texts, in the dictionary of the package.
@@ -224,6 +225,23 @@ final class AuditTest extends TestCase
         // What a template prints is in no field: no fix to offer.
         $map = AuditIssue::query()->where('check', 'widgets.before_consent')->where('key', 'like', '%google.com/maps%')->firstOrFail();
         $this->getJson(route('webx.audit.runs.issues.fixes', [$run, $map->id]))->assertOk()->assertJsonCount(0, 'data');
+    }
+
+    #[Test]
+    public function a_map_let_load_without_consent_is_a_notice_for_the_site_not_an_error(): void
+    {
+        $this->artisan('webx:audit:run')->assertSuccessful();
+
+        $notice = AuditIssue::query()->where('check', 'widgets.before_consent')->where('key', 'maps-at-once')->firstOrFail();
+        $this->assertNull($notice->url);
+        $this->assertSame('notice', $notice->severity, 'the owner decided it: seen, not an error');
+        $this->assertSame('webx-widgets::audit.maps-at-once', $notice->details['summary']['key']);
+        $this->assertSame(['count' => 1], $notice->details['summary']['params'], 'The home page\'s map waits; only the contacts page\'s does not.');
+        $this->assertSame([[self::BASE.'/contacts', 1]], array_map(static fn (array $row): array => [$row['url'], $row['value']], $notice->details['table']['rows']));
+
+        $run = AuditRun::query()->latest('id')->firstOrFail();
+        $this->actingAs($this->admin(['audit.view', 'audit.manage']), 'cms');
+        $this->getJson(route('webx.audit.runs.issues.fixes', [$run, $notice->id]))->assertOk()->assertJsonCount(0, 'data');
     }
 
     #[Test]
@@ -330,6 +348,7 @@ final class AuditTest extends TestCase
             '/' => $page('Home', '<a href="/raw">Raw</a> <a href="/lightbox">Lightbox</a> <a href="/slider">Slider</a> <a href="/contacts">Contacts</a> <a href="/plain">Plain</a>'
                 // What waits as it should: the video and the map widgets, hand-made code marked.
                 .'<div class="webx-video" data-webx-video="{}" data-webx-consent="media"><a class="webx-video__facade" href="https://www.youtube.com/watch?v=x">Play</a></div>'
+                .'<div class="webx-map is-blocked" data-webx-map="{}" data-webx-consent="media"></div>'
                 .'<iframe data-webx-consent="media" data-src="https://www.youtube-nocookie.com/embed/x" title="x"></iframe>'
                 .'<script type="text/plain" data-webx-consent="statistics" src="https://www.googletagmanager.com/gtag/js?id=G-1"></script>'
                 .'<script type="text/plain" data-webx-consent="necessary">window.ok = 1</script>'
@@ -371,6 +390,8 @@ final class AuditTest extends TestCase
                 .'<div class="webx-load-more" id="buttoned" data-webx-load-more="page" data-next="/slider?page=2"><div data-webx-load-more-list><p>1</p></div><a href="/slider?page=3">3</a><button type="button">Show more</button></div>'
                 .'<div class="slide" id="unlinked" data-webx-zoom="/big.jpg"><img src="/small.jpg" alt=""></div><a href="/big.jpg" data-webx-zoom data-webx-lightbox="g" data-width="1800" data-height="1200"><img src="/big.jpg" alt=""></a><figure data-webx-zoom><a href="/big.jpg"><img src="/big.jpg" alt=""></a></figure>'),
             '/contacts' => $page('Contacts', '<div class="webx-contact-button"></div><div class="webx-contact-bar"></div>'
+                // A map the owner lets load without consent: its tiles are the script's, no address in the markup.
+                .'<div class="webx-map" data-webx-map=\'{"consent":false}\'></div>'
                 // A layout with neither @webxTheme nor @webxWidgets: the form never gets its script.
                 .'<form id="request" class="webx-form" method="post" action="/webx/forms/contact" data-webx-send><button>Send</button></form>'),
             '/plain' => $page('Plain', '<p>Nothing of the widgets here.</p>'),

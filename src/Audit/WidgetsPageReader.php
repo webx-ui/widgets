@@ -17,6 +17,7 @@ use WebxUi\Audit\Crawl\PageParser;
  *                        script that runs (by `src` or by a known address in its text)
  *     waits              what waits for consent, by category — `data-webx-consent` on a script
  *                        of `text/plain`, an iframe with `data-src`, a template, a video or a map
+ *     maps_at_once       maps of `<x-webx-map>` the site lets load without consent (§11)
  *     lightbox_unsized   `a[data-webx-lightbox]` without `data-width` and `data-height`
  *     slider_unpaused    a slider that moves by itself with no pause button in it
  *     video_unpaused     a background video with no pause button in it
@@ -47,6 +48,7 @@ final class WidgetsPageReader implements AuditPageReader
         $facts = array_filter([
             'loads' => $this->loads($document),
             'waits' => $this->waits($document),
+            'maps_at_once' => $document->querySelectorAll('[data-webx-map]:not([data-webx-consent])')->length,
             'lightbox_unsized' => $this->unsized($document),
             'slider_unpaused' => $this->unpaused($document),
             'video_unpaused' => $this->stillless($document),

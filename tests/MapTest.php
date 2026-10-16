@@ -141,6 +141,64 @@ final class MapTest extends TestCase
     }
 
     #[Test]
+    public function a_site_that_lets_maps_load_without_consent_prints_the_map_for_the_script_at_once(): void
+    {
+        $this->artisan('webx:theme:sync')->assertSuccessful();
+        config()->set('webx-widgets.map.consent', false);
+
+        $html = (string) $this->get('/map')->assertOk()->getContent();
+
+        $this->assertStringContainsString('class="webx-map" role="region"', $html, 'not blocked');
+        $this->assertStringContainsString('&quot;consent&quot;:false}', $html, 'the script is told not to wait');
+        $this->assertStringNotContainsString('webx-map__notice', $html);
+        $this->assertStringNotContainsString('data-webx-map-load', $html);
+        $this->assertStringNotContainsString('data-webx-map-always', $html);
+        $this->assertStringNotContainsString('data-webx-consent="media"', $html, 'nothing on the page waits for media');
+        $this->assertStringContainsString('webx-map__attribution', $html, 'the licence is printed all the same');
+        // The banner is still there and does not offer media for a map that does not ask for it.
+        $this->assertStringContainsString('data-webx-consent-root', $html);
+        $this->assertDoesNotMatchRegularExpression('/data-webx-consent-row="media"(?![^>]*hidden)/', $html);
+        $this->assertSame([], app(Consent::class)->categories($html));
+        $this->assertFalse(app(Consent::class)->has('media'), 'no category is granted by it');
+    }
+
+    #[Test]
+    public function the_cookie_tab_lifts_the_wait_and_cannot_put_back_what_the_config_lifted(): void
+    {
+        $this->assertTrue(app(Consent::class)->mapsWait(), 'maps wait unless told');
+
+        app(Settings::class)->save(['consent.maps-at-once' => true]);
+        $this->assertFalse(app(Consent::class)->mapsWait());
+        $this->assertStringNotContainsString('webx-map__notice', (string) $this->get('/map')->getContent());
+
+        // The banner stops offering media a waiting map once asked for: its list starts over.
+        app(Consent::class)->categories('<div data-webx-consent="media"></div>');
+        app(Settings::class)->save(['consent.maps-at-once' => true]);
+        $this->assertSame([], app(Consent::class)->categories());
+
+        // A tab saved with the switch off leaves the config's word standing.
+        app(Settings::class)->save(['consent.maps-at-once' => false]);
+        $this->assertTrue(app(Consent::class)->mapsWait());
+        config()->set('webx-widgets.map.consent', false);
+        $this->assertFalse(app(Consent::class)->mapsWait());
+    }
+
+    #[Test]
+    public function the_consent_attribute_decides_for_one_map(): void
+    {
+        $this->assertStringNotContainsString('is-blocked', Blade::render('<x-webx-map :lat="1" :lng="2" :consent="false" />'));
+        $this->assertStringNotContainsString('is-blocked', Blade::render('<x-webx-map :lat="1" :lng="2" consent="false" />'), 'written as text, false is false');
+        $this->assertStringContainsString('is-blocked', Blade::render('<x-webx-map :lat="1" :lng="2" consent="" />'), 'empty is the site\'s');
+
+        config()->set('webx-widgets.map.consent', false);
+        $html = Blade::render('<x-webx-map :lat="1" :lng="2" :consent="true" />');
+        $this->assertStringContainsString('is-blocked', $html);
+        $this->assertStringContainsString('data-webx-consent="media"', $html);
+
+        $this->assertRefused('<x-webx-map :lat="1" :lng="2" consent="maybe" />', '`consent` is true or false, not "maybe"');
+    }
+
+    #[Test]
     public function from_settings_it_is_the_primary_address_of_the_contacts_tab(): void
     {
         app(Settings::class)->save([

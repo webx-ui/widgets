@@ -18,4 +18,6 @@ return [
     'texts-help' => 'Vacío: los textos del paquete en el idioma del visitante.',
     'text-title' => 'Título del banner',
     'text-text' => 'Texto del banner',
+    'maps-at-once' => 'Mapas sin preguntar',
+    'maps-at-once-help' => 'Los mapas se cargan al instante, sin aviso y antes del consentimiento a medios: el servicio de mapas recibe la dirección IP del visitante al abrir la página. Actívalo solo si has decidido que el sitio no necesita consentimiento para ello; el banner y las demás categorías siguen igual, y la auditoría del sitio lo indica.',
 ];

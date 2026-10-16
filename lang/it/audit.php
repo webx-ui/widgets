@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 return [
     'before-consent' => ':kind da :host si carica prima del consenso a «:category»',
+    'maps-at-once' => 'Pagine con mappe caricate senza consenso: :count',
     'banner-off' => 'Pagine con terze parti: :count',
     'lightbox-size' => 'Link senza dimensioni: :count',
     'slider-pause' => 'Slider senza pulsante di pausa: :count',

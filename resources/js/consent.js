@@ -12,7 +12,9 @@
  *       type (`data-webx-type`, or none: classic), so the browser runs it;
  *   <iframe data-webx-consent="media" data-src="…">                    gets its `src`;
  *   <template data-webx-consent="marketing">…</template>                its content goes on the page,
- *       scripts inside re-created (what `<x-webx-consent>` prints).
+ *       scripts inside re-created with the type they were written with, one after another: an
+ *       inline script after an external one waits for it to load, as it would in the page
+ *       (what `<x-webx-consent>` and the snippets module print).
  * Taking an answer back reloads the page: a script that ran cannot be unloaded.
  *
  * For the site's own scripts: `webx.consent.has(category)`, and `webx:consent` on `document`
@@ -51,20 +53,55 @@ function write(version, categories, days) {
   document.cookie = `${COOKIE}=${value}; Path=/; Max-Age=${days * 86400}; SameSite=Lax${secure}`
 }
 
-/** A script built by the parser stays inert wherever it is moved: only a new one runs. */
-function revive(old) {
+/**
+ * A script built by the parser stays inert wherever it is moved: only a new one runs.
+ *
+ * `text/plain` is the parking type of a waiting script, and its real one is `data-webx-type`
+ * (none: classic). A script from a `<template>` was never parked: its own `type` is kept, so
+ * JSON-LD stays data and a module stays a module.
+ */
+function revive(old, parked = true) {
   const script = document.createElement('script')
   for (const { name, value } of Array.from(old.attributes)) {
-    if (name !== 'type' && name !== 'data-webx-consent' && name !== 'data-webx-type') {
-      script.setAttribute(name, value)
-    }
+    if (name === 'data-webx-consent' || name === 'data-webx-type') continue
+    if (name === 'type' && parked) continue
+    script.setAttribute(name, value)
   }
-  const type = old.getAttribute('data-webx-type')
+  const type = parked ? old.getAttribute('data-webx-type') : null
   if (type) script.type = type
   // Inserted scripts load async; several from one place keep their order as written.
   if (script.src) script.async = false
   script.textContent = old.textContent
   old.replaceWith(script)
+  return script
+}
+
+const RUNS = ['', 'text/javascript', 'application/javascript', 'module']
+
+/** Whether the browser loads this script and fires `load` or `error` when it has. */
+function loads(script) {
+  return Boolean(script.src) && RUNS.includes(script.type.trim().toLowerCase())
+}
+
+/**
+ * The scripts of an unpacked template, in the order written. `async = false` orders external
+ * scripts among themselves only; an inline one runs the moment it is inserted — before the
+ * library it calls has loaded (`<script src="…/widget.js"></script><script>Widget.init()</script>`).
+ * So each one goes in after the external one before it has loaded or failed.
+ */
+function reviveInOrder(scripts) {
+  const next = (index) => {
+    for (let i = index; i < scripts.length; i++) {
+      const script = revive(scripts[i], false)
+      if (loads(script)) {
+        const go = () => next(i + 1)
+        script.addEventListener('load', go, { once: true })
+        script.addEventListener('error', go, { once: true })
+        return
+      }
+    }
+  }
+  next(0)
 }
 
 function release(el) {
@@ -77,7 +114,7 @@ function release(el) {
     const content = el.content.cloneNode(true)
     const scripts = Array.from(content.querySelectorAll('script'))
     el.replaceWith(content)
-    scripts.forEach(revive)
+    reviveInOrder(scripts)
   }
 }
 

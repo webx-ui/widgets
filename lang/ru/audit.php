@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 return [
     'before-consent' => ':kind с :host грузится до согласия на «:category»',
+    'maps-at-once' => 'Страниц с картами без ожидания согласия: :count',
     'banner-off' => 'Страниц со сторонним: :count',
     'lightbox-size' => 'Ссылок без размеров: :count',
     'slider-pause' => 'Слайдеров без кнопки паузы: :count',

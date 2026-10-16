@@ -9,16 +9,20 @@ afterEach(() => {
 
 const TILES = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
 
-// What `<x-webx-map>` prints: the place, and before consent the notice of §9.4 in it.
-const map = (n, { blocked = true, marker = '1 Example Street, Sample City' } = {}) => `
-  <div class="webx-map${blocked ? ' is-blocked' : ''}" id="m${n}" role="region" aria-label="Map"
-       data-webx-map='${JSON.stringify({ lat: 12.34, lng: -34.56, zoom: 15, tiles: TILES, maxZoom: 19, marker, hint: 'Click the map to zoom with the wheel' })}'
-       data-webx-consent="media">
+// What `<x-webx-map>` prints: the place, and before consent the notice of §9.4 in it. A site that
+// lets maps load without consent prints neither the notice nor `data-webx-consent`.
+const map = (
+  n,
+  { blocked = true, marker = '1 Example Street, Sample City', waits = true } = {},
+) => `
+  <div class="webx-map${blocked && waits ? ' is-blocked' : ''}" id="m${n}" role="region" aria-label="Map"
+       data-webx-map='${JSON.stringify({ lat: 12.34, lng: -34.56, zoom: 15, tiles: TILES, maxZoom: 19, marker, hint: 'Click the map to zoom with the wheel', ...(waits ? {} : { consent: false }) })}'
+       ${waits ? 'data-webx-consent="media"' : ''}>
     <div class="webx-map__place">
       <p class="webx-map__address">1 Example Street, Sample City</p>
       <a class="webx-map__open" href="https://www.openstreetmap.org/?mlat=12.34&amp;mlon=-34.56">Open in maps</a>
       ${
-        blocked
+        blocked && waits
           ? `<p class="webx-map__notice">The map loads from OpenStreetMap</p>
       <div class="webx-map__actions"><button type="button" class="webx-map__button" data-webx-map-load>Load</button>
       <button type="button" class="webx-map__button webx-map__button--always" data-webx-map-always>Always load maps</button></div>`
@@ -120,6 +124,28 @@ describe('map', () => {
 
     watched[0].observer.callback([{ isIntersecting: true, target: root(1) }])
     expect(maps.get(root(1))).toBeDefined()
+  })
+
+  it('a site that lets maps load without consent: tiles at once, no answer asked, the banner untouched', async () => {
+    const { maps } = await start(map(1, { waits: false }), { consent: true })
+
+    expect(maps.get(root(1))).toBeDefined()
+    expect(tiles(1).length).toBeGreaterThan(0)
+    expect(root(1).classList.contains('is-loaded')).toBe(true)
+    expect(root(1).querySelector('.webx-map__notice')).toBeNull()
+    expect(root(1).querySelector('[data-webx-map-load]')).toBeNull()
+    expect(window.webx.consent.has('media')).toBe(false)
+    expect(document.cookie).not.toContain('webx_consent')
+  })
+
+  it('told not to wait, it loads even with the notice left in the markup', async () => {
+    // A theme's override that still prints the notice: the setting, not the markup, decides.
+    const html = map(1).replace(`"marker"`, `"consent":false,"marker"`)
+    const { maps } = await start(html)
+
+    expect(maps.get(root(1))).toBeDefined()
+    expect(root(1).classList.contains('is-blocked')).toBe(false)
+    expect(root(1).querySelector('.webx-map__notice')).toBeNull()
   })
 
   it('a map mounted after the answer reads it itself', async () => {

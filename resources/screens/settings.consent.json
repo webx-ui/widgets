@@ -71,6 +71,13 @@
                   }
                 ]
               }
+            },
+            {
+              "id": "consent-maps-at-once",
+              "type": "wx-switch",
+              "name": "consent.maps-at-once",
+              "label": "trans::webx-widgets::panel.maps-at-once",
+              "help": "trans::webx-widgets::panel.maps-at-once-help"
             }
           ]
         },

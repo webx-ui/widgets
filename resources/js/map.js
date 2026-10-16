@@ -8,7 +8,8 @@
  * one, no consent given), on "Always" (the consent, through `webx.consent.set()`: the banner is
  * answered and every map on the page loads, no reload) or at once when consent was there before.
  * Even then it waits until the frame is near the screen: a map at the foot of a long page asks
- * for nothing the visitor does not scroll to.
+ * for nothing the visitor does not scroll to. A site whose owner lets maps load without consent
+ * says so in the settings (`consent: false`): no notice was printed, and the map goes in at once.
  *
  * The map lies still under the page until it is clicked or focused: the wheel scrolls the page,
  * and on a touch screen one finger does too. A click or the focus wakes it — the wheel zooms, a
@@ -186,7 +187,11 @@ export function map(root) {
   document.addEventListener('webx:consent', onConsent)
   root.classList.add('is-ready')
 
-  if (!root.classList.contains('is-blocked') || webx.consent?.has?.('media')) {
+  if (
+    config.consent === false ||
+    !root.classList.contains('is-blocked') ||
+    webx.consent?.has?.('media')
+  ) {
     unblock()
     load()
   }

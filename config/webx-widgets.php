@@ -58,6 +58,12 @@ return [
             ],
         ],
 
+        // Whether a map waits for consent to `media` (§9.4): tiles send the visitor's address to the
+        // provider. False only when the owner decided the site needs no consent for that: maps load
+        // at once, the banner and the other categories are as they were, and the audit notes it.
+        // The Cookie tab's "Maps without asking" does the same; either of the two lifts the wait.
+        'consent' => true,
+
         // "Open in maps": where the link under the address leads when the address has no link of its own.
         'open' => 'https://www.openstreetmap.org/?mlat={lat}&mlon={lng}#map={zoom}/{lat}/{lng}',
     ],

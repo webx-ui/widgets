@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 return [
     'before-consent' => ':host kaynaklı :kind, “:category” onayından önce yükleniyor',
+    'maps-at-once' => 'Onay beklemeden yüklenen haritalı sayfalar: :count',
     'banner-off' => 'Üçüncü taraf içeren sayfa: :count',
     'lightbox-size' => 'Boyutsuz bağlantı: :count',
     'slider-pause' => 'Duraklat düğmesi olmayan slider: :count',

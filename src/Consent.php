@@ -82,6 +82,17 @@ final class Consent
         return in_array($category, $this->answer()['c'] ?? [], true);
     }
 
+    /**
+     * Whether `<x-webx-map>` waits for consent to `media` (§11) — yes unless the owner decided
+     * otherwise: the switch "Maps without asking" of the Cookie tab, or `webx-widgets.map.consent`
+     * set to false. The switch can only lift the wait: a tab saved with it off must not undo
+     * what the config says. Nothing else changes — the other categories and the banner still ask.
+     */
+    public function mapsWait(): bool
+    {
+        return ! (bool) $this->panel('maps-at-once') && $this->config->get('webx-widgets.map.consent', true) !== false;
+    }
+
     /** Whether the visitor answered the current version of the policy. */
     public function answered(): bool
     {
@@ -136,6 +147,15 @@ final class Consent
         }
 
         return array_values(array_intersect(self::OPTIONAL, [...$all, ...($this->answer()['c'] ?? [])]));
+    }
+
+    /**
+     * Forget the categories pages have asked for: they are gathered again from the pages served
+     * next. Maps let load without consent no longer ask for `media`, but the list remembers it.
+     */
+    public function forgetSeen(): void
+    {
+        $this->cache->forget(self::SEEN);
     }
 
     /** One of the banner's words: the setting in the current language, or the dictionary's. */
@@ -261,6 +281,12 @@ final class Consent
      */
     private function setting(string $key, mixed $default = null): mixed
     {
+        return $this->panel($key) ?? (str_starts_with($key, 'text-') ? null : $this->config->get("webx-widgets.consent.{$key}", $default));
+    }
+
+    /** A setting of the "Cookie" tab, or null when `module-settings` is not there or has none. */
+    private function panel(string $key): mixed
+    {
         if (class_exists(self::SETTINGS) && $this->app->bound(self::SETTINGS)) {
             $value = $this->app->make(self::SETTINGS)->get("consent.{$key}");
 
@@ -269,6 +295,6 @@ final class Consent
             }
         }
 
-        return str_starts_with($key, 'text-') ? null : $this->config->get("webx-widgets.consent.{$key}", $default);
+        return null;
     }
 }

@@ -18,4 +18,6 @@ return [
     'texts-help' => 'Empty: the package\'s words in the visitor\'s language.',
     'text-title' => 'Banner title',
     'text-text' => 'Banner text',
+    'maps-at-once' => 'Maps without asking',
+    'maps-at-once-help' => 'Maps load at once, without the notice and before consent to media: the map provider receives the visitor’s IP address as the page opens. On only if you have decided the site needs no consent for that; the banner and the other categories stay as they are, and the site audit notes it.',
 ];

@@ -19,6 +19,7 @@ use WebxUi\Audit\Checks\AuditChecks;
 use WebxUi\Audit\Crawl\PageReaders;
 use WebxUi\Audit\Fixes\AuditFixes;
 use WebxUi\Blocks\BlockOffers;
+use WebxUi\Blocks\Events\BlockDrawn;
 use WebxUi\Media\MediaServiceProvider;
 use WebxUi\Themes\BottomLayers;
 use WebxUi\Themes\Contracts\HeadPart;
@@ -94,6 +95,8 @@ class WidgetsServiceProvider extends ServiceProvider
     private const string SETTINGS_SAVED = 'WebxUi\Settings\Events\SettingsSaved';
 
     private const string ASK_AGAIN = 'consent.ask-again';
+
+    private const string MAPS_AT_ONCE = 'consent.maps-at-once';
 
     /** What `webx:blocks:offered --module=` calls the blocks this package offers. */
     public const string OFFERS = 'widgets';
@@ -189,6 +192,18 @@ class WidgetsServiceProvider extends ServiceProvider
             }
         });
 
+        // A block the panel draws on its own and swaps into a page printed before it: the files of
+        // its widgets go with it, gathered as a page's are — the stage would show a map without them.
+        if (class_exists(BlockDrawn::class)) {
+            $this->app->make(Dispatcher::class)->listen(BlockDrawn::class, function (BlockDrawn $drawn): void {
+                $piece = $this->app->make(Widgets::class)->piece($drawn->html);
+
+                $drawn->html = $piece['html'];
+                $drawn->head = [...$drawn->head, ...$piece['head']];
+                $drawn->body = [...$drawn->body, ...$piece['body']];
+            });
+        }
+
         // The whole page has rendered, the header and the footer too: every claim is known.
         $this->app->make(Dispatcher::class)->listen(RequestHandled::class, function (RequestHandled $event): void {
             $widgets = $this->app->make(Widgets::class);
@@ -227,6 +242,11 @@ class WidgetsServiceProvider extends ServiceProvider
                     'consent.version' => (int) $this->app->make(Consent::class)->version() + 1,
                     self::ASK_AGAIN => false,
                 ]);
+            }
+
+            // "Maps without asking" changes what asks for `media`: the banner's list starts over.
+            if (in_array(self::MAPS_AT_ONCE, (array) ($event->keys ?? []), true)) {
+                $this->app->make(Consent::class)->forgetSeen();
             }
         });
     }

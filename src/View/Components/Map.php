@@ -23,6 +23,11 @@ use WebxUi\Widgets\Map\MapTiles;
  * the place; the wheel scrolls the page until the map is clicked or focused. The attribution of
  * the tiles is printed under every map, whatever the script does.
  *
+ * Whether it waits is the site's: `Consent::mapsWait()` — the Cookie tab's "Maps without asking",
+ * or `webx-widgets.map.consent`. An owner who decided the site needs no consent for the tiles
+ * turns the wait off: no notice, no `data-webx-consent`, the script puts the map in at once, and
+ * the audit notes it. `:consent="false"` (or true) decides for one map, whatever the site says.
+ *
  * `from="settings"` reads the primary address of the "Contacts" tab (§12.1): its text, its
  * coordinates and its link to a map. An address without coordinates is the place alone, with no
  * map; no address, or no `module-settings`, prints nothing. `marker` is the pin's label — the
@@ -51,6 +56,9 @@ final class Map extends Component
 
     public string $name;
 
+    /** Whether the map waits for consent to `media` at all — the site's setting, or `consent`. */
+    public bool $waits = true;
+
     /** Before consent to `media`: the notice and its buttons. */
     public bool $blocked = false;
 
@@ -71,6 +79,7 @@ final class Map extends Component
         float|int|string|null $height = null,
         ?string $title = null,
         ?string $link = null,
+        bool|string|null $consent = null,
     ) {
         if ($from !== null && $from !== 'settings') {
             throw new InvalidArgumentException("<x-webx-map>: `from` is \"settings\" or nothing, not \"{$from}\".");
@@ -102,7 +111,8 @@ final class Map extends Component
         $tiles = MapTiles::configured();
         $this->zoom = min($this->zoom, $tiles->maxZoom);
         $this->href ??= MapTiles::openAt((float) $this->lat, (float) $this->lng, $this->zoom);
-        $this->blocked = ! app(Consent::class)->has('media');
+        $this->waits = self::flag($consent) ?? app(Consent::class)->mapsWait();
+        $this->blocked = $this->waits && ! app(Consent::class)->has('media');
         $this->notice = (string) __('webx-widgets::widgets.map.notice', ['provider' => $tiles->label]);
         $this->attribution = $tiles->attribution;
         $label = $marker === false ? null : ($this->address ?? '');
@@ -115,6 +125,11 @@ final class Map extends Component
             'marker' => $label,
             'hint' => (string) __('webx-widgets::widgets.map.hint'),
         ];
+
+        // Told, so the script does not wait for a consent the site does not ask for.
+        if (! $this->waits) {
+            $this->config['consent'] = false;
+        }
     }
 
     public function hasMap(): bool
@@ -172,6 +187,21 @@ final class Map extends Component
         }
 
         throw new InvalidArgumentException('<x-webx-map>: a height is a CSS length — 24rem, 400px, 60svh — or a number of pixels, not "'.$height.'".');
+    }
+
+    /** `:consent="false"`, or `consent="false"` written as text — which PHP would read as true. */
+    private static function flag(bool|string|null $value): ?bool
+    {
+        if ($value === null || is_bool($value)) {
+            return $value;
+        }
+
+        if (trim($value) === '') {
+            return null;
+        }
+
+        return filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE)
+            ?? throw new InvalidArgumentException("<x-webx-map>: `consent` is true or false, not \"{$value}\".");
     }
 
     private static function filled(mixed $value): ?string

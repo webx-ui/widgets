@@ -18,4 +18,6 @@ return [
     'texts-help' => 'Puste: teksty pakietu w języku odwiedzającego.',
     'text-title' => 'Tytuł banera',
     'text-text' => 'Tekst banera',
+    'maps-at-once' => 'Mapy bez pytania',
+    'maps-at-once-help' => 'Mapy ładują się od razu, bez komunikatu i przed zgodą na multimedia: serwis map otrzymuje adres IP odwiedzającego przy otwarciu strony. Włącz tylko, jeśli zdecydowano, że strona nie potrzebuje na to zgody; baner i inne kategorie zostają bez zmian, a audyt strony to odnotuje.',
 ];

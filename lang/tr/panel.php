@@ -18,4 +18,6 @@ return [
     'texts-help' => 'Boş: paketin metinleri ziyaretçinin dilinde.',
     'text-title' => 'Bant başlığı',
     'text-text' => 'Bant metni',
+    'maps-at-once' => 'Sormadan haritalar',
+    'maps-at-once-help' => 'Haritalar hemen, bildirim olmadan ve medya onayından önce yüklenir: harita hizmeti sayfa açılırken ziyaretçinin IP adresini alır. Yalnızca sitenin bunun için onaya ihtiyacı olmadığına karar verdiyseniz açın; banner ve diğer kategoriler olduğu gibi kalır, site denetimi bunu not eder.',
 ];

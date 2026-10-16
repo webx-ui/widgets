@@ -50,8 +50,9 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
 - **Video** — `<x-webx-video src="<YouTube|Vimeo>" :poster title ratio>`: a poster, the player only
   on a click and after consent to `media`; no poster — its preview fetched once into the library.
   `:file="$media"` — `<video preload="none">`; `variant="background"` — a muted first-screen loop.
-- **Map** — `<x-webx-map :lat :lng :zoom marker height>` or `from="settings"`: address and "Open in
-  maps" always, tiles after consent; provider `webx-widgets.map.provider` (OpenStreetMap, no key).
+- **Map** — `<x-webx-map :lat :lng :zoom marker height consent>` or `from="settings"`: address and
+  "Open in maps" always, tiles after consent — unless the owner lifts the wait (Cookie tab "Maps
+  without asking", `webx-widgets.map.consent` false; the audit notes it); provider `map.provider`.
 - **Page tools** — a `<table>` without a class gets a scrolling `.webx-table` frame (server-side);
   `data-webx-reveal="up|fade|scale|stagger"`; `<x-webx-back-to-top>`; `<x-webx-share>`;
   `<x-webx-counter :value>`; `<x-webx-countdown to ended>`; `<x-webx-compare :before :after>`;

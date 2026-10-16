@@ -219,6 +219,56 @@ describe('what waits for consent', () => {
     expect(document.querySelector('iframe').getAttribute('src')).toBe('https://video.example/e')
   })
 
+  // jsdom runs no script, so what is watched is which element is in the page: a script is
+  // re-created when it is released, and an inert copy out of the template is still the old one.
+  it('keeps the type a script of a template was written with: data stays data, a module a module', async () => {
+    const webx = await start(
+      banner() +
+        `<template data-webx-consent="marketing"><script type="application/ld+json" id="data">{"@type":"Thing"}</script><script type="module" id="module">window.ran = 'module'</script><script id="classic">window.ran = 'classic'</script></template>`,
+    )
+
+    webx.consent.set(['marketing'])
+
+    expect(document.getElementById('data').getAttribute('type')).toBe('application/ld+json')
+    expect(document.getElementById('module').getAttribute('type')).toBe('module')
+    expect(document.getElementById('classic').hasAttribute('type')).toBe(false)
+  })
+
+  it('puts an inline script of a template in after the external one before it has loaded', async () => {
+    const webx = await start(
+      banner() +
+        `<template data-webx-consent="marketing"><script src="https://chat.example/widget.js" id="library"></script><script id="init">window.ran = 'init'</script><script src="https://chat.example/later.js" id="later"></script></template>`,
+    )
+
+    webx.consent.set(['marketing'])
+
+    const library = document.getElementById('library')
+    const init = document.getElementById('init')
+    const later = document.getElementById('later')
+    expect(library.async).toBe(false)
+
+    library.dispatchEvent(new Event('load'))
+
+    // Both re-created only now, the second external one ordered like the first.
+    expect(document.getElementById('init')).not.toBe(init)
+    expect(document.getElementById('init').textContent).toBe("window.ran = 'init'")
+    expect(document.getElementById('later')).not.toBe(later)
+    expect(document.getElementById('later').async).toBe(false)
+  })
+
+  it('goes on past an external script that failed to load', async () => {
+    const webx = await start(
+      banner() +
+        `<template data-webx-consent="marketing"><script src="https://chat.example/gone.js" id="gone"></script><script id="after">window.ran = 'after'</script></template>`,
+    )
+
+    webx.consent.set(['marketing'])
+    const after = document.getElementById('after')
+
+    document.getElementById('gone').dispatchEvent(new Event('error'))
+    expect(document.getElementById('after')).not.toBe(after)
+  })
+
   it('reloads the page when an answer is taken back: a script that ran cannot be unloaded', async () => {
     document.cookie = `webx_consent=${encodeURIComponent(JSON.stringify({ v: '1', c: ['statistics'] }))}; Path=/`
     const reload = vi.fn()
