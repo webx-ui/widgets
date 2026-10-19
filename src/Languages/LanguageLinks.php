@@ -14,6 +14,7 @@ use WebxUi\Localization\Models\Locale;
 use WebxUi\Routing\Contracts\Visible;
 use WebxUi\Routing\Models\Route;
 use WebxUi\Routing\Resolution;
+use WebxUi\Routing\RouteCache;
 use WebxUi\Routing\SiteUrl;
 use WebxUi\Routing\Untranslated;
 use WebxUi\Routing\UrlNormaliser;
@@ -113,7 +114,20 @@ final class LanguageLinks
     {
         $paths = [];
 
-        foreach (Route::query()->forEntity($entity)->canonical()->get() as $row) {
+        // The rows `url()` and `hreflang` read for the same page: the request's memory, the site's
+        // cache, one query — a `webx-ui/routing` from before the cache asks the registry itself.
+        $rows = match (true) {
+            $entity->relationLoaded('routes') => $entity->getRelation('routes'),
+            class_exists(RouteCache::class) => app(RouteCache::class)->canonical($entity),
+            default => Route::query()->forEntity($entity)->canonical()->get(),
+        };
+
+        /** @var iterable<Route> $rows */
+        foreach ($rows as $row) {
+            if ($row->kind !== Route::CANONICAL) {
+                continue;
+            }
+
             if (! $this->locales->has($row->locale)) {
                 continue;
             }
