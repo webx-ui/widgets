@@ -9,6 +9,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Facade;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\AdminServiceProvider;
 use WebxUi\Auth\AuthServiceProvider;
@@ -127,6 +128,27 @@ final class ContactsWidgetsTest extends TestCase
 
         $this->assertSame('', trim($html));
         $this->assertNotContains('contacts', app(Widgets::class)->claimed());
+    }
+
+    #[Test]
+    public function the_contact_button_is_switched_off_in_the_config(): void
+    {
+        $this->contacts();
+
+        $this->assertStringContainsString('webx-contact-button', Blade::render('<x-webx-contact-button form="callback" />'));
+        $this->assertContains('contacts', app(Widgets::class)->claimed());
+
+        // A fresh page: what the first render claimed is forgotten.
+        app()->forgetScopedInstances();
+        Facade::clearResolvedInstances();
+        config()->set('webx-widgets.contact_button', false);
+
+        $this->assertSame('', trim(Blade::render('<x-webx-contact-button form="callback" />')));
+        $this->assertNotContains('contacts', app(Widgets::class)->claimed());
+
+        // Only the button is off: the other contact widgets still print and claim their script.
+        $this->assertStringContainsString('webx-phones', Blade::render('<x-webx-phones />'));
+        $this->assertContains('contacts', app(Widgets::class)->claimed());
     }
 
     #[Test]

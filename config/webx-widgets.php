@@ -32,6 +32,14 @@ return [
     ],
 
     /*
+     * The quick-contact button in a corner of the window (spec §12.4), `<x-webx-contact-button>`,
+     * which `theme-default` prints on every page that has contacts. False for a site that wants
+     * none: the button is not printed wherever it is placed, and the contacts script is not
+     * loaded for it — other contact widgets on the page still load it for themselves.
+     */
+    'contact_button' => true,
+
+    /*
      * The map (spec §11): Leaflet over the tiles of the provider named here. OpenStreetMap needs
      * neither a key nor an account; any other provider of raster tiles is an entry with its
      * address — `{key}` in it is replaced with the entry's `key`. The attribution is printed

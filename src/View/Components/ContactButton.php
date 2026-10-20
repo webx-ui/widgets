@@ -18,6 +18,7 @@ use WebxUi\Widgets\Facades\Widgets;
  * It is a dropdown (§6.3) opening upwards, so the keyboard, Esc and one-open-at-a-time are the
  * dropdown's. While the cookie banner is on the screen the button stands above it rather than
  * under it. `:items` picks and orders what the list holds; nothing to list — nothing printed.
+ * `webx-widgets.contact_button` set to false turns it off on the whole site, wherever it is placed.
  */
 final class ContactButton extends Component
 {
@@ -46,6 +47,11 @@ final class ContactButton extends Component
             if (! in_array($item, self::ITEMS, true)) {
                 throw new InvalidArgumentException("<x-webx-contact-button :items>: \"{$item}\" is none of ".implode(', ', self::ITEMS).'.');
             }
+        }
+
+        // Off: no links, so no render and no claim on the contacts script; not even a read of them.
+        if (config('webx-widgets.contact_button', true) === false) {
+            return;
         }
 
         foreach ($items as $item) {

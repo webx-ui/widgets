@@ -37,8 +37,8 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
   the "Cookie" tab (`consent.*`), else `config/webx-widgets.php`.
 - **Contacts** — read the Contacts tab of `module-settings` (`contacts()`), print nothing while it
   is empty: `<x-webx-phones layout callback compact>`, `<x-webx-hours layout="status|table">`
-  (site's time zone, recomputed each minute), `<x-webx-contact-button corner form>`,
-  `<x-webx-contact-bar form breakpoint>`, `<x-webx-socials>`, `<x-webx-icon name>`.
+  (site's time zone, recomputed each minute), `<x-webx-contact-button corner form>` (off —
+  `contact_button => false`), `<x-webx-contact-bar form breakpoint>`, `<x-webx-socials>`, `<x-webx-icon name>`.
 - **Language switcher** — `<x-webx-language-switcher layout="dropdown|list" codes>`: the same page
   in each language (`routing`), else its home page with `is-fallback`; `LanguageLinks::current()`.
 - **Slider** — `<x-webx-slider variant="cards|hero|gallery|logos" :per-view="['sm' => 1.2, 'lg' => 3]">`
