@@ -21,12 +21,15 @@ use Illuminate\Support\Facades\Redirect;
  *     return FormResponse::ok();
  *
  * To a request that wants JSON — `<x-webx-form>` sending in place — it is
- * `{ ok, heading, message, redirect, html }`, and the form goes there, shows the message, puts the
+ * `{ ok, heading, heading_html, message, redirect, html }`, and the form goes there, shows the message, puts the
  * HTML in place of its fields or only says `webx:form:success`. To a plain POST — the same form
  * without JavaScript — it is a redirect: to the address, or back to the page with the message or
  * the HTML in the session, where the form that was sent prints them.
  *
- * The message is HTML and printed as it is: escape what a visitor wrote into it.
+ * The message is HTML and printed as it is: escape what a visitor wrote into it. The heading is
+ * text and printed escaped — unless it is an `Htmlable` (`new HtmlString(…)`): then it goes as
+ * `heading_html` and is printed as it is, with its text alone in `heading` for whoever reads only
+ * that.
  */
 final class FormResponse implements Responsable
 {
@@ -37,14 +40,14 @@ final class FormResponse implements Responsable
     public const string FORM = '_webx_form';
 
     private function __construct(
-        private readonly ?string $heading = null,
+        private readonly Htmlable|string|null $heading = null,
         private readonly ?string $message = null,
         private readonly ?string $redirect = null,
         private readonly Htmlable|Renderable|string|null $html = null,
     ) {}
 
     /** Shown in place of nothing, under the form's fields: a request, a subscription. */
-    public static function message(?string $heading, ?string $html = null): self
+    public static function message(Htmlable|string|null $heading, ?string $html = null): self
     {
         return new self(heading: $heading, message: $html);
     }
@@ -68,13 +71,14 @@ final class FormResponse implements Responsable
     }
 
     /**
-     * @return array{ok: true, heading: ?string, message: ?string, redirect: ?string, html: ?string}
+     * @return array{ok: true, heading: ?string, heading_html: ?string, message: ?string, redirect: ?string, html: ?string}
      */
     public function toArray(): array
     {
         return [
             'ok' => true,
-            'heading' => $this->heading,
+            'heading' => $this->heading instanceof Htmlable ? self::plain($this->heading) : $this->heading,
+            'heading_html' => $this->heading instanceof Htmlable ? $this->heading->toHtml() : null,
             'message' => $this->message,
             'redirect' => $this->redirect,
             'html' => match (true) {
@@ -83,6 +87,12 @@ final class FormResponse implements Responsable
                 default => $this->html,
             },
         ];
+    }
+
+    /** The text of an HTML heading: what a reader of `heading` alone, or a page of before, prints. */
+    public static function plain(Htmlable $heading): string
+    {
+        return html_entity_decode(strip_tags($heading->toHtml()), ENT_QUOTES | ENT_HTML5, 'UTF-8');
     }
 
     /**
@@ -104,6 +114,7 @@ final class FormResponse implements Responsable
         return Redirect::back()->with(self::FLASH, [
             'form' => is_string($form = $request->input(self::FORM)) ? $form : null,
             'heading' => $answer['heading'],
+            'heading_html' => $answer['heading_html'],
             'message' => $answer['message'],
             'html' => $answer['html'],
         ]);

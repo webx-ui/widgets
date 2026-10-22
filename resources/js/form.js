@@ -16,6 +16,9 @@
  *    the focus on the first field wrong; an error goes as soon as its field is changed;
  *  - the answer of FormResponse: off to `redirect`, `html` in place of the fields, `message`
  *    under them in a live region — in a dialog in place of them, with a button that closes it;
+ *    `heading_html` (a heading with the visitor's answers in it) as HTML, `heading` as text;
+ *  - `again` (`.webx-form__again`): the thank-you in place of the fields and a button that brings
+ *    them back empty, the focus on the first — the link to the page itself it is without this;
  *  - the checks of FormRules (§17.5) before anything is sent: a touched field when it is left,
  *    every field on submit, in the validator's own words; the browser's bubbles off
  *    (`novalidate`); a button with `formnovalidate` goes straight to the server;
@@ -118,14 +121,16 @@ function refuse(form, messages) {
   box.replaceChildren(list)
 }
 
-function say(form, heading, message) {
+function say(form, heading, message, headingHtml = null) {
   const box = own(form, '.webx-form__message')
   if (!box) return
   const parts = []
-  if (heading) {
+  if (heading || headingHtml) {
     const line = document.createElement('p')
     line.className = 'webx-form__heading'
-    line.textContent = heading
+    // The controller's own HTML, the visitor's words escaped in it: FormResponse::message(HtmlString).
+    if (headingHtml) line.innerHTML = headingHtml
+    else line.textContent = heading
     parts.push(line)
   }
   if (message) {
@@ -406,6 +411,7 @@ export function form(el) {
   const body = own(el, '.webx-form__body')
   const bar = own(el, '.webx-form__progress')
   const done = own(el, '.webx-form__done')
+  const again = own(el, '.webx-form__again')
   const refresh = el.getAttribute('data-webx-csrf')
   const dialog = el.closest('dialog')
   // An `action` input would shadow the property: the attribute is the address.
@@ -435,20 +441,38 @@ export function form(el) {
 
   // A dialog shows the thank-you in place of the fields and a button that closes it; closed, it
   // is a fresh form again. It never closes by itself: the visitor has to have time to read.
+  // `again`: the thank-you in place of the fields on the page as well, and the way back to them.
   const aside = () => {
-    if (!dialog || !body || !done) return
-    body.hidden = true
-    done.hidden = false
-    done.focus()
+    if (!body) return
+    if (dialog && done) {
+      body.hidden = true
+      done.hidden = false
+      if (again) again.hidden = false
+      done.focus()
+    } else if (again) {
+      body.hidden = true
+      again.hidden = false
+      // The button that sent is gone with the fields: the focus goes where the way back is.
+      again.focus({ preventScroll: true })
+    }
   }
 
   const fresh = () => {
-    if (!el.classList.contains('is-sent')) return
+    if (!el.classList.contains('is-sent')) return false
     el.classList.remove('is-sent')
     if (body) body.hidden = false
     if (done) done.hidden = true
+    if (again) again.hidden = true
     say(el, null, null)
     el.reset()
+    return true
+  }
+
+  const first = () => {
+    const field = fieldsOf(el)[0]
+    const control = field ? controlsOf(field)[0] : null
+    control?.focus({ preventScroll: true })
+    control?.scrollIntoView?.({ block: 'center', behavior: 'smooth' })
   }
 
   const emit = (name, detail, cancelable = false) =>
@@ -478,8 +502,8 @@ export function form(el) {
       body.innerHTML = data.html
       webx.mount?.(body)
       el.classList.add('is-sent')
-    } else if (data.heading || data.message) {
-      say(el, data.heading, data.message)
+    } else if (data.heading || data.heading_html || data.message) {
+      say(el, data.heading, data.message, data.heading_html)
       el.classList.add('is-sent')
       el.reset()
       aside()
@@ -637,6 +661,15 @@ export function form(el) {
       if (other.classList.contains('is-invalid')) recheck(other)
     }
   }
+  if (again) {
+    // A link to the page without the script; with it, the same form again in place.
+    again.setAttribute('role', 'button')
+    on(again, 'click', (event) => {
+      event.preventDefault()
+      if (fresh()) first()
+    })
+  }
+
   on(el, 'input', changed)
   on(el, 'change', changed)
   on(el, 'focusout', (event) => {
@@ -678,6 +711,7 @@ export function form(el) {
     on.off()
     el.noValidate = validated
     watch?.disconnect()
+    again?.removeAttribute('role')
     if (sending) busy(false)
   }
 }

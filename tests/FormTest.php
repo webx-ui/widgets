@@ -192,10 +192,10 @@ final class FormTest extends TestCase
     #[Test]
     public function the_answer_to_a_request_that_wants_json_is_the_one_convention(): void
     {
-        $this->postJson('/subscribe', ['answer' => 'message'])->assertExactJson(['ok' => true, 'heading' => 'Subscribed', 'message' => '<p>See you.</p>', 'redirect' => null, 'html' => null]);
-        $this->postJson('/subscribe', ['answer' => 'redirect'])->assertExactJson(['ok' => true, 'heading' => null, 'message' => null, 'redirect' => '/welcome', 'html' => null]);
-        $this->postJson('/subscribe', ['answer' => 'html'])->assertExactJson(['ok' => true, 'heading' => null, 'message' => null, 'redirect' => null, 'html' => '<p class="step">Step two</p>']);
-        $this->postJson('/subscribe', ['answer' => 'nothing'])->assertExactJson(['ok' => true, 'heading' => null, 'message' => null, 'redirect' => null, 'html' => null]);
+        $this->postJson('/subscribe', ['answer' => 'message'])->assertExactJson(['ok' => true, 'heading' => 'Subscribed', 'heading_html' => null, 'message' => '<p>See you.</p>', 'redirect' => null, 'html' => null]);
+        $this->postJson('/subscribe', ['answer' => 'redirect'])->assertExactJson(['ok' => true, 'heading' => null, 'heading_html' => null, 'message' => null, 'redirect' => '/welcome', 'html' => null]);
+        $this->postJson('/subscribe', ['answer' => 'html'])->assertExactJson(['ok' => true, 'heading' => null, 'heading_html' => null, 'message' => null, 'redirect' => null, 'html' => '<p class="step">Step two</p>']);
+        $this->postJson('/subscribe', ['answer' => 'nothing'])->assertExactJson(['ok' => true, 'heading' => null, 'heading_html' => null, 'message' => null, 'redirect' => null, 'html' => null]);
 
         // And the validator's 422, Laravel's as it is: the script lays it out by field.
         $this->postJson('/contact', [])->assertStatus(422)->assertJsonStructure(['message', 'errors' => ['fields.name', 'fields.email', 'captcha']]);
@@ -227,6 +227,56 @@ final class FormTest extends TestCase
         $step = (string) $this->followingRedirects()->from('/contact')->post('/subscribe', ['answer' => 'html', '_webx_form' => 'subscribe'])->getContent();
         $this->assertMatchesRegularExpression('~id="subscribe".*?<div class="webx-form__body">\s*<p class="step">Step two</p>\s*</div>~s', $step);
         $this->assertStringNotContainsString('id="field-email"', $step);
+    }
+
+    #[Test]
+    public function an_html_heading_goes_as_html_with_its_text_beside_it_both_ways(): void
+    {
+        $answer = FormResponse::message(new HtmlString('Thanks, <em class="webx-form__answer-value">Ann &amp; Bob</em>.'), '<p>Soon.</p>')->toArray();
+
+        $this->assertSame('Thanks, Ann & Bob.', $answer['heading']);
+        $this->assertSame('Thanks, <em class="webx-form__answer-value">Ann &amp; Bob</em>.', $answer['heading_html']);
+
+        $html = $this->withSession(['webx-form' => ['form' => 'thanks', 'heading' => $answer['heading'], 'heading_html' => $answer['heading_html'], 'message' => null, 'html' => null]])
+            ->renderPage('<x-webx-form action="/send" id="thanks"></x-webx-form>');
+        $this->assertStringContainsString('<p class="webx-form__heading">Thanks, <em class="webx-form__answer-value">Ann &amp; Bob</em>.</p>', $html);
+
+        // A heading of text stays text: what a visitor wrote into it is not markup.
+        $text = $this->withSession(['webx-form' => ['form' => 'thanks', 'heading' => '<b>Ann</b>', 'message' => null, 'html' => null]])
+            ->renderPage('<x-webx-form action="/send" id="thanks"></x-webx-form>');
+        $this->assertStringContainsString('<p class="webx-form__heading">&lt;b&gt;Ann&lt;/b&gt;</p>', $text);
+    }
+
+    #[Test]
+    public function again_is_off_by_default_and_links_back_to_the_form_without_javascript(): void
+    {
+        $plain = $this->renderPage('<x-webx-form action="/send" id="thanks"><input name="a"></x-webx-form>');
+        $this->assertStringNotContainsString('webx-form__again', $plain);
+
+        $html = $this->renderPage('<x-webx-form action="/send" id="thanks" again><input name="a"></x-webx-form>');
+        $this->assertStringContainsString('<a class="webx-form__again" href="http://localhost/page?x=1" data-webx-again hidden>Send another</a>', $html);
+        $this->assertStringContainsString('<div class="webx-form__body">', $html);
+
+        // Sent: the thank-you in place of the fields, the way back to them shown.
+        $sent = $this->withSession(['webx-form' => ['form' => 'thanks', 'heading' => 'Thank you', 'message' => null, 'html' => null]])
+            ->renderPage('<x-webx-form action="/send" id="thanks" again again-label="One more"><input name="a"></x-webx-form>');
+        $this->assertStringContainsString('<div class="webx-form__body" hidden>', $sent);
+        $this->assertStringContainsString('<a class="webx-form__again" href="http://localhost/page?x=1" data-webx-again>One more</a>', $sent);
+
+        // Without `again` a sent form keeps its fields under the thank-you, as it always did.
+        $kept = $this->withSession(['webx-form' => ['form' => 'thanks', 'heading' => 'Thank you', 'message' => null, 'html' => null]])
+            ->renderPage('<x-webx-form action="/send" id="thanks"><input name="a"></x-webx-form>');
+        $this->assertStringContainsString('<div class="webx-form__body">', $kept);
+
+        $this->app->setLocale('ru');
+        $this->assertStringContainsString('>Отправить ещё</a>', $this->renderPage('<x-webx-form action="/send" id="thanks" again></x-webx-form>'));
+    }
+
+    private function renderPage(string $blade): string
+    {
+        $this->app['router']->middleware('web')->get('/page', static fn (): string => Blade::render($blade));
+
+        return (string) $this->get('/page?x=1')->assertOk()->getContent();
     }
 
     #[Test]
@@ -323,7 +373,7 @@ final class FormTest extends TestCase
             ->assertJson(['redirect' => 'http://localhost']);
         $this->assertStringContainsString('Next, &lt;b&gt;Ann&lt;/b&gt;.', (string) $this->postJson('/webx/widgets/showcase', array_replace_recursive($sent, ['showcase' => ['answer' => 'html']]))->json('html'));
         $this->postJson('/webx/widgets/showcase', array_replace_recursive($sent, ['showcase' => ['answer' => 'nothing']]))
-            ->assertExactJson(['ok' => true, 'heading' => null, 'message' => null, 'redirect' => null, 'html' => null]);
+            ->assertExactJson(['ok' => true, 'heading' => null, 'heading_html' => null, 'message' => null, 'redirect' => null, 'html' => null]);
 
         // Removed with the demo: the journal is gone, the door with it.
         unlink($this->journal);

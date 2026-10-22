@@ -56,6 +56,9 @@ final class Widgets implements HeadPart
     /** The behaviours inside the runtime: claiming one is allowed and loads nothing more. */
     public const array RUNTIME = ['disclosure', 'dialog', 'tabs', 'accordion', 'mobile-menu', 'header', 'dropdown', 'form-dialog', 'reveal'];
 
+    /** `data-webx-smooth-scroll` on the page's <html> or <body>: the switch of the glide (spec §14). */
+    private const string SMOOTH_SCROLL = '~<(?:html|body)\b[^>]*\sdata-webx-smooth-scroll(?:\s*=|[\s>])~i';
+
     /** A form's slug, the shape `module-inbox` gives it. */
     private const string SLUG = '/^[a-z0-9][a-z0-9_-]*$/i';
 
@@ -147,6 +150,12 @@ final class Widgets implements HeadPart
     public function head(): string
     {
         return self::MARKER;
+    }
+
+    /** Whether the page's <html> or <body> asks for smooth scrolling: `data-webx-smooth-scroll`. */
+    public static function smoothScroll(string $html): bool
+    {
+        return preg_match(self::SMOOTH_SCROLL, $html) === 1;
     }
 
     /** Whether the page has either marker — `@webxTheme`'s or `@webxWidgets`'. */
@@ -353,6 +362,11 @@ final class Widgets implements HeadPart
         // A picture with `data-webx-zoom` claims the zoom the same way: a gallery's link, a slide (§14).
         if (Zoom::wanted($html) && $this->built('zoom', 'js')) {
             $this->need('zoom');
+        }
+
+        // The theme's layout switches the page to the glide; nothing renders to claim it (§14).
+        if (self::smoothScroll($html) && $this->built('smooth-scroll', 'js')) {
+            $this->need('smooth-scroll');
         }
     }
 

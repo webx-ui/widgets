@@ -186,6 +186,7 @@ return [
     'form' => [
         'failed' => 'Das Formular konnte nicht gesendet werden. Prüfen Sie die Verbindung und versuchen Sie es erneut.',
         'expired' => 'Die Seite ist schon zu lange geöffnet. Laden Sie sie neu und senden Sie das Formular noch einmal.',
+        'again' => 'Weitere senden',
     ],
     'suggest' => [
         'label' => 'Suche',

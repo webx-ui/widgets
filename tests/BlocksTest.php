@@ -31,7 +31,7 @@ use WebxUi\Widgets\WidgetsServiceProvider;
 
 /**
  * The blocks `gallery`, `logos`, `video`, `map`, `counters`, `countdown`, `compare` and `toc` (§15.1, §14): offered to a site with blocks and a media
- * library, installed and published by the command `webx:setup` runs, and printed with the
+ * library, installed and published by `webx:blocks:offered --install` (the line `webx:setup` prints), and printed with the
  * slider, the lightbox and the video inside — pictures of the library with their sizes, one
  * group per block; a video of a provider behind the consent, a file of the library as is; a
  * map of the contacts or of its own coordinates, behind the consent too.

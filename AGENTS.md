@@ -56,22 +56,25 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
 - **Page tools** — a `<table>` without a class gets a scrolling `.webx-table` frame (server-side);
   `data-webx-reveal="up|fade|scale|stagger"`; `<x-webx-back-to-top>`; `<x-webx-share>`;
   `<x-webx-counter :value>`; `<x-webx-countdown to ended>`; `<x-webx-compare :before :after>`;
-  `<x-webx-toc for depth side>`; `<x-webx-pagination :paginator>`;
-  `<x-webx-load-more :paginator pages="covered|shown">` (fetches the next page's HTML);
+  `<x-webx-toc for depth side>`; `<x-webx-pagination :paginator>`; `<x-webx-load-more :paginator pages="covered|shown">`;
   `<x-webx-notice-bar place="notice">` (a `module-banners` place, closed versions remembered).
+- **Smooth scrolling** — `data-webx-smooth-scroll` on the layout's `<html>`/`<body>` (Lenis; `-duration`,
+  `-easing`, `-wheel` or `--webx-smooth-scroll-*`); native under reduced motion, touch, no JS, a modal, `[data-webx-scroll-native]`.
 - **Fields** — `<x-webx-field type name label hint required>` for every form of the site; `type`
   `text` `email` `tel` `url` `password` `number` `textarea` `select` `radio` `checkbox`
   (`:choices` → a group, without → one tick) `consent` `date` `file` `hidden`. Value `old()`, error
   `$errors` by the dotted key (`fields.email` is written `fields[email]`); `autocomplete` and
   `inputmode` default by type; `class` on the field, other attributes on the control.
-- **The form** — `<x-webx-form :action method id bag :csrf>` around the fields and
+- **The form** — `<x-webx-form :action method id bag :csrf again>` around the fields and
   `<x-webx-form.submit>`: `@csrf`, `@method`, a hidden `_webx_form`. Without JavaScript a plain
   POST, each error back under its field. With it: sent in place, `X-XSRF-TOKEN`, one retry on 419,
   a 422 by field, no second submission, files with progress. `:csrf="false"` only for a door
-  guarded otherwise (inbox's intake).
+  guarded otherwise (inbox's intake). `again` (off by default) — «Send another» (`webx-form__again`)
+  in place of the fields after the thank-you: them back empty, focus on the first; no JS — a link.
 - **The answer** — `WebxUi\Widgets\Forms\FormResponse`: `FormResponse::message($heading, $html)`,
   `FormResponse::redirect($url)`, `FormResponse::html($view)` (a next step in place of the fields),
-  `FormResponse::ok()` (only the event); JSON to the script, a redirect with flash to a plain POST.
+  `FormResponse::ok()` (only the event); JSON to the script, a redirect with flash to a plain POST;
+  an `HtmlString` heading is HTML (`heading_html`, `FormResponse::plain()` — its text).
   Events on the `<form>`: `webx:form:submit` (cancelable, `detail.data`, `detail.wait(promise)`),
   `webx:form:success`, `webx:form:error`.
 - **Checks in the browser** — `<x-webx-form :rules="FormRules::for($rules, $attributes, $messages)">`
@@ -93,9 +96,8 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
   `--<variant>`, states `is-*` (`is-open`, `is-current`, `is-flipped`, `is-invalid`, `is-sending`…);
   each component's view lists its own. `html.webx-js` once the runtime runs,
   `html.webx-scroll-locked` under a modal, `html.webx-header-sticky` while the header sticks.
-- **Tokens and words** — `--webx-<name>-*` per widget on `:root` from `--site-*`;
-  `--webx-header-height` is kept live — the `top` of anything sticky. Words
-  `webx-widgets::widgets.*` in en ru uk de pl fr es it pt tr; each also a prop.
+- **Tokens and words** — `--webx-<name>-*` per widget on `:root` from `--site-*`; `--webx-header-height`
+  is kept live — the `top` of anything sticky. Words `webx-widgets::widgets.*` in en ru uk de pl fr es it pt tr; each also a prop.
 
 ## Change it without forking
 
@@ -139,12 +141,10 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
 
 - `webx:theme:sync` lists `webx-ui/widgets`; `runtime.css` is in `<head>`, `runtime.js` before
   `</body>`. Walk it with Tab; turn JavaScript off.
-- `php artisan webx:audit:run`, then `audit_issues` with `check: "widgets.before_consent"` —
-  nothing. The "Kitchen sink" pages of `theme-default` show each widget.
+- `php artisan webx:audit:run`, then `audit_issues` with `check: "widgets.before_consent"` — nothing. The "Kitchen sink" pages of `theme-default` show each widget.
 
 ## Read more
 
 - [README.md](README.md)
-- The guides: https://webx-ui.github.io/webx-ui/guide/widgets and
-  https://webx-ui.github.io/webx-ui/guide/forms (every rule, prop, class and event of the forms)
+- The guides: https://webx-ui.github.io/webx-ui/guide/widgets and https://webx-ui.github.io/webx-ui/guide/forms (every rule, prop, class and event of the forms)
 - The spec: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_WIDGETS.md

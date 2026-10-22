@@ -186,6 +186,7 @@ return [
     'form' => [
         'failed' => 'Form gönderilemedi. Bağlantıyı kontrol edip tekrar deneyin.',
         'expired' => 'Sayfa çok uzun süredir açık. Sayfayı yenileyip formu tekrar gönderin.',
+        'again' => 'Bir tane daha gönder',
     ],
     'suggest' => [
         'label' => 'Arama',

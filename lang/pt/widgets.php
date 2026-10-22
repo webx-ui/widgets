@@ -186,6 +186,7 @@ return [
     'form' => [
         'failed' => 'Não foi possível enviar o formulário. Verifique a ligação e tente novamente.',
         'expired' => 'A página está aberta há demasiado tempo. Recarregue-a e envie o formulário novamente.',
+        'again' => 'Enviar outro',
     ],
     'suggest' => [
         'label' => 'Pesquisa',

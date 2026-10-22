@@ -270,7 +270,8 @@ https://webx-ui.github.io/webx-ui/guide/forms#suggestions-while-typing.
 ## Blocks
 
 On a site with `webx-ui/module-blocks` and `webx-ui/module-media` the package offers eight block
-types — `webx:setup` installs them, or `php artisan webx:blocks:offered --install --module=widgets`:
+types — `php artisan webx:blocks:offered --install --module=widgets` installs them (`webx:setup` only
+prints the line for a dev copy; on staging and live a person runs it):
 
 - **Gallery** — pictures of the media library as a grid (as many columns as the column has room
   for, up to the number set) or as the slider's gallery with thumbnails; a click opens the picture
@@ -346,7 +347,7 @@ would be worse than none. Under a theme the directive adds nothing, so a layout 
 after adopting one loses nothing.
 
 `webx:theme:sync` publishes the widgets without a theme too (and nothing else);
-`webx:setup` runs it, adds it to `post-update-cmd`, and writes `@webxWidgets` into the layout of
+`webx:setup` calls the sync, adds it to `post-update-cmd`, and writes `@webxWidgets` into the layout of
 `--no-theme`. A site set up before: add the line and run the sync once. Do not import
 `vendor/webx-ui/widgets/dist/*.js` into the site's own bundle — the package is not on npm, the
 files change with every update, and a bundled copy outlives the one the page links.

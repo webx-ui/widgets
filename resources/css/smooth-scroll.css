@@ -1,0 +1,22 @@
+/*
+ * Smooth scrolling (spec §14). The tokens a theme may set instead of the attributes; the script
+ * reads them once, on start.
+ */
+:where(:root) {
+  --webx-smooth-scroll-duration: 1.1s;
+  --webx-smooth-scroll-anchor-duration: 1.4s;
+  --webx-smooth-scroll-wheel: 0.9;
+  --webx-smooth-scroll-easing: quart;
+}
+
+/*
+ * On <html> while the glide runs. The theme's own `scroll-behavior: smooth` — what anchors slide
+ * with without the glide: no JavaScript, reduced motion, a touch screen — steps aside, and so does
+ * a fixed height, which would leave the window nothing to scroll. Lenis' `.lenis-stopped` rule is
+ * not taken: it pauses only under `.webx-scroll-locked`, whose `overflow: hidden` keeps the
+ * scrollbar's gutter, and its `overflow: clip` would not.
+ */
+.webx-smooth-scroll {
+  height: auto;
+  scroll-behavior: auto;
+}

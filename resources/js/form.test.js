@@ -415,6 +415,86 @@ describe('the form sent in place', () => {
     expect(form.classList.contains('is-sent')).toBe(false)
   })
 
+  it('prints a heading with the visitor’s answers as HTML, a plain one as text', async () => {
+    const form = await start(shell(contact))
+    answers(
+      json(200, {
+        ok: true,
+        heading: 'Thanks, Ann.',
+        heading_html: 'Thanks, <em class="webx-form__answer-value">Ann</em>.',
+      }),
+      json(200, { ok: true, heading: '<b>Not markup</b>' }),
+    )
+
+    send(form)
+    await settle()
+
+    const heading = () => form.querySelector('.webx-form__heading')
+    expect(heading().querySelector('.webx-form__answer-value').textContent).toBe('Ann')
+    expect(heading().textContent).toBe('Thanks, Ann.')
+
+    send(form)
+    await settle()
+
+    expect(heading().querySelector('b')).toBeNull()
+    expect(heading().textContent).toBe('<b>Not markup</b>')
+  })
+
+  it('with `again` puts the thank-you in place of the fields, and brings them back empty with the focus on the first', async () => {
+    const again =
+      '<a class="webx-form__again" href="/page#form-1" data-webx-again hidden>Send another</a>'
+    const form = await start(shell(contact).replace('</form>', `${again}</form>`))
+    answers(json(200, { ok: true, heading: 'Thank you' }))
+    const link = form.querySelector('.webx-form__again')
+    const body = form.querySelector('.webx-form__body')
+    // A link without the script; with it, a button.
+    expect(link.getAttribute('role')).toBe('button')
+    expect(link.hidden).toBe(true)
+
+    document.getElementById('field-fields-name').value = 'Ann'
+    send(form)
+    await settle()
+
+    expect(form.classList.contains('is-sent')).toBe(true)
+    expect(body.hidden).toBe(true)
+    expect(link.hidden).toBe(false)
+    expect(document.activeElement).toBe(link)
+
+    const click = new MouseEvent('click', { bubbles: true, cancelable: true })
+    link.dispatchEvent(click)
+
+    // In place: the page is not left.
+    expect(click.defaultPrevented).toBe(true)
+    expect(form.classList.contains('is-sent')).toBe(false)
+    expect(body.hidden).toBe(false)
+    expect(link.hidden).toBe(true)
+    expect(form.querySelector('.webx-form__message').childElementCount).toBe(0)
+    expect(document.getElementById('field-fields-name').value).toBe('')
+    expect(document.activeElement).toBe(document.getElementById('field-fields-name'))
+  })
+
+  it('with `again` brings back the fields of a page that came back from the form without the script', async () => {
+    const html = shell(contact)
+      .replace('class="webx-form"', 'class="webx-form is-sent"')
+      .replace('data-webx-send', 'data-webx-send data-webx-returned')
+      .replace('<div class="webx-form__body">', '<div class="webx-form__body" hidden>')
+      .replace(
+        '<div class="webx-form__message" role="status" aria-live="polite"></div>',
+        '<div class="webx-form__message" role="status" aria-live="polite"><div class="webx-form__answer"><p class="webx-form__heading">Thank you</p></div></div>',
+      )
+      .replace(
+        '</form>',
+        '<a class="webx-form__again" href="/page#form-1" data-webx-again>Send another</a></form>',
+      )
+    const form = await start(html)
+
+    form.querySelector('.webx-form__again').click()
+
+    expect(form.querySelector('.webx-form__body').hidden).toBe(false)
+    expect(form.querySelector('.webx-form__heading')).toBeNull()
+    expect(document.activeElement).toBe(document.getElementById('field-fields-name'))
+  })
+
   it('opens again the dialog of a form the page came back from', async () => {
     const showModal = vi.spyOn(HTMLDialogElement.prototype, 'showModal')
     const form = await start(

@@ -112,3 +112,25 @@
 .webx-form__done[hidden] {
   display: none;
 }
+
+/* `again`: the way back to the fields, quieter than the button that sent them. */
+.webx-form__again {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--webx-form-button-height);
+  margin-block-start: var(--site-space-2);
+  color: var(--site-color-accent);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+
+.webx-form__again:focus-visible {
+  outline: 2px solid var(--site-color-accent);
+  outline-offset: 2px;
+}
+
+.webx-form__again[hidden] {
+  display: none;
+}

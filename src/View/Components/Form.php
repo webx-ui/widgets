@@ -27,6 +27,10 @@ use WebxUi\Widgets\Forms\FormRules;
  *
  * `:csrf="false"` — for a door that guards itself otherwise (inbox's intake: Origin, a honeypot, a
  * limit). `method="get"` — a search: a plain form, nothing to send in place.
+ *
+ * `again` — the thank-you takes the place of the fields, with a button under it that brings them
+ * back empty, the focus on the first (`webx-form__again`, its words `:again-label`). Without
+ * JavaScript it is a link to the same page, which comes back without the answer.
  */
 final class Form extends Component
 {
@@ -62,6 +66,8 @@ final class Form extends Component
         public ?string $expiredLabel = null,
         public ?string $closeLabel = null,
         mixed $rules = null,
+        public bool $again = false,
+        public ?string $againLabel = null,
     ) {
         $this->webxFormRules = match (true) {
             $rules instanceof FormRules => $rules,
@@ -99,7 +105,11 @@ final class Form extends Component
                 'failed' => $this->failedLabel ?? __('webx-widgets::widgets.form.failed'),
                 'expired' => $this->expiredLabel ?? __('webx-widgets::widgets.form.expired'),
                 'close' => $this->closeLabel ?? __('webx-widgets::widgets.dialog.close'),
+                'again' => $this->againLabel ?? __('webx-widgets::widgets.form.again'),
             ],
+            // The page itself, which comes back without what was answered: the flash is gone by
+            // then. No `#id` — a link to a fragment of the same page is not a new request.
+            'againUrl' => $this->again ? request()->fullUrl() : null,
         ]);
     }
 
@@ -107,7 +117,7 @@ final class Form extends Component
      * What {@see FormResponse} answered this form, when the page came back from it without
      * JavaScript.
      *
-     * @return array{heading: ?string, message: ?string, html: ?string}|null
+     * @return array{heading: ?string, heading_html: ?string, message: ?string, html: ?string}|null
      */
     private function answer(): ?array
     {
@@ -120,7 +130,7 @@ final class Form extends Component
 
         $text = static fn (mixed $value): ?string => is_string($value) && $value !== '' ? $value : null;
 
-        return ['heading' => $text($flash['heading'] ?? null), 'message' => $text($flash['message'] ?? null), 'html' => $text($flash['html'] ?? null)];
+        return ['heading' => $text($flash['heading'] ?? null), 'heading_html' => $text($flash['heading_html'] ?? null), 'message' => $text($flash['message'] ?? null), 'html' => $text($flash['html'] ?? null)];
     }
 
     /** The validator sent this form back: Laravel flashes the input with its errors. */
