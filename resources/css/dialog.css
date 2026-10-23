@@ -31,11 +31,22 @@
   padding: var(--webx-dialog-padding) var(--webx-dialog-padding) 0;
 }
 
+.webx-dialog__heading {
+  flex: 1;
+  min-width: 0;
+}
+
 .webx-dialog__title {
   flex: 1;
   margin: 0;
   font-family: var(--site-font-heading);
   font-size: var(--site-font-size-4);
+}
+
+.webx-dialog__description {
+  margin: var(--site-space-2) 0 0;
+  color: var(--site-color-text-muted);
+  overflow-wrap: anywhere;
 }
 
 .webx-dialog__close {
@@ -71,4 +82,38 @@ html:not(.webx-js) .webx-dialog[open] {
   inset: 0;
   z-index: 100;
   box-shadow: 0 0 0 100vmax var(--webx-dialog-backdrop);
+}
+
+/*
+ * `sheet`: on a narrow window a sheet from the bottom — the whole width, rounded on top, as tall as
+ * it needs up to most of the screen, scrolling inside. The runtime says when (`is-sheet`, below
+ * 40rem of the window, dialog.js): a modal dialog lies in the top layer over the viewport, outside
+ * every container of the page, and a theme's stylesheet has no media queries by width. Wider, or
+ * without the runtime, it is the card it always is.
+ */
+.webx-dialog--sheet.is-sheet {
+  width: 100%;
+  max-height: calc(100dvh - var(--site-space-7));
+  margin: auto 0 0;
+  padding-block-end: env(safe-area-inset-bottom);
+  border-inline: 0;
+  border-block-end: 0;
+  border-radius: var(--site-radius-lg) var(--site-radius-lg) 0 0;
+}
+
+/* It slides in from below: only in, closing is at once — the visitor is done with it. */
+.webx-dialog--sheet.is-sheet[open] {
+  transition: transform var(--site-duration) var(--site-easing);
+}
+
+@starting-style {
+  .webx-dialog--sheet.is-sheet[open] {
+    transform: translateY(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .webx-dialog--sheet.is-sheet[open] {
+    transition: none;
+  }
 }

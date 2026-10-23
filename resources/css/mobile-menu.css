@@ -284,6 +284,36 @@ html:not(.webx-js) .webx-mobile-menu__panel:target {
   transition: transform var(--site-duration) var(--site-easing);
 }
 
+/*
+ * `split`: the name is the link, and the arrow sits over the end of its row — a target of its own,
+ * as tall as the row and as wide as a finger. The branch opens under the row, across its width.
+ */
+.webx-mobile-nav__row {
+  position: relative;
+}
+
+.webx-mobile-nav__link.webx-mobile-nav__link--split {
+  padding-inline-end: 44px;
+}
+
+/* As tall as one line of the link with its padding — the same font, so the same `lh` — and the
+   chevron where it stands in `repeat`: the two modes look alike. */
+.webx-mobile-nav__toggle.webx-mobile-nav__toggle--split {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-end: 0;
+  justify-content: flex-end;
+  box-sizing: border-box;
+  width: 44px;
+  height: calc(1lh + 2 * var(--site-space-2));
+  padding-block: 0;
+}
+
+.webx-mobile-nav__toggle.webx-mobile-nav__toggle--split:focus-visible {
+  outline: 2px solid var(--site-color-accent);
+  outline-offset: -2px;
+}
+
 .webx-mobile-nav__heading {
   color: var(--site-color-text-muted);
   font-size: var(--site-font-size-6);

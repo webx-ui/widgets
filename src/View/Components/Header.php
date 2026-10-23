@@ -24,6 +24,8 @@ use WebxUi\Widgets\View\HeaderNavigation;
  *     sticky      none | sticky | hide-on-scroll
  *     overlay     transparent over the first screen until scrolled past its own height
  *     skip        the target of the "Skip to content" link, or false when the layout has one
+ *     parent      repeat | split — a branch of the accordion in the mobile menu that is a link:
+ *                 the link is its first line, or the name is the link and an arrow opens it
  */
 final class Header extends Component
 {
@@ -43,6 +45,7 @@ final class Header extends Component
         public string $mode = 'accordion',
         public ?string $label = null,
         public ?string $skipLabel = null,
+        public string $parent = 'repeat',
     ) {
         if (! in_array($sticky, self::STICKY, true)) {
             throw new InvalidArgumentException('A header is sticky as one of: '.implode(', ', self::STICKY).", not \"{$sticky}\".");

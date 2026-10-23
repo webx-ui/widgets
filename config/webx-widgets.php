@@ -40,6 +40,14 @@ return [
     'contact_button' => true,
 
     /*
+     * The forms in a dialog (spec §6.4). `sheet` — every one of them is a sheet from the bottom on a
+     * narrow screen, as `data-webx-sheet` on an opener asks for one; a card in the middle elsewhere.
+     */
+    'form_dialog' => [
+        'sheet' => false,
+    ],
+
+    /*
      * The map (spec §11): Leaflet over the tiles of the provider named here. OpenStreetMap needs
      * neither a key nor an account; any other provider of raster tiles is an entry with its
      * address — `{key}` in it is replaced with the entry's `key`. The attribution is printed

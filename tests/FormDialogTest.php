@@ -87,6 +87,8 @@ final class FormDialogTest extends TestCase
             $router->get('/page', static fn (): string => Blade::render($page));
             $router->get('/claimed', static fn (): string => Blade::render("<x-layout>@php(WebxUi\\Widgets\\Facades\\Widgets::form('callback'))<p>Hi</p></x-layout>"));
             $router->get('/none', static fn (): string => Blade::render('<x-layout><p>Hi</p></x-layout>'));
+            $router->get('/sheet', static fn (): string => Blade::render('<x-layout><a href="#webx-form-callback" data-webx-sheet>Call</a><a href="#webx-form-contact" data-webx-sheet="false">Write</a></x-layout>'));
+            $router->get('/sheet-claimed', static fn (): string => Blade::render("<x-layout>@php(WebxUi\\Widgets\\Facades\\Widgets::form('callback', sheet: true))@php(WebxUi\\Widgets\\Facades\\Widgets::form('callback'))<p>Hi</p></x-layout>"));
         });
     }
 
@@ -200,6 +202,37 @@ final class FormDialogTest extends TestCase
     }
 
     #[Test]
+    public function the_description_of_the_form_stands_under_the_dialogs_title_and_not_again_in_the_form(): void
+    {
+        Form::query()->where('slug', 'callback')->update(['options' => ['description' => ['en' => 'We call within 15 minutes.']]]);
+
+        $html = (string) $this->get('/page')->assertOk()->getContent();
+
+        $this->assertMatchesRegularExpression('~<dialog id="webx-form-callback" class="webx-dialog webx-form-dialog" data-webx-form-dialog="callback" aria-labelledby="webx-form-callback-title" aria-describedby="webx-form-callback-description">~', $html);
+        $this->assertStringContainsString('<p class="webx-dialog__description webx-form-dialog__description" id="webx-form-callback-description">We call within 15 minutes.</p>', $html);
+        $this->assertSame(1, substr_count($html, 'We call within 15 minutes.'));
+        // A form without one says nothing, not an empty line.
+        $this->assertDoesNotMatchRegularExpression('~<dialog id="webx-form-contact"[^>]*aria-describedby~', $html);
+        $this->assertStringNotContainsString('webx-inbox-form__description', $html);
+    }
+
+    #[Test]
+    public function an_opener_asks_for_a_sheet_and_nothing_else_makes_one(): void
+    {
+        $html = (string) $this->get('/sheet')->assertOk()->getContent();
+
+        $this->assertStringContainsString('<dialog id="webx-form-callback" class="webx-dialog webx-dialog--sheet webx-form-dialog"', $html);
+        $this->assertStringContainsString('<dialog id="webx-form-contact" class="webx-dialog webx-form-dialog"', $html);
+        $this->assertStringNotContainsString('webx-dialog--sheet', (string) $this->get('/page')->getContent());
+
+        // A claim with `sheet` is not taken back by a later claim without it.
+        $this->assertStringContainsString('webx-dialog--sheet', (string) $this->get('/sheet-claimed')->getContent());
+
+        config()->set('webx-widgets.form_dialog.sheet', true);
+        $this->assertStringContainsString('<dialog id="webx-form-contact" class="webx-dialog webx-dialog--sheet webx-form-dialog"', (string) $this->get('/page')->getContent());
+    }
+
+    #[Test]
     public function openers_are_links_and_buttons_naming_a_form_not_the_form_itself(): void
     {
         $this->assertSame(['callback', 'contact', 'call-me'], FormDialogs::openers(<<<'HTML'
@@ -210,6 +243,8 @@ final class FormDialogTest extends TestCase
             <div data-webx-form="ignored"></div>
             <A HREF="#webx-form-call-me">Four</A>
             HTML));
+
+        $this->assertSame(['callback'], FormDialogs::sheets('<a href="#webx-form-contact" data-webx-sheet="false">x</a><button data-webx-form="callback" data-webx-sheet>y</button><a href="#webx-form-contact">z</a>'));
     }
 
     #[Test]

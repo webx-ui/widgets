@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\HtmlString;
 use WebxUi\Inbox\Models\Form;
 use WebxUi\Inbox\Support\Forms;
+use WebxUi\Inbox\View\Components\Form as InboxForm;
 
 /**
  * The forms a page opens in a dialog (spec §6.4): "Request a call", "Book" — a form of
@@ -31,6 +32,9 @@ final class FormDialogs
 
     private const string HREF = '~\shref=(["\'])#webx-form-([a-z0-9][a-z0-9_-]*)\1~i';
 
+    /** `data-webx-sheet` on an opener: the dialog it opens is a sheet from the bottom on a phone. */
+    private const string SHEET = '~\sdata-webx-sheet(?:=(["\'])(?!false\1)[^"\']*\1)?(?=[\s>/])~i';
+
     public const string ID = 'webx-form-';
 
     public function __construct(
@@ -46,26 +50,49 @@ final class FormDialogs
      */
     public static function openers(string $html): array
     {
+        return array_keys(self::found($html));
+    }
+
+    /**
+     * The slugs at least one of whose openers on the page says `data-webx-sheet`: those dialogs
+     * open as a sheet from the bottom on a narrow screen (§6.4). One opener is enough — a dialog
+     * is printed once per slug, and two buttons to one form asking for two shapes is a slip.
+     *
+     * @return list<string>
+     */
+    public static function sheets(string $html): array
+    {
+        return array_keys(array_filter(self::found($html)));
+    }
+
+    /**
+     * @return array<string, bool> each slug the page asks for, and whether as a sheet
+     */
+    private static function found(string $html): array
+    {
         preg_match_all(self::OPENER, $html, $tags);
         $slugs = [];
 
         foreach ($tags[0] as $tag) {
             if (preg_match(self::ATTRIBUTE, $tag, $match) === 1 || preg_match(self::HREF, $tag, $match) === 1) {
-                $slugs[$match[2]] = true;
+                $slugs[$match[2]] = ($slugs[$match[2]] ?? false) || preg_match(self::SHEET, $tag) === 1;
             }
         }
 
-        return array_keys($slugs);
+        return $slugs;
     }
 
     /**
-     * The dialogs, one per slug.
+     * The dialogs, one per slug. A slug in `$sheets` — or every one, with
+     * `webx-widgets.form_dialog.sheet` on — is a sheet from the bottom on a narrow screen.
      *
      * @param  list<string>  $slugs
+     * @param  list<string>  $sheets
      */
-    public function render(array $slugs): string
+    public function render(array $slugs, array $sheets = []): string
     {
         $slugs = array_values(array_unique($slugs));
+        $always = (bool) $this->config->get('webx-widgets.form_dialog.sheet', false);
 
         if ($slugs === []) {
             return '';
@@ -81,13 +108,17 @@ final class FormDialogs
             $form = app(Forms::class)->enabled($slug);
 
             if ($form instanceof Form) {
-                $body = Blade::render('<x-webx-inbox::form :form="$form" placement="modal" />', ['form' => $form]);
+                // The line under the title is the dialog's (under its own title, its description
+                // for a screen reader), not printed a second time by the form inside.
+                $body = Blade::render('<x-webx-inbox::form :form="$form" placement="modal" :description="false" />', ['form' => $form]);
 
                 $dialogs[] = $this->views->make('webx-widgets::form-dialog', [
                     'form' => $form,
                     'id' => self::ID.$form->slug,
                     'title' => trim((string) $form->title) !== '' ? trim((string) $form->title) : $form->slug,
                     'body' => new HtmlString($body),
+                    'description' => InboxForm::descriptionHtml($form),
+                    'sheet' => $always || in_array($slug, $sheets, true),
                     // The form the page came back from says so itself; a view the site published
                     // before W6.4 does not, and is told by the session.
                     'open' => str_contains($body, 'data-webx-returned') || $this->answered($form),

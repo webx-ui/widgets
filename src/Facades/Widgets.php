@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Facade;
 /**
  * @method static void need(string $widget)
  * @method static list<string> claimed()
- * @method static void form(string $slug)
+ * @method static void form(string $slug, bool $sheet = false)
  * @method static list<string> forms()
  * @method static string finish(string $html)
  * @method static int sequence(string $name)

@@ -6,6 +6,11 @@
  *
  * Without JavaScript the opener is a link to `#<id>` and the stylesheet shows the dialog
  * through `:target`, until `.webx-js` on <html> says the runtime is here.
+ *
+ * `webx-dialog--sheet`: while the window is narrower than 40rem the open dialog is `is-sheet`, a
+ * sheet from the bottom (dialog.css). Decided here and not by a media query: a modal lies over the
+ * viewport, outside every container of the page, and the stylesheets of a theme know only
+ * container queries (THEMES §8). A turned phone turns the open dialog with it.
  */
 
 import { listeners } from '../core.js'
@@ -15,6 +20,23 @@ const openers = new WeakMap()
 const open = new Set()
 
 const lock = () => document.documentElement.classList.toggle('webx-scroll-locked', open.size > 0)
+
+const NARROW = '(width < 40rem)'
+let narrow = null
+
+const shape = (dialog) =>
+  dialog.classList.toggle(
+    'is-sheet',
+    dialog.classList.contains('webx-dialog--sheet') && (narrow?.matches ?? false),
+  )
+
+function watchWidth() {
+  if (narrow || typeof window.matchMedia !== 'function') return
+  narrow = window.matchMedia(NARROW)
+  narrow.addEventListener?.('change', () => {
+    for (const dialog of open) shape(dialog)
+  })
+}
 
 function prepare(dialog) {
   if (prepared.has(dialog)) return
@@ -56,6 +78,8 @@ export function openDialog(dialog, opener = null) {
   if (!(dialog instanceof HTMLDialogElement) || dialog.open) return
   prepare(dialog)
   if (opener) openers.set(dialog, opener)
+  watchWidth()
+  shape(dialog)
   dialog.showModal()
   open.add(dialog)
   lock()

@@ -200,6 +200,31 @@ describe('dialog', () => {
     expect(document.activeElement).toBe(opener)
   })
 
+  it('is a sheet while the window is narrow, only when asked for, and turns with the phone', async () => {
+    const listeners = []
+    const query = { matches: true, addEventListener: (_, fn) => listeners.push(fn) }
+    const matchMedia = vi.fn(() => query)
+    vi.stubGlobal('matchMedia', matchMedia)
+
+    await start(`
+      <a href="#a" data-webx-dialog="a">A</a><dialog id="a" class="webx-dialog webx-dialog--sheet"></dialog>
+      <a href="#b" data-webx-dialog="b">B</a><dialog id="b" class="webx-dialog"></dialog>`)
+    const a = document.getElementById('a')
+
+    document.querySelector('[data-webx-dialog="a"]').click()
+    document.querySelector('[data-webx-dialog="b"]').click()
+    expect(matchMedia).toHaveBeenCalledWith('(width < 40rem)')
+    expect(a.classList.contains('is-sheet')).toBe(true)
+    expect(document.getElementById('b').classList.contains('is-sheet')).toBe(false)
+
+    // Turned to landscape, wider than 40rem: the open dialog is the card again.
+    query.matches = false
+    for (const fn of listeners) fn()
+    expect(a.classList.contains('is-sheet')).toBe(false)
+
+    vi.unstubAllGlobals()
+  })
+
   it('opens from a link to it in the address', async () => {
     history.replaceState(null, '', '/#callback')
     await start(markup)

@@ -1,0 +1,12 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/composition.json",
+  "$comment": "Quick contact (WIDGETS §12.4): the chats, the number, the e-mail of the Contacts tab, after the footer; nothing while it is empty.",
+  "add": [
+    {
+      "id": "widgets.contact-button",
+      "to": "body",
+      "after": "footer",
+      "component": "webx-contact-button"
+    }
+  ]
+}

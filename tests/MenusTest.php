@@ -87,6 +87,39 @@ class MenusTest extends TestCase
     }
 
     #[Test]
+    public function split_makes_the_parent_the_link_and_opens_its_branch_by_an_arrow(): void
+    {
+        $html = Blade::render('<x-webx-mobile-menu.nav :items="$items" parent="split" />', ['items' => self::tree()]);
+
+        $this->assertMatchesRegularExpression('~<div class="webx-mobile-nav__row">\s*<a class="webx-mobile-nav__link webx-mobile-nav__link--split" href="/services">Services</a>\s*<details class="webx-mobile-nav__group webx-mobile-nav__group--split"\s+open>\s*<summary class="webx-mobile-nav__toggle webx-mobile-nav__toggle--split" aria-label="Submenu: Services"></summary>~', $html);
+        // The parent's page is not repeated inside its branch.
+        $this->assertSame(1, substr_count($html, 'href="/services"'));
+        $this->assertSame(1, substr_count($html, 'href="/services/storage"'));
+        $this->assertStringContainsString('<a class="webx-mobile-nav__link" href="/services/freight" aria-current="page">Freight</a>', $html);
+        // A branch that is no link has nothing to split.
+        $plain = Blade::render('<x-webx-mobile-menu.nav :items="$items" parent="split" />', ['items' => [['label' => 'More', 'children' => [['label' => 'A', 'url' => '/a']]]]]);
+        $this->assertMatchesRegularExpression('~<summary class="webx-mobile-nav__toggle">More</summary>~', $plain);
+    }
+
+    #[Test]
+    public function split_is_the_accordions_drill_keeps_its_title(): void
+    {
+        $html = Blade::render('<x-webx-mobile-menu.nav :items="$items" mode="drill" parent="split" />', ['items' => self::tree()]);
+
+        $this->assertStringNotContainsString('webx-mobile-nav__row', $html);
+        $this->assertStringContainsString('<a class="webx-mobile-nav__title" href="/services">Services</a>', $html);
+    }
+
+    #[Test]
+    public function a_parent_that_is_neither_is_a_typo(): void
+    {
+        $this->expectException(ViewException::class);
+        $this->expectExceptionMessage('The parent of a branch is');
+
+        Blade::render('<x-webx-mobile-menu.nav :items="$items" parent="hide" />', ['items' => self::tree()]);
+    }
+
+    #[Test]
     public function in_drill_a_branch_has_back_and_its_name_on_top(): void
     {
         app()->setLocale('de');

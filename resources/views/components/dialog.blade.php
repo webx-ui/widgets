@@ -8,12 +8,22 @@
     thank-you or its errors — prints the dialog open: over the page without the runtime, opened
     again as a modal with it (spec §17.3).
 
-    Classes: webx-dialog, __header, __title, __close, __body.
+    `sheet` — on a narrow screen a sheet from the bottom, the whole width, rounded on top, instead
+    of a card in the middle; `description` — a line under the title, its accessible description.
+
+    Classes: webx-dialog (+ --sheet), __header, __heading, __title, __description, __close, __body.
 --}}
-<dialog {{ $attributes->class(['webx-dialog'])->merge(['id' => $id, 'aria-labelledby' => $title !== null ? $id.'-title' : null]) }}@if (str_contains((string) $slot, 'data-webx-returned')) open @endif>
+<dialog {{ $attributes->class(['webx-dialog', 'webx-dialog--sheet' => $sheet])->merge(['id' => $id, 'aria-labelledby' => $title !== null ? $id.'-title' : null, 'aria-describedby' => $description !== null ? $id.'-description' : null]) }}@if (str_contains((string) $slot, 'data-webx-returned')) open @endif>
     <div class="webx-dialog__header">
-        @if ($title !== null)
-            <h2 class="webx-dialog__title" id="{{ $id }}-title">{{ $title }}</h2>
+        @if ($title !== null || $description !== null)
+            <div class="webx-dialog__heading">
+                @if ($title !== null)
+                    <h2 class="webx-dialog__title" id="{{ $id }}-title">{{ $title }}</h2>
+                @endif
+                @if ($description !== null)
+                    <p class="webx-dialog__description" id="{{ $id }}-description">{{ $description }}</p>
+                @endif
+            </div>
         @endif
         <a class="webx-dialog__close" href="#" data-webx-dialog-close aria-label="{{ $closeLabel }}"><span aria-hidden="true">&times;</span></a>
     </div>

@@ -63,7 +63,7 @@
                     @endif
 
                     @if ($tree !== null)
-                        <x-webx-mobile-menu.nav :items="$tree" :mode="$mode" :label="$navLabel" />
+                        <x-webx-mobile-menu.nav :items="$tree" :mode="$mode" :parent="$parent" :label="$navLabel" />
                     @else
                         {{ $slot }}
                     @endif

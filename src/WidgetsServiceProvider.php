@@ -20,6 +20,8 @@ use WebxUi\Audit\Crawl\PageReaders;
 use WebxUi\Audit\Fixes\AuditFixes;
 use WebxUi\Blocks\BlockOffers;
 use WebxUi\Blocks\Events\BlockDrawn;
+use WebxUi\Compositions\Compositions;
+use WebxUi\Compositions\CompositionsServiceProvider;
 use WebxUi\Media\MediaServiceProvider;
 use WebxUi\Themes\BottomLayers;
 use WebxUi\Themes\Contracts\HeadPart;
@@ -103,6 +105,9 @@ class WidgetsServiceProvider extends ServiceProvider
 
     public function register(): void
     {
+        // The registry this module's compositions go into, whether discovered or listed by a test.
+        $this->app->register(CompositionsServiceProvider::class);
+
         // Scoped: what one request claimed must not load on the next one of a long-lived worker.
         $this->app->scoped(Widgets::class);
         $this->app->scoped(HeaderNavigation::class);
@@ -121,6 +126,10 @@ class WidgetsServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->loadViewsFrom(Widgets::path().'/resources/views', 'webx-widgets');
+
+        // The quick contact after the footer of the layout (COMPOSITIONS §5.3).
+        Compositions::load(Widgets::path().'/resources/compositions');
+
         $this->loadTranslationsFrom(Widgets::path().'/lang', 'webx-widgets');
 
         // The banner's script writes the answer and the server reads it back: a cookie the

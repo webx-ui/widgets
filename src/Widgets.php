@@ -65,7 +65,7 @@ final class Widgets implements HeadPart
     /** @var array<string, true> */
     private array $claimed = [];
 
-    /** @var array<string, true> */
+    /** @var array<string, bool> slug => as a sheet */
     private array $forms = [];
 
     private bool $dialogsDone = false;
@@ -107,14 +107,17 @@ final class Widgets implements HeadPart
      * `data-webx-form="<slug>"` opens it. Printed once at the end of `<body>` however many
      * buttons lead to it. A link written in a template or a block is found on the page without
      * a claim (`FormDialogs::openers()`); this is for an opener the server never prints.
+     *
+     * `sheet` — on a narrow screen the dialog is a sheet from the bottom, as `data-webx-sheet` on
+     * an opener asks; a later claim of the same form without it does not take it back.
      */
-    public function form(string $slug): void
+    public function form(string $slug, bool $sheet = false): void
     {
         if (preg_match(self::SLUG, $slug) !== 1) {
             throw new InvalidArgumentException("\"{$slug}\" is not the slug of a form.");
         }
 
-        $this->forms[$slug] = true;
+        $this->forms[$slug] = ($this->forms[$slug] ?? false) || $sheet;
     }
 
     /** @return list<string> The forms this page claimed for a dialog. */
@@ -270,7 +273,7 @@ final class Widgets implements HeadPart
         $this->claimAttributes($html);
         $body = [];
 
-        $dialogs = $this->dialogs->render([...$this->forms(), ...FormDialogs::openers($html)]);
+        $dialogs = $this->dialogs->render([...$this->forms(), ...FormDialogs::openers($html)], [...array_keys(array_filter($this->forms)), ...FormDialogs::sheets($html)]);
 
         if ($dialogs !== '') {
             $this->need('form-dialog');
@@ -306,7 +309,7 @@ final class Widgets implements HeadPart
         }
 
         $this->dialogsDone = true;
-        $dialogs = $this->dialogs->render([...$this->forms(), ...FormDialogs::openers($html)]);
+        $dialogs = $this->dialogs->render([...$this->forms(), ...FormDialogs::openers($html)], [...array_keys(array_filter($this->forms)), ...FormDialogs::sheets($html)]);
 
         if ($dialogs === '') {
             return $html;

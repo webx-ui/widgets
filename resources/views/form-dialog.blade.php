@@ -10,12 +10,21 @@
     Override: <layer>/views/vendor/webx-widgets/form-dialog.blade.php — keep
     `data-webx-form-dialog`, `data-webx-dialog-close` and `{{ $body }}`.
 
-    Classes: webx-dialog and webx-form-dialog, __header, __title, __close, __body; __done and
-    is-sent only around an inbox view published before W6.4.
+    `$description` — the form's line under its title (inbox §5), HTML; null without one. `$sheet` —
+    a sheet from the bottom on a narrow screen (`data-webx-sheet` on an opener).
+
+    Classes: webx-dialog (+ --sheet) and webx-form-dialog, __header, __heading, __title,
+    __description, __close, __body; __done and is-sent only around an inbox view published before
+    W6.4.
 --}}
-<dialog id="{{ $id }}" class="webx-dialog webx-form-dialog" data-webx-form-dialog="{{ $form->slug }}" aria-labelledby="{{ $id }}-title"{!! $open ? ' open' : '' !!}>
+<dialog id="{{ $id }}" @class(['webx-dialog', 'webx-dialog--sheet' => $sheet ?? false, 'webx-form-dialog']) data-webx-form-dialog="{{ $form->slug }}" aria-labelledby="{{ $id }}-title"@if ($description ?? null) aria-describedby="{{ $id }}-description"@endif{!! $open ? ' open' : '' !!}>
     <div class="webx-dialog__header webx-form-dialog__header">
-        <h2 class="webx-dialog__title webx-form-dialog__title" id="{{ $id }}-title">{{ $title }}</h2>
+        <div class="webx-dialog__heading">
+            <h2 class="webx-dialog__title webx-form-dialog__title" id="{{ $id }}-title">{{ $title }}</h2>
+            @if ($description ?? null)
+                <p class="webx-dialog__description webx-form-dialog__description" id="{{ $id }}-description">{{ $description }}</p>
+            @endif
+        </div>
         <a class="webx-dialog__close webx-form-dialog__close" href="#" data-webx-dialog-close aria-label="{{ __('webx-widgets::widgets.dialog.close') }}"><span aria-hidden="true">&times;</span></a>
     </div>
     <div class="webx-dialog__body webx-form-dialog__body">

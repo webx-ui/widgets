@@ -37,6 +37,19 @@ class ComponentsTest extends TestCase
     }
 
     #[Test]
+    public function a_dialog_asked_for_a_sheet_and_a_description_says_both(): void
+    {
+        $html = Blade::render('<x-webx-dialog id="call" title="Call me back" description="We call within 15 minutes." sheet>x</x-webx-dialog>');
+
+        $this->assertStringContainsString('<dialog id="call" aria-labelledby="call-title" aria-describedby="call-description" class="webx-dialog webx-dialog--sheet">', $html);
+        $this->assertMatchesRegularExpression('~<div class="webx-dialog__heading">\s*<h2 class="webx-dialog__title" id="call-title">Call me back</h2>\s*<p class="webx-dialog__description" id="call-description">We call within 15 minutes.</p>\s*</div>~', $html);
+
+        // By default: the card it always was.
+        $this->assertStringContainsString('class="webx-dialog">', Blade::render('<x-webx-dialog id="d" title="T">x</x-webx-dialog>'));
+        $this->assertStringNotContainsString('aria-describedby', Blade::render('<x-webx-dialog id="e" title="T">x</x-webx-dialog>'));
+    }
+
+    #[Test]
     public function the_words_follow_the_locale_and_a_prop_overrides_them(): void
     {
         app()->setLocale('ru');

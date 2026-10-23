@@ -26,6 +26,7 @@
         "illuminate/http": "^13.0",
         "illuminate/support": "^13.0",
         "illuminate/view": "^13.0",
+        "webx-ui/compositions": "^0.85.0",
         "webx-ui/themes": "^0.85.0"
     },
     "require-dev": {

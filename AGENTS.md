@@ -16,19 +16,19 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
 - **Behaviours by attribute** — `data-webx-disclosure="<id>"`, `data-webx-dialog="<id>"` (a modal
   `<dialog>`; `[data-webx-dialog-close]`, a URL ending in `#<id>` opens it),
   `data-webx-tabs` around `[data-webx-tab]` panels, `data-webx-accordion="single"` on `<details>`.
-  Components: `<x-webx-dialog id title close>`, `<x-webx-tabs label>` + `<x-webx-tabs.panel title>`.
+  Components: `<x-webx-dialog id title description close sheet>` (`sheet` — from the bottom below 40rem), `<x-webx-tabs label>` + `<x-webx-tabs.panel title>`.
 - **Header** — `<x-webx-header>`: slots `topbar`, `brand`, default (navigation), `actions`,
   `mobile-bottom`, `mobile`, `trigger`; props `collapse` (`auto` measures, a width, `never`),
   `breakpoint` (960, without JavaScript), `sticky` (`none|sticky|hide-on-scroll`), `overlay`,
   `skip`, `mode`/`side` of the mobile menu it builds from its own parts. Inside:
   `<x-webx-header.nav :items="menu('header')" :mega>` — items are `menu()` trees or arrays.
 - **Mobile menu** — `<x-webx-mobile-menu side breakpoint history>` with slots `top`, default,
-  `bottom`, `trigger`; `<x-webx-mobile-menu.nav :items mode="accordion|drill">` inside.
+  `bottom`, `trigger`; `<x-webx-mobile-menu.nav :items mode="accordion|drill" parent="repeat|split">` inside (`split`: the section's name is the link, an arrow opens it; also `<x-webx-header parent>`).
 - **Dropdown** — `<x-webx-dropdown placement open-on="click|hover">` with slot `trigger`: a
   `<details>` without JavaScript, a popover turned over at the window's edge with it; one open.
 - **Form in a dialog** — a link to `#webx-form-<slug>` or `data-webx-form="<slug>"` opens that
   `module-inbox` form in a dialog printed once per slug; `data-webx-form-value-<field>` fills a
-  hidden field; `Widgets::form('<slug>')` for an opener the server does not print.
+  hidden field; `Widgets::form('<slug>')` for an opener the server does not print. `data-webx-sheet` on an opener, `Widgets::form($slug, sheet: true)` or `form_dialog.sheet` — a sheet on a phone.
 - **Cookie consent** — the package prints the banner on every themed page; the footer has
   `<x-webx-consent-link />`. Categories: necessary, preferences, statistics, marketing, media.
   Third-party code waits: `<script type="text/plain" data-webx-consent="statistics">`,
@@ -58,7 +58,7 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
   `<x-webx-counter :value>`; `<x-webx-countdown to ended>`; `<x-webx-compare :before :after>`;
   `<x-webx-toc for depth side>`; `<x-webx-pagination :paginator>`; `<x-webx-load-more :paginator pages="covered|shown">`;
   `<x-webx-notice-bar place="notice">` (a `module-banners` place, closed versions remembered).
-- **Smooth scrolling** — `data-webx-smooth-scroll` on the layout's `<html>`/`<body>` (Lenis; `-duration`,
+- **Smooth scrolling** — `data-webx-smooth-scroll` on `<html>`: `{"attrs": {"html": {"data-webx-smooth-scroll": true}}}` in `theme/compositions/layout/default.json`, no copy of the layout (Lenis; `-duration`,
   `-easing`, `-wheel` or `--webx-smooth-scroll-*`); native under reduced motion, touch, no JS, a modal, `[data-webx-scroll-native]`.
 - **Fields** — `<x-webx-field type name label hint required>` for every form of the site; `type`
   `text` `email` `tel` `url` `password` `number` `textarea` `select` `radio` `checkbox`
@@ -104,12 +104,12 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
 - Colours, radius, spacing — the site tokens in `theme/tokens.json`; the widgets follow.
 - A widget's own measure — `--webx-<name>-*` on `:root` or `.webx-<name>` in `theme/src/css`.
 - Another look — the same `.webx-<name>*` class in `theme/src/css`: it comes later, no `!important`.
-- A header's layout (logo in the middle, two rows) — `grid-template-areas` on `.webx-header__bar`.
+- A header's layout (logo in the middle, two rows) — `grid-template-areas` on `.webx-header__bar`; its pieces and slots in theme-default — the composition `header` (an `x-slot:<name>` node is a slot).
 - Other markup — `theme/views/vendor/webx-widgets/components/<name>.blade.php`.
 - Another control of one field type — `theme/views/vendor/webx-widgets/components/field/<type>.blade.php`;
   print `{{ $control($attributes) }}` on it.
-- An icon — `theme/views/vendor/webx-widgets/icons/<name>.blade.php` (inside a 24×24 `<svg>`).
-- A word — the component's prop, or `lang/vendor/webx-widgets/<locale>/widgets.php`.
+- An icon — `theme/views/vendor/webx-widgets/icons/<name>.blade.php` (24×24 `<svg>`); a word — the prop or `lang/vendor/webx-widgets/<locale>/widgets.php`.
+- Its pieces of the composition `layout` — `widgets.contact-button` (after `footer`): moved or gone by id, `{"remove": ["widgets.contact-button"]}` in `theme/compositions/layout/default.json`.
 - A behaviour of the site's own — `webx.widget('name', '[data-…]', (el) => cleanup)` in
   `theme/src/js/theme.js`.
 - HTML added later — `webx.mount(container)`; `webx.unmount(container)` before removing it.
