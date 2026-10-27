@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\AdminServiceProvider;
+use WebxUi\Admin\Testing\MigratesOnce;
 use WebxUi\Auth\AuthServiceProvider;
 use WebxUi\Blocks\BlocksServiceProvider;
 use WebxUi\Blocks\Models\Block;
@@ -38,6 +39,8 @@ use WebxUi\Widgets\WidgetsServiceProvider;
  */
 final class BlocksTest extends TestCase
 {
+    use MigratesOnce;
+
     /** Each render a block of its own key, as on a page: k1, k2… */
     private int $rendered = 0;
 
@@ -76,11 +79,6 @@ final class BlocksTest extends TestCase
         $app['config']->set('webx-localization.locales', [['code' => 'en', 'default' => true]]);
         $app['config']->set('webx-localization.cache.enabled', false);
         $app['config']->set('webx-seo.cache.enabled', false);
-    }
-
-    protected function defineDatabaseMigrations(): void
-    {
-        $this->artisan('migrate')->run();
     }
 
     protected function setUp(): void

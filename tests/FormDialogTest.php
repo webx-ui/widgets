@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace WebxUi\Widgets\Tests;
 
 use Illuminate\Foundation\Application;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\MessageBag;
@@ -13,6 +12,7 @@ use Illuminate\Support\ViewErrorBag;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\AdminServiceProvider;
+use WebxUi\Admin\Testing\MigratesOnce;
 use WebxUi\Auth\AuthServiceProvider;
 use WebxUi\Inbox\Fields\FieldType;
 use WebxUi\Inbox\InboxServiceProvider;
@@ -31,7 +31,7 @@ use WebxUi\Widgets\WidgetsServiceProvider;
  */
 final class FormDialogTest extends TestCase
 {
-    use RefreshDatabase;
+    use MigratesOnce;
 
     /**
      * @param  Application  $app
@@ -61,11 +61,6 @@ final class FormDialogTest extends TestCase
         $app['config']->set('webx-localization.locales', [['code' => 'en', 'default' => true]]);
         $app['config']->set('webx-localization.cache.enabled', false);
         $app['config']->set('webx-inbox.antispam.min_seconds', 0);
-    }
-
-    protected function defineDatabaseMigrations(): void
-    {
-        $this->artisan('migrate')->run();
     }
 
     /**

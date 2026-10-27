@@ -13,6 +13,11 @@
  * and back. One finger on a picture at its own size is the page's and the slider's, as before. A
  * single tap still opens the lightbox, a moment later: the moment a second tap would take.
  *
+ * The window of `inner` is the picture's own box; `data-zoom-frame="container"` makes it the whole
+ * `.webx-zoom`, for a picture that stands in a frame of another shape —
+ * a portrait photo in a gallery's 4:3. The magnified copy then rests against the window's edges and
+ * stands in its middle where it is smaller than the window. Fingers keep to the picture's box.
+ *
  * The large picture is `data-webx-zoom` (empty: the link's address), fetched on the first hover or
  * touch only; until it comes, the picture shown stands in for it, magnified.
  */
@@ -72,7 +77,8 @@ export function zoom(root) {
   classes.add('webx-zoom')
 
   let view, large, lens, panel, shown, fetched, pointer, pressed, gesture, swiper, held, lastTap
-  let pending, passing
+  // The window's box, and where the picture stands in `.webx-zoom`: `frame()` measures them.
+  let pending, passing, win, x0, y0
   let touchedAt = -1e9
   // The magnification of a finger and where the magnified picture stands in the frame.
   let z = 1
@@ -103,23 +109,34 @@ export function zoom(root) {
     full.src = url
   }
 
-  /** Where the picture stands now, and the view laid over it: the frame may have moved or grown. */
-  const frame = () => {
+  /**
+   * Where the picture stands now, and the view laid over it — over the picture, or over the window
+   * when a mouse asks for one (`win`): the frame may have moved or grown.
+   */
+  const frame = (over = picture) => {
     view ??= make('span', 'webx-zoom__view', root)
     large ??= dress(make('img', 'webx-zoom__large', view))
     const box = picture.getBoundingClientRect()
     const outer = root.getBoundingClientRect()
-    box.x0 = box.left - outer.left - root.clientLeft
-    box.y0 = box.top - outer.top - root.clientTop
+    win = over.getBoundingClientRect()
+    x0 = box.left - outer.left - root.clientLeft
+    y0 = box.top - outer.top - root.clientTop
     set(view, {
-      left: box.x0,
-      top: box.y0,
-      width: box.width,
-      height: box.height,
-      borderRadius: getComputedStyle(picture).borderRadius,
+      left: win.left - outer.left - root.clientLeft,
+      top: win.top - outer.top - root.clientTop,
+      width: win.width,
+      height: win.height,
+      borderRadius: getComputedStyle(over).borderRadius,
     })
     return box
   }
+
+  /**
+   * Where a copy stands in its window, `spare` the window's length less the copy's and `under` the
+   * place that keeps the point under the cursor: as near to it as the window's edges let where the
+   * copy is the longer, in the middle where it is the shorter.
+   */
+  const rest = (spare, under) => (spare > 0 ? spare / 2 : clamp(under, spare, 0))
 
   const place = (img, width, height, x, y) =>
     set(img, { width, height, transform: `translate(${x}px, ${y}px)` })
@@ -136,7 +153,8 @@ export function zoom(root) {
   }
 
   const hover = (x, y) => {
-    const box = frame()
+    // The window of a mouse: the picture's own box, or the whole frame it stands in.
+    const box = frame(root.dataset.zoomFrame === 'container' ? root : picture)
     const { width: w, height: h } = box
     const at = { x: clamp(x - box.left, 0, w), y: clamp(y - box.top, 0, h) }
     let fits = null
@@ -159,7 +177,7 @@ export function zoom(root) {
       const lh = h / scale
       const left = clamp(at.x - lw / 2, 0, w - lw)
       const top = clamp(at.y - lh / 2, 0, h - lh)
-      set(lens, { left: box.x0 + left, top: box.y0 + top, width: lw, height: lh })
+      set(lens, { left: x0 + left, top: y0 + top, width: lw, height: lh })
       set(panel, {
         top: box.top,
         left: box.right,
@@ -168,8 +186,14 @@ export function zoom(root) {
       })
       place(panel.firstChild, w * scale, h * scale, -left * scale, -top * scale)
     } else {
-      // The point under the cursor stays under it, magnified.
-      place(large, w * scale, h * scale, -at.x * (scale - 1), -at.y * (scale - 1))
+      // The point under the cursor stays under it, magnified, as far as the window's edges let.
+      place(
+        large,
+        w * scale,
+        h * scale,
+        rest(win.width - w * scale, box.left - win.left - at.x * (scale - 1)),
+        rest(win.height - h * scale, box.top - win.top - at.y * (scale - 1)),
+      )
     }
     show(true, !!fits)
   }

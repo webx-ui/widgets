@@ -131,6 +131,94 @@ describe('a mouse', () => {
     expect(fetched).toEqual([])
   })
 
+  // A portrait picture 150 × 300 in the middle of a frame 400 × 300, as a gallery's 4:3 shows it.
+  const framed = async (frame, scale = '2.5') => {
+    const root = await mounted(
+      COMPONENT.replace(
+        'data-zoom-scale="2.5"',
+        `data-zoom-scale="${scale}" data-zoom-frame="${frame}"`,
+      ),
+    )
+    box(root, { left: 0, top: 0, width: 400, height: 300 })
+    box(root.querySelector('img'), { left: 125, top: 0, width: 150, height: 300 })
+    return root
+  }
+
+  it('in a frame of another shape: the window is the whole frame, the copy against its edges', async () => {
+    const root = await framed('container')
+    root.style.borderRadius = '12px'
+    pointer(root, 'pointermove', { x: 200, y: 150 })
+    const view = root.querySelector('.webx-zoom__view')
+    expect([view.style.left, view.style.top, view.style.width, view.style.height]).toEqual([
+      '0px',
+      '0px',
+      '400px',
+      '300px',
+    ])
+    expect(view.style.borderRadius).toBe('12px')
+    const img = large(root)
+    // The copy is the picture's box × 2.5: 375 wide, narrower than the window — in its middle.
+    expect(img.style.width).toBe('375px')
+    expect(img.style.height).toBe('750px')
+    // 150px down the picture is 375px down the copy, under the cursor.
+    expect(img.style.transform).toBe('translate(12.5px, -225px)')
+
+    // Near the top and the bottom the copy rests against the window's edges, never short of them.
+    pointer(root, 'pointermove', { x: 200, y: 10 })
+    expect(img.style.transform).toBe('translate(12.5px, -15px)')
+    pointer(root, 'pointermove', { x: 200, y: 300 })
+    expect(img.style.transform).toBe('translate(12.5px, -450px)')
+    // Off the picture, over the frame's margin: the picture's nearest edge, still resting.
+    pointer(root, 'pointermove', { x: 20, y: 0 })
+    expect(img.style.transform).toBe('translate(12.5px, 0px)')
+  })
+
+  it('a copy wider than the window follows the cursor until it rests against an edge', async () => {
+    const root = await framed('container', '4')
+    const style = () => large(root).style
+    // 600 × 1200: the picture's left edge under the cursor would leave the window bare on the left.
+    pointer(root, 'pointermove', { x: 125, y: 0 })
+    expect(style().width).toBe('600px')
+    expect(style().transform).toBe('translate(0px, 0px)')
+    pointer(root, 'pointermove', { x: 200, y: 150 })
+    expect(style().transform).toBe('translate(-100px, -450px)')
+    pointer(root, 'pointermove', { x: 275, y: 300 })
+    expect(style().transform).toBe('translate(-200px, -900px)')
+  })
+
+  it('follows the frame on a scroll', async () => {
+    const root = await framed('container')
+    pointer(root, 'pointermove', { x: 200, y: 150 })
+    box(root, { left: 0, top: -50, width: 400, height: 300 })
+    box(root.querySelector('img'), { left: 125, top: -50, width: 150, height: 300 })
+    window.dispatchEvent(new Event('scroll'))
+    // The cursor is 200px down the picture now: 500px down the copy.
+    expect(large(root).style.transform).toBe('translate(12.5px, -300px)')
+  })
+
+  it('fingers keep to the picture’s own box', async () => {
+    const root = await framed('container')
+    pointer(root, 'pointermove', { x: 200, y: 150 })
+    pointer(root, 'pointerleave')
+    touch(root, 'touchstart', [
+      [150, 100],
+      [250, 100],
+    ])
+    const view = root.querySelector('.webx-zoom__view')
+    expect([view.style.left, view.style.width, view.style.height]).toEqual([
+      '125px',
+      '150px',
+      '300px',
+    ])
+  })
+
+  it('any other value is the picture’s own box, as without one', async () => {
+    const root = await framed('.stage')
+    pointer(root, 'pointermove', { x: 200, y: 150 })
+    expect(root.querySelector('.webx-zoom__view').style.width).toBe('150px')
+    expect(large(root).style.transform).toBe('translate(-112.5px, -225px)')
+  })
+
   it('beside: a lens over the picture, the panel right of the frame, when its container has room', async () => {
     const root = await mounted(
       COMPONENT.replace('data-zoom-mode="inner"', 'data-zoom-mode="side"'),

@@ -152,7 +152,9 @@ A picture whose details matter: a mouse magnifies it inside its frame, or in a p
 its container has room; two fingers pinch it on a phone, a double tap is twice the size and back,
 and one finger still scrolls the page and swipes a slider. The picture is a link to the original
 that opens the lightbox — the way in for a keyboard — and the original is fetched only when someone
-looks closer. `data-webx-zoom` on a gallery's lightbox link does the same; the Gallery block's
+looks closer. `frame="container"` is for a picture standing in a frame of another shape (a portrait
+photo in a 4:3): the whole frame is then the magnified window, the copy resting against its edges.
+`data-webx-zoom` on a gallery's lightbox link does the same; the Gallery block's
 slider and the catalog's product page use it.
 
 ## Lists: pages and "Show more"

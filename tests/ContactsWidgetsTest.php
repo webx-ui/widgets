@@ -6,12 +6,12 @@ namespace WebxUi\Widgets\Tests;
 
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Application;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Facade;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\AdminServiceProvider;
+use WebxUi\Admin\Testing\MigratesOnce;
 use WebxUi\Auth\AuthServiceProvider;
 use WebxUi\Localization\LocalizationServiceProvider;
 use WebxUi\Mcp\McpServiceProvider;
@@ -29,7 +29,7 @@ use WebxUi\Widgets\WidgetsServiceProvider;
  */
 final class ContactsWidgetsTest extends TestCase
 {
-    use RefreshDatabase;
+    use MigratesOnce;
 
     /**
      * @param  Application  $app
@@ -57,11 +57,6 @@ final class ContactsWidgetsTest extends TestCase
 
         $app['config']->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
         $app['config']->set('webx-localization.locales', [['code' => 'en', 'default' => true], ['code' => 'de']]);
-    }
-
-    protected function defineDatabaseMigrations(): void
-    {
-        $this->artisan('migrate')->run();
     }
 
     /**

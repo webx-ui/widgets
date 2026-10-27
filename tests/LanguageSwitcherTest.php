@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace WebxUi\Widgets\Tests;
 
 use Illuminate\Foundation\Application;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Route as LaravelRoute;
 use Illuminate\Support\Facades\Blade;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\Testing\MigratesOnce;
 use WebxUi\Localization\LocalizationServiceProvider;
 use WebxUi\NestedSet\NestedSetServiceProvider;
 use WebxUi\Routing\Formatters\Slug;
@@ -30,7 +30,7 @@ use WebxUi\Widgets\WidgetsServiceProvider;
  */
 final class LanguageSwitcherTest extends TestCase
 {
-    use RefreshDatabase;
+    use MigratesOnce;
 
     /**
      * @param  Application  $app
@@ -61,11 +61,6 @@ final class LanguageSwitcherTest extends TestCase
             ['code' => 'de'],
             ['code' => 'pl'],
         ]);
-    }
-
-    protected function defineDatabaseMigrations(): void
-    {
-        $this->artisan('migrate')->run();
     }
 
     #[Test]

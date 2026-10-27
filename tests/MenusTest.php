@@ -101,6 +101,42 @@ class MenusTest extends TestCase
         $this->assertMatchesRegularExpression('~<summary class="webx-mobile-nav__toggle">More</summary>~', $plain);
     }
 
+    /** «All showers» → /showers under «Showers» → /showers: the parent is that link already. */
+    #[Test]
+    public function split_drops_a_child_that_leads_where_its_parent_does(): void
+    {
+        $items = [
+            ['label' => 'Showers', 'url' => '/en/showers', 'children' => [
+                ['label' => 'All showers', 'url' => '/en/showers/'],
+                ['label' => 'Walk-in', 'url' => '/en/showers/walk-in'],
+                ['label' => 'Filtered', 'url' => '/en/showers?glass=clear'],
+                ['label' => 'Section', 'url' => '#showers'],
+            ]],
+            ['label' => 'Doors', 'url' => '/en/doors', 'children' => [
+                ['label' => 'All doors', 'url' => 'http://localhost/en/doors'],
+            ]],
+        ];
+
+        $split = Blade::render('<x-webx-mobile-menu.nav :items="$items" parent="split" />', ['items' => $items]);
+
+        $this->assertStringNotContainsString('All showers', $split);
+        $this->assertStringContainsString('href="/en/showers/walk-in"', $split);
+        $this->assertStringContainsString('href="/en/showers?glass=clear"', $split);
+        $this->assertStringContainsString('href="#showers"', $split);
+        // Nothing left in the branch: no arrow, the parent is a plain link.
+        $this->assertStringNotContainsString('All doors', $split);
+        $this->assertStringNotContainsString('aria-label="Submenu: Doors"', $split);
+        $this->assertStringContainsString('<a class="webx-mobile-nav__link" href="/en/doors">Doors</a>', $split);
+
+        // `repeat` and the header's dropdown keep the tree as it is.
+        $repeat = Blade::render('<x-webx-mobile-menu.nav :items="$items" />', ['items' => $items]);
+        $this->assertStringContainsString('All showers', $repeat);
+        $this->assertStringContainsString('All doors', $repeat);
+        $dropdown = Blade::render('<x-webx-header.nav :items="$items" />', ['items' => $items]);
+        $this->assertStringContainsString('All showers', $dropdown);
+        $this->assertStringContainsString('All doors', $dropdown);
+    }
+
     #[Test]
     public function split_is_the_accordions_drill_keeps_its_title(): void
     {

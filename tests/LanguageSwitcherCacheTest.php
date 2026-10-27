@@ -10,6 +10,7 @@ use Illuminate\Routing\Route as LaravelRoute;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\Testing\MigratesOnce;
 use WebxUi\Cache\CacheGroups;
 use WebxUi\Localization\LocalizationServiceProvider;
 use WebxUi\NestedSet\NestedSetServiceProvider;
@@ -30,6 +31,8 @@ use WebxUi\Widgets\WidgetsServiceProvider;
  */
 final class LanguageSwitcherCacheTest extends TestCase
 {
+    use MigratesOnce;
+
     /**
      * @param  Application  $app
      * @return list<class-string>
@@ -60,11 +63,6 @@ final class LanguageSwitcherCacheTest extends TestCase
             ['code' => 'de'],
             ['code' => 'pl'],
         ]);
-    }
-
-    protected function defineDatabaseMigrations(): void
-    {
-        $this->artisan('migrate')->run();
     }
 
     #[Test]

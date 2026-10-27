@@ -6,6 +6,7 @@ namespace WebxUi\Widgets\Tests;
 
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\Application;
+use Illuminate\Support\Facades\Http;
 use Orchestra\Testbench\TestCase as Orchestra;
 use WebxUi\Themes\ThemeLocator;
 use WebxUi\Themes\ThemeServiceProvider;
@@ -14,6 +15,14 @@ use WebxUi\Widgets\WidgetsServiceProvider;
 abstract class TestCase extends Orchestra
 {
     protected string $public;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // A test that reaches the network waits on it; whatever it calls is faked.
+        Http::preventStrayRequests();
+    }
 
     /**
      * Widgets after the themes, the order Composer installs them in: the theme's view overrides

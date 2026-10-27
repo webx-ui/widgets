@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\AdminServiceProvider;
+use WebxUi\Admin\Testing\MigratesOnce;
 use WebxUi\Auth\AuthServiceProvider;
 use WebxUi\Localization\LocalizationServiceProvider;
 use WebxUi\Mcp\McpServiceProvider;
@@ -33,6 +34,8 @@ use WebxUi\Widgets\WidgetsServiceProvider;
  */
 final class VideoPostersTest extends TestCase
 {
+    use MigratesOnce;
+
     private const string YOUTUBE = 'https://www.youtube.com/watch?v=aqz-KE-bpKQ';
 
     /**
@@ -82,11 +85,6 @@ final class VideoPostersTest extends TestCase
     protected function defineRoutes($router): void
     {
         $router->get('/video', static fn (): string => Blade::render('<x-layout><x-webx-video src="'.self::YOUTUBE.'" /></x-layout>'));
-    }
-
-    protected function defineDatabaseMigrations(): void
-    {
-        $this->artisan('migrate')->run();
     }
 
     protected function setUp(): void

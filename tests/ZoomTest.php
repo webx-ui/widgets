@@ -114,12 +114,26 @@ final class ZoomTest extends TestCase
     }
 
     #[Test]
+    public function a_frame_of_another_shape_is_the_window_of_the_mouse_and_the_default_prints_nothing(): void
+    {
+        $this->assertStringContainsString(
+            'data-zoom-scale="2.5" data-zoom-frame="container" data-webx-lightbox=""',
+            Blade::render('<x-webx-zoom src="/a.webp" frame="container" />'),
+        );
+
+        foreach (['<x-webx-zoom src="/a.webp" />', '<x-webx-zoom src="/a.webp" frame="picture" />'] as $template) {
+            $this->assertStringNotContainsString('data-zoom-frame', Blade::render($template), $template);
+        }
+    }
+
+    #[Test]
     public function a_typo_says_what_it_takes(): void
     {
         foreach ([
             '<x-webx-zoom />' => 'no picture',
             '<x-webx-zoom :image="[\'url\' => \'\']" />' => 'no picture',
             '<x-webx-zoom src="/a.webp" mode="lens" />' => 'inner or side',
+            '<x-webx-zoom src="/a.webp" frame="box" />' => 'picture or container',
             '<x-webx-zoom src="/a.webp" scale="10" />' => '1.25 to 6',
             '<x-webx-zoom src="/a.webp" scale="big" />' => '1.25 to 6',
         ] as $template => $message) {

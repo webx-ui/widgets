@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Blade;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\AdminServiceProvider;
+use WebxUi\Admin\Testing\MigratesOnce;
 use WebxUi\Auth\AuthServiceProvider;
 use WebxUi\Banners\BannersServiceProvider;
 use WebxUi\Banners\Models\Banner;
@@ -32,6 +33,8 @@ use WebxUi\Widgets\WidgetsServiceProvider;
  */
 final class NoticeBannersTest extends TestCase
 {
+    use MigratesOnce;
+
     /**
      * @param  Application  $app
      * @return list<class-string>
@@ -68,11 +71,6 @@ final class NoticeBannersTest extends TestCase
         $app['config']->set('webx-localization.locales', [['code' => 'en', 'default' => true], ['code' => 'ru']]);
         $app['config']->set('webx-localization.cache.enabled', false);
         $app['config']->set('webx-seo.cache.enabled', false);
-    }
-
-    protected function defineDatabaseMigrations(): void
-    {
-        $this->artisan('migrate')->run();
     }
 
     #[Test]

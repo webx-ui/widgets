@@ -22,12 +22,19 @@ use WebxUi\Widgets\Facades\Widgets;
  * is the picture shown, a smaller copy where the template has one (a product photo's
  * `thumbUrl()`); without it the original is shown and magnified alike.
  *
+ * `frame="container"` is for a picture that stands in a frame of another shape — a portrait photo in
+ * a gallery's 4:3: the mouse's window is then the whole link, the magnified copy rests against its
+ * edges and stands in its middle where it is smaller. `picture` (the default) prints nothing.
+ *
  * `data-webx-zoom` on any element that holds a picture does the same without the component: a
  * gallery's lightbox link, a slide (§14, WIDGETS §20 W5.5).
  */
 final class Zoom extends Component
 {
     public const array MODES = ['inner', 'side'];
+
+    /** The window of `inner`: the picture's own box, or the whole `.webx-zoom` it stands in. */
+    public const array FRAMES = ['picture', 'container'];
 
     /** An element that asks for the zoom, wherever on the page it was written. */
     private const string ELEMENT = '~<[a-z][a-z0-9-]*\b[^>]*\sdata-webx-zoom(?:\s*=|[\s>/])~i';
@@ -58,12 +65,17 @@ final class Zoom extends Component
         public string $group = '',
         ?string $label = null,
         public bool $eager = false,
+        public string $frame = 'picture',
     ) {
         $this->large = self::filled($large) ?? self::filled(self::read($image, 'url')) ?? self::filled($src)
             ?? throw new InvalidArgumentException('<x-webx-zoom>: no picture — an `image` with a url, `large` or `src`.');
 
         if (! in_array($mode, self::MODES, true)) {
             throw new InvalidArgumentException("<x-webx-zoom mode=\"{$mode}\">: inner or side.");
+        }
+
+        if (! in_array($frame, self::FRAMES, true)) {
+            throw new InvalidArgumentException("<x-webx-zoom frame=\"{$frame}\">: picture or container.");
         }
 
         if (! is_numeric($scale) || (float) $scale < 1.25 || (float) $scale > 6) {

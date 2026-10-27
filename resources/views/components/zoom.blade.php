@@ -6,12 +6,14 @@
 
     Classes: webx-zoom, webx-zoom-link, --inner | --side, __picture, __badge, __icon; the script's
     __view, __large, __lens, __panel; is-active, is-zoomed, is-side, is-hidden, is-easing.
+    data-zoom-frame only for frame="container": the mouse's window is then the whole link.
 --}}
 <a {{ $attributes->class(['webx-zoom', 'webx-zoom-link', "webx-zoom--{$mode}"])->merge(array_filter([
     'href' => $large,
     'data-webx-zoom' => $large,
     'data-zoom-mode' => $mode,
     'data-zoom-scale' => $magnify,
+    'data-zoom-frame' => $frame === 'picture' ? null : $frame,
     'data-webx-lightbox' => $group,
     'data-width' => $pictureWidth,
     'data-height' => $pictureHeight,

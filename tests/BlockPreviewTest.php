@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\AdminServiceProvider;
+use WebxUi\Admin\Testing\MigratesOnce;
 use WebxUi\Auth\AuthServiceProvider;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Auth\Models\Role;
@@ -49,6 +50,8 @@ use WebxUi\Widgets\WidgetsServiceProvider;
  */
 final class BlockPreviewTest extends TestCase
 {
+    use MigratesOnce;
+
     /** The folder the widgets' files are published to, as the page links them: a path, whatever the host. */
     private string $base;
 
@@ -92,7 +95,7 @@ final class BlockPreviewTest extends TestCase
 
     protected function defineDatabaseMigrations(): void
     {
-        $this->artisan('migrate')->run();
+        $this->migrateOnce();
 
         Schema::create('pages', function (Blueprint $table): void {
             $table->id();

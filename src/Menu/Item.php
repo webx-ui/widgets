@@ -99,6 +99,49 @@ final readonly class Item
     }
 
     /**
+     * The children but the ones that lead where this item does — «All showers» under «Showers»:
+     * where the parent is the link itself (`split`), such a child offers the same page twice.
+     *
+     * @return list<Item>
+     */
+    public function childrenElsewhere(): array
+    {
+        $here = self::place($this->href());
+
+        if ($here === null) {
+            return $this->children;
+        }
+
+        return array_values(array_filter($this->children, static fn (Item $child): bool => self::place($child->href()) !== $here));
+    }
+
+    /**
+     * An address as `here()` reads it — the path with its slashes trimmed, a host other than the
+     * site's — and the query, which makes a filtered list another page. An anchor, a `mailto:`
+     * is no page to compare.
+     */
+    private static function place(?string $href): ?string
+    {
+        if ($href === null || ($parts = parse_url($href)) === false || ! isset($parts['path']) && ! isset($parts['host'])) {
+            return null;
+        }
+
+        if (isset($parts['scheme']) && ! isset($parts['host'])) {
+            return null;
+        }
+
+        $host = $parts['host'] ?? '';
+
+        if ($host !== '' && app()->bound('request') && $host === request()->getHost()) {
+            $host = '';
+        }
+
+        $place = $host.'/'.trim($parts['path'] ?? '', '/');
+
+        return isset($parts['query']) ? $place.'?'.$parts['query'] : $place;
+    }
+
+    /**
      * @param  list<Item>  $items
      */
     private static function anyActive(array $items): bool

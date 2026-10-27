@@ -9,6 +9,7 @@ use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\AdminServiceProvider;
+use WebxUi\Admin\Testing\MigratesOnce;
 use WebxUi\Audit\AuditServiceProvider;
 use WebxUi\Audit\Content\AuditContentSources;
 use WebxUi\Audit\Content\ContentField;
@@ -37,6 +38,8 @@ use WebxUi\Widgets\WidgetsServiceProvider;
  */
 final class AuditTest extends TestCase
 {
+    use MigratesOnce;
+
     private const BASE = 'https://shop.example.com';
 
     /** A player pasted into a post, as an editor pastes it: `&amp;` and all. */
@@ -77,11 +80,6 @@ final class AuditTest extends TestCase
         $app['config']->set('queue.default', 'database');
         $app['config']->set('filesystems.links', []);
         $app['config']->set('webx-localization.locales', [['code' => 'en', 'default' => true]]);
-    }
-
-    protected function defineDatabaseMigrations(): void
-    {
-        $this->artisan('migrate')->run();
     }
 
     protected function setUp(): void
