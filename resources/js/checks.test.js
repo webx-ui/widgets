@@ -162,6 +162,25 @@ describe('when the browser checks', () => {
     expect(error('email').hidden).toBe(true)
   })
 
+  it('keeps an error of the server when its field is only left: the link under it must not jump away', async () => {
+    const form = await start(shell(field('email', [said('email')])))
+    globalThis.fetch = vi.fn(async () =>
+      json(422, { errors: { email: ['Wrong e-mail or password.'] } }),
+    )
+    type('email', 'a@b.c')
+    form.querySelector('.webx-form__submit').click()
+    await settle()
+    expect(error('email').textContent).toBe('Wrong e-mail or password.')
+
+    // The press on «Forgot your password?» under the form takes the focus out of the field first.
+    leave('email')
+    expect(error('email').hidden).toBe(false)
+    expect(error('email').textContent).toBe('Wrong e-mail or password.')
+
+    type('email', 'b@b.c')
+    expect(error('email').hidden).toBe(true)
+  })
+
   it('checks a confirmation against its password, and the password again as the confirmation changes', async () => {
     await start(
       shell(

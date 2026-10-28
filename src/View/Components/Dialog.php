@@ -15,6 +15,9 @@ use WebxUi\Widgets\Facades\Widgets;
  *
  * `sheet` — below 40rem of the window a sheet from the bottom rather than a card in the middle
  * (the runtime measures it: `is-sheet`; without JavaScript a card).
+ * `drawer` — a panel pressed to the inline end of the window at its whole height, the same modal
+ * dialog in behaviour (focus kept inside, Esc, the backdrop, focus given back): the cart, the
+ * filters of a list. With `sheet` too it is a sheet from the bottom on a phone.
  * Off by default: a dialog is what it always was unless the site asks.
  */
 final class Dialog extends Component
@@ -25,6 +28,7 @@ final class Dialog extends Component
         public ?string $close = null,
         public ?string $description = null,
         public bool $sheet = false,
+        public bool $drawer = false,
     ) {}
 
     public function render(): View

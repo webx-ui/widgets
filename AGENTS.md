@@ -16,7 +16,7 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
 - **Behaviours by attribute** — `data-webx-disclosure="<id>"`, `data-webx-dialog="<id>"` (a modal
   `<dialog>`; `[data-webx-dialog-close]`, a URL ending in `#<id>` opens it),
   `data-webx-tabs` around `[data-webx-tab]` panels, `data-webx-accordion="single"` on `<details>`.
-  Components: `<x-webx-dialog id title description close sheet>` (`sheet` — from the bottom below 40rem), `<x-webx-tabs label>` + `<x-webx-tabs.panel title>`.
+  Components: `<x-webx-dialog id title description close sheet drawer>` (`sheet` — from the bottom below 40rem; `drawer` — at the inline end, the window's whole height), `<x-webx-tabs label>` + `<x-webx-tabs.panel title>`.
 - **Header** — `<x-webx-header>`: slots `topbar`, `brand`, default (navigation), `actions`,
   `mobile-bottom`, `mobile`, `trigger`; props `collapse` (`auto` measures, a width, `never`),
   `breakpoint` (960, without JavaScript), `sticky` (`none|sticky|hide-on-scroll`), `overlay`,

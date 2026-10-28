@@ -420,6 +420,8 @@ export function form(el) {
   let gone = false
   // The fields the browser itself found wrong.
   const refused = new WeakSet()
+  // The fields the server found wrong, unchanged since: leaving one keeps its error.
+  const answered = new WeakSet()
 
   const busy = (state) => {
     sending = state
@@ -515,8 +517,9 @@ export function form(el) {
 
   const reject = (answer) => {
     const data = answer.json ? answer.data : {}
-    const errors =
-      answer.status === 422 && data.errors && typeof data.errors === 'object' ? data.errors : {}
+    // A 429 says why as well (too many attempts, wait so long): by field, or in a sentence.
+    const explained = answer.status === 422 || answer.status === 429
+    const errors = explained && data.errors && typeof data.errors === 'object' ? data.errors : {}
     const unplaced = []
     const byField = new Map()
 
@@ -526,10 +529,13 @@ export function form(el) {
       if (field) byField.set(field, [...(byField.get(field) ?? []), ...list])
       else unplaced.push(...list)
     }
-    for (const [field, messages] of byField) invalid(field, messages)
+    for (const [field, messages] of byField) {
+      invalid(field, messages)
+      answered.add(field)
+    }
 
     const box = own(el, '.webx-form__error')
-    if (answer.status === 422) {
+    if (explained) {
       // Laravel's own sentence sums the errors up — said already where they are.
       if (unplaced.length === 0 && byField.size === 0 && data.message)
         unplaced.push(String(data.message))
@@ -654,6 +660,7 @@ export function form(el) {
     const field = event.target instanceof Element ? event.target.closest('[data-webx-field]') : null
     if (!field || field.closest('form') !== el) return
     touched.add(field)
+    answered.delete(field)
     // A file is checked as soon as it is chosen or dropped: before it is sent, not after.
     if (field.classList.contains('is-invalid') || (event.target.type === 'file' && rulesOf(field)))
       recheck(field)
@@ -676,7 +683,9 @@ export function form(el) {
     const field = event.target instanceof Element ? event.target.closest('[data-webx-field]') : null
     // Moving between the radios of one group is not leaving it.
     if (!field || field.contains(event.relatedTarget) || !touched.has(field)) return
-    if (rulesOf(field)) recheck(field)
+    // An error of the server stays until the field is changed: a check of the browser that lets
+    // the value through cannot tell it is right, and the form under it would jump at the press.
+    if (rulesOf(field) && !answered.has(field)) recheck(field)
     for (const other of watching(el, field.dataset.webxField)) {
       if (touched.has(other)) recheck(other)
     }

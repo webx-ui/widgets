@@ -50,6 +50,20 @@ class ComponentsTest extends TestCase
     }
 
     #[Test]
+    public function a_drawer_is_the_same_dialog_pressed_to_the_edge(): void
+    {
+        $html = Blade::render('<x-webx-dialog id="cart" title="Cart" drawer sheet>x</x-webx-dialog>');
+
+        // The same <dialog>: the runtime opens it as any other, only the box differs.
+        $this->assertStringContainsString('<dialog id="cart" aria-labelledby="cart-title" class="webx-dialog webx-dialog--sheet webx-dialog--drawer">', $html);
+        $this->assertStringContainsString('data-webx-dialog-close', $html);
+
+        $css = (string) file_get_contents(dirname(__DIR__).'/resources/css/dialog.css');
+        $this->assertStringContainsString('.webx-dialog--drawer {', $css);
+        $this->assertStringNotContainsString('webx-dialog--drawer', Blade::render('<x-webx-dialog id="d">x</x-webx-dialog>'));
+    }
+
+    #[Test]
     public function the_words_follow_the_locale_and_a_prop_overrides_them(): void
     {
         app()->setLocale('ru');

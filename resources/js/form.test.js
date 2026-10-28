@@ -132,6 +132,25 @@ describe('the form sent in place', () => {
     expect(Object.keys(errors[0].errors)).toContain('captcha')
   })
 
+  it("says why a 429 refused — under its field, or Laravel's sentence in the alert — not the failure of the network", async () => {
+    const form = await start(shell(contact))
+    answers(
+      json(429, { message: 'Too many attempts.', errors: { 'fields.email': ['Wait 40 s.'] } }),
+      json(429, { message: 'Too Many Attempts.' }),
+    )
+
+    send(form)
+    await settle()
+    expect(
+      form.querySelector('[data-webx-field="fields.email"] .webx-field__error').textContent,
+    ).toBe('Wait 40 s.')
+    expect(form.querySelector('.webx-form__error').textContent).toBe('')
+
+    send(form)
+    await settle()
+    expect(form.querySelector('.webx-form__error').textContent).toBe('Too Many Attempts.')
+  })
+
   it('takes an error away as its field is corrected, and all of them on the next submission', async () => {
     const form = await start(shell(contact))
     answers(

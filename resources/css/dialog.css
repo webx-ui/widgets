@@ -2,6 +2,7 @@
   --webx-dialog-width: min(100% - 2 * var(--site-gutter), 40rem);
   --webx-dialog-padding: var(--site-space-5);
   --webx-dialog-backdrop: color-mix(in srgb, var(--site-color-text) 55%, transparent);
+  --webx-dialog-drawer-width: min(100%, 28rem);
 }
 
 .webx-dialog {
@@ -85,6 +86,39 @@ html:not(.webx-js) .webx-dialog[open] {
 }
 
 /*
+ * `drawer`: pressed to the inline end of the window at its whole height — the cart, the filters
+ * of a list. The same modal dialog; only its box differs. With `sheet` as well the rules below
+ * win on a narrow window (two classes against one), and it is a sheet from the bottom there.
+ */
+.webx-dialog--drawer {
+  width: var(--webx-dialog-drawer-width);
+  height: 100dvh;
+  max-height: none;
+  margin-block: 0;
+  margin-inline: auto 0;
+  border-block: 0;
+  border-inline-end: 0;
+  border-radius: 0;
+}
+
+/* It slides in from the edge: only in, as the sheet does. */
+.webx-dialog--drawer[open] {
+  transition: transform var(--site-duration) var(--site-easing);
+}
+
+@starting-style {
+  .webx-dialog--drawer[open] {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .webx-dialog--drawer[open] {
+    transition: none;
+  }
+}
+
+/*
  * `sheet`: on a narrow window a sheet from the bottom — the whole width, rounded on top, as tall as
  * it needs up to most of the screen, scrolling inside. The runtime says when (`is-sheet`, below
  * 40rem of the window, dialog.js): a modal dialog lies in the top layer over the viewport, outside
@@ -92,7 +126,11 @@ html:not(.webx-js) .webx-dialog[open] {
  * without the runtime, it is the card it always is.
  */
 .webx-dialog--sheet.is-sheet {
+  /* Pressed to the bottom by itself: a modal sits between top: 0 and bottom: 0, and with both
+     an auto height stretches it to the max-height whatever is inside. */
+  inset-block-start: auto;
   width: 100%;
+  height: auto;
   max-height: calc(100dvh - var(--site-space-7));
   margin: auto 0 0;
   padding-block-end: env(safe-area-inset-bottom);
