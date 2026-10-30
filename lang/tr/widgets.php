@@ -183,6 +183,11 @@ return [
         'drop_file' => 'ya da dosyayı buraya bırakın',
         'drop_files' => 'ya da dosyaları buraya bırakın',
     ],
+    'captcha' => [
+        'missing' => 'Lütfen robot olmadığınızı doğrulayın ve formu yeniden gönderin.',
+        'script' => 'Bu form robot olmadığınızı JavaScript ile denetler. Lütfen JavaScript’i açın ve formu yeniden gönderin.',
+        'unavailable' => 'Robot olmadığınızı doğrulayamadık. Lütfen sayfayı yenileyin ya da başka bir tarayıcı deneyin.',
+    ],
     'form' => [
         'failed' => 'Form gönderilemedi. Bağlantıyı kontrol edip tekrar deneyin.',
         'expired' => 'Sayfa çok uzun süredir açık. Sayfayı yenileyip formu tekrar gönderin.',

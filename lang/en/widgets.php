@@ -183,6 +183,11 @@ return [
         'drop_file' => 'or drop a file here',
         'drop_files' => 'or drop files here',
     ],
+    'captcha' => [
+        'missing' => 'Please confirm you are not a robot and send the form again.',
+        'script' => 'This form checks that you are not a robot with JavaScript. Please turn it on and send the form again.',
+        'unavailable' => 'We could not check that you are not a robot. Please reload the page or try another browser.',
+    ],
     'form' => [
         'failed' => 'The form could not be sent. Check the connection and try again.',
         'expired' => 'The page has been open too long. Reload it and send the form again.',

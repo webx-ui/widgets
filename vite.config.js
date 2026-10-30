@@ -121,6 +121,8 @@ export default {
         field: join(root, 'resources/js/field.js'),
         // The shell of a form: sending in place, the errors of a 422 by field, the answer.
         form: join(root, 'resources/js/form.js'),
+        // The site's captcha in a form: the invisible ones run on submit, a checkbox is checked before.
+        captcha: join(root, 'resources/js/captcha.js'),
         // The files of a field: dropping, the list with sizes and previews, removing before sending.
         files: join(root, 'resources/js/files.js'),
         // The phone mask, only where a field asks for it: +country code and groups of digits.

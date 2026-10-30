@@ -183,6 +183,11 @@ return [
         'drop_file' => 'lub upuść plik tutaj',
         'drop_files' => 'lub upuść pliki tutaj',
     ],
+    'captcha' => [
+        'missing' => 'Potwierdź, że nie jesteś robotem, i wyślij formularz ponownie.',
+        'script' => 'Ten formularz sprawdza za pomocą JavaScriptu, że nie jesteś robotem. Włącz go i wyślij formularz ponownie.',
+        'unavailable' => 'Nie udało się sprawdzić, że nie jesteś robotem. Odśwież stronę albo spróbuj innej przeglądarki.',
+    ],
     'form' => [
         'failed' => 'Nie udało się wysłać formularza. Sprawdź połączenie i spróbuj ponownie.',
         'expired' => 'Strona jest otwarta zbyt długo. Odśwież ją i wyślij formularz ponownie.',

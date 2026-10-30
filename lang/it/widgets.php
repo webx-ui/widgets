@@ -183,6 +183,11 @@ return [
         'drop_file' => 'oppure trascina qui un file',
         'drop_files' => 'oppure trascina qui i file',
     ],
+    'captcha' => [
+        'missing' => 'Conferma di non essere un robot e invia di nuovo il modulo.',
+        'script' => 'Questo modulo verifica con JavaScript che tu non sia un robot. Attivalo e invia di nuovo il modulo.',
+        'unavailable' => 'Non siamo riusciti a verificare che tu non sia un robot. Ricarica la pagina o prova un altro browser.',
+    ],
     'form' => [
         'failed' => 'Non è stato possibile inviare il modulo. Controlla la connessione e riprova.',
         'expired' => 'La pagina è aperta da troppo tempo. Ricaricala e invia di nuovo il modulo.',

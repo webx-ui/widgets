@@ -46,6 +46,7 @@
     "resources/js/behaviours/mobile-nav.js": "94db709e8334ddccee27a21499af8a59066a0eda421841b8a37f5730dcccb8b7",
     "resources/js/behaviours/reveal.js": "c43d96b28a81b3cdb5422bad690e14b1deab55b0f85d3a2912ede12a5c9de848",
     "resources/js/behaviours/tabs.js": "ac551bfcb9eed90dfd6b21f5fc0ffea916accedf7279999dce72675825a91d42",
+    "resources/js/captcha.js": "ffd7fa05a7c115d957c8988089603fdae6bd825c8664741a78278a5355b52a31",
     "resources/js/compare.js": "43da11b90cd2cb4139308ee3de978f6ec9f79a7b0462a0ebe30c1e3e5de32d83",
     "resources/js/consent.js": "ad8879656995aa8635889de90b2a5b8a4f4d4c67af269791d938e35bba3bb1a5",
     "resources/js/contacts.js": "172226370a7c4bc341fc76f7382264e4bfdb4686a66b3ae8dd35878650a09d06",

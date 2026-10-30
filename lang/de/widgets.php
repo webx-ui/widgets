@@ -183,6 +183,11 @@ return [
         'drop_file' => 'oder Datei hierher ziehen',
         'drop_files' => 'oder Dateien hierher ziehen',
     ],
+    'captcha' => [
+        'missing' => 'Bitte bestätigen Sie, dass Sie kein Roboter sind, und senden Sie das Formular erneut.',
+        'script' => 'Dieses Formular prüft mit JavaScript, dass Sie kein Roboter sind. Bitte schalten Sie es ein und senden Sie das Formular erneut.',
+        'unavailable' => 'Wir konnten nicht prüfen, dass Sie kein Roboter sind. Bitte laden Sie die Seite neu oder versuchen Sie einen anderen Browser.',
+    ],
     'form' => [
         'failed' => 'Das Formular konnte nicht gesendet werden. Prüfen Sie die Verbindung und versuchen Sie es erneut.',
         'expired' => 'Die Seite ist schon zu lange geöffnet. Laden Sie sie neu und senden Sie das Formular noch einmal.',

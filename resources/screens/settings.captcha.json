@@ -1,0 +1,108 @@
+[
+  {
+    "op": "add",
+    "target": "tabs",
+    "node": {
+      "id": "captcha",
+      "type": "wx-tab",
+      "label": "trans::webx-widgets::panel.captcha.tab",
+      "children": [
+        {
+          "id": "captcha-card",
+          "type": "wx-card",
+          "children": [
+            {
+              "id": "captcha-provider",
+              "type": "wx-segmented",
+              "name": "captcha.provider",
+              "label": "trans::webx-widgets::panel.captcha.provider",
+              "help": "trans::webx-widgets::panel.captcha.provider-help",
+              "props": {
+                "options": [
+                  {
+                    "value": "off",
+                    "label": "trans::webx-widgets::panel.captcha.off"
+                  },
+                  {
+                    "value": "recaptcha",
+                    "label": "reCAPTCHA"
+                  },
+                  {
+                    "value": "turnstile",
+                    "label": "Turnstile"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "captcha-recaptcha-type",
+              "type": "wx-select",
+              "name": "captcha.recaptcha.type",
+              "label": "trans::webx-widgets::panel.captcha.recaptcha-type",
+              "help": "trans::webx-widgets::panel.captcha.recaptcha-type-help",
+              "visible": { "when": "captcha.provider", "is": "recaptcha" },
+              "props": {
+                "options": [
+                  {
+                    "value": "checkbox",
+                    "label": "trans::webx-widgets::panel.captcha.checkbox"
+                  },
+                  {
+                    "value": "invisible",
+                    "label": "trans::webx-widgets::panel.captcha.invisible"
+                  },
+                  {
+                    "value": "v3",
+                    "label": "trans::webx-widgets::panel.captcha.v3"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "captcha-recaptcha-key",
+              "type": "wx-input",
+              "name": "captcha.recaptcha.key",
+              "label": "trans::webx-widgets::panel.captcha.key",
+              "help": "trans::webx-widgets::panel.captcha.recaptcha-key-help",
+              "visible": { "when": "captcha.provider", "is": "recaptcha" },
+              "props": {
+                "maxlength": 200
+              }
+            },
+            {
+              "id": "captcha-turnstile-mode",
+              "type": "wx-select",
+              "name": "captcha.turnstile.mode",
+              "label": "trans::webx-widgets::panel.captcha.turnstile-mode",
+              "help": "trans::webx-widgets::panel.captcha.turnstile-mode-help",
+              "visible": { "when": "captcha.provider", "is": "turnstile" },
+              "props": {
+                "options": [
+                  {
+                    "value": "managed",
+                    "label": "trans::webx-widgets::panel.captcha.managed"
+                  },
+                  {
+                    "value": "invisible",
+                    "label": "trans::webx-widgets::panel.captcha.invisible-run"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "captcha-turnstile-key",
+              "type": "wx-input",
+              "name": "captcha.turnstile.key",
+              "label": "trans::webx-widgets::panel.captcha.key",
+              "help": "trans::webx-widgets::panel.captcha.turnstile-key-help",
+              "visible": { "when": "captcha.provider", "is": "turnstile" },
+              "props": {
+                "maxlength": 200
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

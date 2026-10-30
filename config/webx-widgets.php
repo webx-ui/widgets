@@ -32,6 +32,52 @@ return [
     ],
 
     /*
+     * The site's captcha (`WebxUi\Widgets\Captcha`): one provider and one pair of keys for every
+     * form that wants one — the inbox's forms, the checkout, the visitors' sign-in. Each of them
+     * only says "on" or "off"; which provider is the site's. With `module-settings` installed the
+     * "Captcha" tab writes the provider, the kind of reCAPTCHA key, Turnstile's mode and the site
+     * key (`captcha.*`) and wins over what is here. The secret is the environment's only: it is
+     * never stored in the database and never shown to an agent.
+     *
+     * The names a site configured for the inbox before the captcha was the site's are read when
+     * the new ones are not set — `WEBX_INBOX_RECAPTCHA_KEY` and the rest — and so is a published
+     * `config/webx-inbox.php` (`webx-inbox.captcha.*`), so nothing has to be set up again.
+     *
+     * reCAPTCHA keys come in three kinds, and a key of one kind drawn as another is the widget's own
+     * "Invalid key type": `type` is `checkbox` (v2, "I'm not a robot"), `invisible` (v2 Invisible,
+     * run when the form is sent) or `v3` (a score, no widget; `min_score` is the line below which a
+     * submission is a robot). Turnstile has one kind of key: `mode` `managed` draws the widget when
+     * the page opens, `invisible` runs it when the form is sent. `script` is the provider's own,
+     * printed once per page beside the first widget; empty — the site loads it itself.
+     */
+    'captcha' => [
+        // `recaptcha`, `turnstile`, or null: no form on the site can draw one.
+        'provider' => env('WEBX_CAPTCHA_PROVIDER'),
+
+        'recaptcha' => [
+            'key' => env('WEBX_CAPTCHA_RECAPTCHA_KEY', env('WEBX_INBOX_RECAPTCHA_KEY')),
+            'secret' => env('WEBX_CAPTCHA_RECAPTCHA_SECRET', env('WEBX_INBOX_RECAPTCHA_SECRET')),
+            // Null: what a published `webx-inbox` config says, else `checkbox`.
+            'type' => env('WEBX_CAPTCHA_RECAPTCHA_TYPE', env('WEBX_INBOX_RECAPTCHA_TYPE')),
+            'min_score' => env('WEBX_CAPTCHA_RECAPTCHA_MIN_SCORE', env('WEBX_INBOX_RECAPTCHA_MIN_SCORE')),
+            'verify' => 'https://www.google.com/recaptcha/api/siteverify',
+            'script' => 'https://www.google.com/recaptcha/api.js',
+        ],
+
+        'turnstile' => [
+            'key' => env('WEBX_CAPTCHA_TURNSTILE_KEY', env('WEBX_INBOX_TURNSTILE_KEY')),
+            'secret' => env('WEBX_CAPTCHA_TURNSTILE_SECRET', env('WEBX_INBOX_TURNSTILE_SECRET')),
+            // Null: what a published `webx-inbox` config says, else `managed`.
+            'mode' => env('WEBX_CAPTCHA_TURNSTILE_MODE', env('WEBX_INBOX_TURNSTILE_MODE')),
+            'verify' => 'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+            'script' => 'https://challenges.cloudflare.com/turnstile/v0/api.js',
+        ],
+
+        // Seconds to wait for the provider's answer; past it the submission is let through.
+        'timeout' => 5,
+    ],
+
+    /*
      * The quick-contact button in a corner of the window (spec §12.4), `<x-webx-contact-button>`,
      * which `theme-default` prints on every page that has contacts. False for a site that wants
      * none: the button is not printed wherever it is placed, and the contacts script is not

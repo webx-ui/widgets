@@ -77,17 +77,19 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
   an `HtmlString` heading is HTML (`heading_html`, `FormResponse::plain()` — its text).
   Events on the `<form>`: `webx:form:submit` (cancelable, `detail.data`, `detail.wait(promise)`),
   `webx:form:success`, `webx:form:error`.
-- **Checks in the browser** — `<x-webx-form :rules="FormRules::for($rules, $attributes, $messages)">`
-  (the arrays the controller validates by): the rules the browser can check, with the validator's
-  own words in the page's language; the rest stays the server's. `type="tel" mask` — a phone mask;
-  file fields get drop, a list and Remove.
+- **Checks in the browser** — `<x-webx-form :rules="FormRules::for($rules, $attributes, $messages)">`:
+  what the browser can check, in the validator's words and the page's language; the rest stays the
+  server's. `type="tel" mask` — a phone mask; file fields get drop, a list and Remove.
+- **Captcha** — one per site, `WebxUi\Widgets\Captcha`: provider and site key on the settings tab
+  "Captcha" (`captcha.*`), else `webx-widgets.captcha` (`WEBX_CAPTCHA_*`, then `WEBX_INBOX_*`); the
+  secret — the environment only. `<x-webx-captcha action="…">` inside the form; the server
+  `Captcha::check($request, $action)` — null or the refusal, `message()` — the words under `captcha`.
 - **Suggestions while typing** — `<x-webx-suggest :action :source name :recent>` (a GET search;
   without `action` a field to stand inside another form). `source` answers HTML of the site's own
   view: `data-webx-option` on what can be chosen, `data-webx-section` + `data-webx-heading` on a
   group. Events `webx:suggest:select` (cancelable), `webx:suggest:results`. The catalogue's:
   `GET /catalog/suggest`.
-- **Blocks** — offered with `module-media`, then the site's: `gallery`, `logos`, `video`, `map`,
-  `counters`, `countdown`, `compare`, `toc` (`webx:blocks:offered --install --module=widgets`).
+- **Blocks** — with `module-media`: `gallery` `logos` `video` `map` `counters` `countdown` `compare` `toc` (`webx:blocks:offered --install --module=widgets`).
 - **Audit** (with `module-audit`) — `widgets.before_consent` (fix `widgets.wait-for-consent`),
   `widgets.banner_off` (fix `widgets.banner-on`), `lightbox_size`, `slider_pause`, `video_pause`,
   `counter_number`, `compare_range`, `toc_target`, `load_more_link`, `zoom_link`, `form_script`,
@@ -106,12 +108,10 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
 - Another look — the same `.webx-<name>*` class in `theme/src/css`: it comes later, no `!important`.
 - A header's layout (logo in the middle, two rows) — `grid-template-areas` on `.webx-header__bar`; its pieces and slots in theme-default — the composition `header` (an `x-slot:<name>` node is a slot).
 - Other markup — `theme/views/vendor/webx-widgets/components/<name>.blade.php`.
-- Another control of one field type — `theme/views/vendor/webx-widgets/components/field/<type>.blade.php`;
-  print `{{ $control($attributes) }}` on it.
+- Another control of one field type — `theme/views/vendor/webx-widgets/components/field/<type>.blade.php`; print `{{ $control($attributes) }}` on it.
 - An icon — `theme/views/vendor/webx-widgets/icons/<name>.blade.php` (24×24 `<svg>`); a word — the prop or `lang/vendor/webx-widgets/<locale>/widgets.php`.
 - Its pieces of the composition `layout` — `widgets.contact-button` (after `footer`): moved or gone by id, `{"remove": ["widgets.contact-button"]}` in `theme/compositions/layout/default.json`.
-- A behaviour of the site's own — `webx.widget('name', '[data-…]', (el) => cleanup)` in
-  `theme/src/js/theme.js`.
+- A behaviour of the site's own — `webx.widget('name', '[data-…]', (el) => cleanup)` in `theme/src/js/theme.js`.
 - HTML added later — `webx.mount(container)`; `webx.unmount(container)` before removing it.
 - A map provider — an entry in `webx-widgets.map.providers` with `{key}` in its address.
 

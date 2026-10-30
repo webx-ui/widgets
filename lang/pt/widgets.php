@@ -183,6 +183,11 @@ return [
         'drop_file' => 'ou arraste um arquivo para cá',
         'drop_files' => 'ou arraste arquivos para cá',
     ],
+    'captcha' => [
+        'missing' => 'Confirme que não é um robô e envie o formulário de novo.',
+        'script' => 'Este formulário verifica com JavaScript que não é um robô. Ative-o e envie o formulário de novo.',
+        'unavailable' => 'Não foi possível verificar que não é um robô. Recarregue a página ou experimente outro navegador.',
+    ],
     'form' => [
         'failed' => 'Não foi possível enviar o formulário. Verifique a ligação e tente novamente.',
         'expired' => 'A página está aberta há demasiado tempo. Recarregue-a e envie o formulário novamente.',

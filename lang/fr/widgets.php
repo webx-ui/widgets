@@ -183,6 +183,11 @@ return [
         'drop_file' => 'ou déposez un fichier ici',
         'drop_files' => 'ou déposez des fichiers ici',
     ],
+    'captcha' => [
+        'missing' => 'Confirmez que vous n’êtes pas un robot et envoyez le formulaire à nouveau.',
+        'script' => 'Ce formulaire vérifie avec JavaScript que vous n’êtes pas un robot. Activez-le et envoyez le formulaire à nouveau.',
+        'unavailable' => 'Nous n’avons pas pu vérifier que vous n’êtes pas un robot. Rechargez la page ou essayez un autre navigateur.',
+    ],
     'form' => [
         'failed' => 'Le formulaire n’a pas pu être envoyé. Vérifiez la connexion et réessayez.',
         'expired' => 'La page est ouverte depuis trop longtemps. Rechargez-la et renvoyez le formulaire.',

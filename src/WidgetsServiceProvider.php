@@ -43,6 +43,7 @@ use WebxUi\Widgets\Audit\ZoomLink;
 use WebxUi\Widgets\Video\Posters;
 use WebxUi\Widgets\Video\VideoProviders;
 use WebxUi\Widgets\View\Components\BackToTop;
+use WebxUi\Widgets\View\Components\Captcha as CaptchaField;
 use WebxUi\Widgets\View\Components\Compare;
 use WebxUi\Widgets\View\Components\ConsentGate;
 use WebxUi\Widgets\View\Components\ConsentLink;
@@ -117,6 +118,8 @@ class WidgetsServiceProvider extends ServiceProvider
         $this->app->scoped(Consent::class);
         // Scoped: a request puts off the fetch of each missing poster once.
         $this->app->scoped(Posters::class);
+        // Scoped: a provider's script is printed once per page.
+        $this->app->scoped(Captcha::class);
         $this->app->singleton(VideoProviders::class);
         $this->app->tag([Widgets::class], HeadPart::TAG);
 
@@ -182,6 +185,7 @@ class WidgetsServiceProvider extends ServiceProvider
         Blade::component('webx-field', Field::class);
         Blade::component('webx-form', Form::class);
         Blade::component('webx-form.submit', FormSubmit::class);
+        Blade::component('webx-captcha', CaptchaField::class);
 
         // The token a cached page's form asks for again (§17.3), and the door of the showcase.
         $this->loadRoutesFrom(Widgets::path().'/routes/web.php');
@@ -240,6 +244,8 @@ class WidgetsServiceProvider extends ServiceProvider
         }
 
         $this->app->make(ScreenRegistry::class)->extend('settings.index', Widgets::path().'/resources/screens/settings.consent.json');
+        // The site's captcha (`Captcha`): the provider and the site key; the secret stays in the environment.
+        $this->app->make(ScreenRegistry::class)->extend('settings.index', Widgets::path().'/resources/screens/settings.captcha.json');
 
         // "Ask everyone again" is a switch saved with the tab: the save raises the version of
         // the policy — every answer given so far is to an older one — and turns the switch off.
