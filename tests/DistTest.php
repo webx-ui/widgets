@@ -57,6 +57,9 @@ final class DistTest extends PlainTestCase
     /** Suggestions while typing (W6.5): the combobox and the panel's frame, 4 KB gzip — the HTML inside is the site's. */
     private const int SUGGEST_BUDGET = 4 * 1024;
 
+    /** The list with a search (decision 36 of the delivery spec): 4 KB gzip, the script and its look, as the suggestions. */
+    private const int SELECT_BUDGET = 4 * 1024;
+
     private const array LOCALES = ['en', 'ru', 'uk', 'de', 'pl', 'fr', 'es', 'it', 'pt', 'tr'];
 
     #[Test]
@@ -95,7 +98,7 @@ final class DistTest extends PlainTestCase
         ));
         sort($built);
 
-        $this->assertSame(['back-to-top.css', 'back-to-top.js', 'captcha.js', 'compare.css', 'compare.js', 'consent.css', 'consent.js', 'contacts.css', 'contacts.js', 'countdown.css', 'countdown.js', 'counter.css', 'counter.js', 'field.css', 'field.js', 'files.css', 'files.js', 'form.css', 'form.js', 'language-switcher.css', 'lightbox.css', 'lightbox.js', 'load-more.css', 'load-more.js', 'map.css', 'map.js', 'mask.js', 'notice-bar.css', 'notice-bar.js', 'pagination.css', 'runtime.css', 'runtime.js', 'share.css', 'share.js', 'slider.css', 'slider.js', 'smooth-scroll.css', 'smooth-scroll.js', 'sources.json', 'suggest.css', 'suggest.js', 'table.css', 'table.js', 'toc.css', 'toc.js', 'video.css', 'video.js', 'zoom.css', 'zoom.js'], $built);
+        $this->assertSame(['back-to-top.css', 'back-to-top.js', 'captcha.js', 'compare.css', 'compare.js', 'consent.css', 'consent.js', 'contacts.css', 'contacts.js', 'countdown.css', 'countdown.js', 'counter.css', 'counter.js', 'field.css', 'field.js', 'files.css', 'files.js', 'form.css', 'form.js', 'language-switcher.css', 'lightbox.css', 'lightbox.js', 'load-more.css', 'load-more.js', 'map.css', 'map.js', 'mask.js', 'notice-bar.css', 'notice-bar.js', 'pagination.css', 'runtime.css', 'runtime.js', 'select.css', 'select.js', 'share.css', 'share.js', 'slider.css', 'slider.js', 'smooth-scroll.css', 'smooth-scroll.js', 'sources.json', 'suggest.css', 'suggest.js', 'table.css', 'table.js', 'toc.css', 'toc.js', 'video.css', 'video.js', 'zoom.css', 'zoom.js'], $built);
     }
 
     /**
@@ -148,6 +151,16 @@ final class DistTest extends PlainTestCase
         $this->assertLessThanOrEqual(self::SUGGEST_BUDGET, $size, sprintf('The suggestions are %.1f KB gzip.', $size / 1024));
         $this->assertStringNotContainsString('webx:suggest', (string) file_get_contents(Widgets::path().'/dist/form.js'));
         $this->assertStringNotContainsString('webx:form', (string) file_get_contents(Widgets::path().'/dist/suggest.js'));
+    }
+
+    /** The list with a search: its own file, claimed by `<x-webx-select>` — no page of suggestions loads it. */
+    #[Test]
+    public function the_list_with_a_search_stays_inside_its_budget(): void
+    {
+        $size = self::gzipped('select.js') + self::gzipped('select.css');
+
+        $this->assertLessThanOrEqual(self::SELECT_BUDGET, $size, sprintf('The list with a search is %.1f KB gzip.', $size / 1024));
+        $this->assertStringNotContainsString('webx-suggest', (string) file_get_contents(Widgets::path().'/dist/select.js'));
     }
 
     #[Test]

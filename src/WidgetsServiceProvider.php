@@ -69,6 +69,7 @@ use WebxUi\Widgets\View\Components\NoticeBar;
 use WebxUi\Widgets\View\Components\OpeningHours;
 use WebxUi\Widgets\View\Components\Pagination;
 use WebxUi\Widgets\View\Components\Phones;
+use WebxUi\Widgets\View\Components\Select;
 use WebxUi\Widgets\View\Components\Share;
 use WebxUi\Widgets\View\Components\Slide;
 use WebxUi\Widgets\View\Components\Slider;
@@ -180,6 +181,7 @@ class WidgetsServiceProvider extends ServiceProvider
         Blade::component('webx-pagination', Pagination::class);
         Blade::component('webx-load-more', LoadMore::class);
         Blade::component('webx-suggest', Suggest::class);
+        Blade::component('webx-select', Select::class);
         Blade::component('webx-notice-bar', NoticeBar::class);
         Blade::component('webx-zoom', Zoom::class);
         Blade::component('webx-field', Field::class);

@@ -87,8 +87,9 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
 - **Suggestions while typing** — `<x-webx-suggest :action :source name :recent>` (a GET search;
   without `action` a field to stand inside another form). `source` answers HTML of the site's own
   view: `data-webx-option` on what can be chosen, `data-webx-section` + `data-webx-heading` on a
-  group. Events `webx:suggest:select` (cancelable), `webx:suggest:results`. The catalogue's:
-  `GET /catalog/suggest`.
+  group. Events `webx:suggest:select` (cancelable), `webx:suggest:results`; the catalogue's `/catalog/suggest`.
+- **A list with a search** — `<x-webx-select name :options :value searchable :source>`: a `<select>` without
+  JavaScript, with it the loaded options filtered and `source` asked (JSON `{options, more}`); `change` on the select. `:strict="false"` — text with suggestions.
 - **Blocks** — with `module-media`: `gallery` `logos` `video` `map` `counters` `countdown` `compare` `toc` (`webx:blocks:offered --install --module=widgets`).
 - **Audit** (with `module-audit`) — `widgets.before_consent` (fix `widgets.wait-for-consent`),
   `widgets.banner_off` (fix `widgets.banner-on`), `lightbox_size`, `slider_pause`, `video_pause`,
@@ -131,8 +132,7 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
   the app: use `<x-webx-form>` and hook its events.
 - Do not write a field's markup of your own, nor validate only in the browser, nor keep a second
   set of rules or messages in JavaScript: `<x-webx-field>` and `FormRules` carry the server's.
-- Do not write a search box's own `fetch` and list, nor put `<x-webx-suggest action>` inside
-  another form (forms do not nest — drop `action` there).
+- Do not write a search box's or a list's own `fetch`, nor put `<x-webx-suggest action>` in a form (they do not nest).
 - Do not type a phone, an address or a network into a template: they live on the Contacts tab.
 - Do not format a time with `toLocaleString()`: `<x-webx-hours>` has the words.
 - Do not copy the runtime into the theme, nor `Widgets::need()` its behaviours.

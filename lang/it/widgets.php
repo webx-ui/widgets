@@ -203,4 +203,13 @@ return [
         'count' => 'Suggerimenti: :count',
         'failed' => 'I suggerimenti non sono disponibili al momento. Premi Invio per cercare.',
     ],
+    'select' => [
+        'label' => 'Scelta',
+        'placeholder' => 'Scegli…',
+        'nothing' => 'Nessun risultato',
+        'more' => 'Mostra altri',
+        'count' => 'Opzioni: :count',
+        'failed' => 'Impossibile caricare l’elenco. Riprova.',
+        'searching' => 'Ricerca…',
+    ],
 ];

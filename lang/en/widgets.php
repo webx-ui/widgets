@@ -203,4 +203,13 @@ return [
         'count' => 'Suggestions: :count',
         'failed' => 'Suggestions are not available right now. Press Enter to search.',
     ],
+    'select' => [
+        'label' => 'Choose',
+        'placeholder' => 'Choose…',
+        'nothing' => 'Nothing found',
+        'more' => 'Show more',
+        'count' => 'Options: :count',
+        'failed' => 'The list could not be loaded. Try again.',
+        'searching' => 'Searching…',
+    ],
 ];

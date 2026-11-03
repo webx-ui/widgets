@@ -203,4 +203,13 @@ return [
         'count' => 'Öneriler: :count',
         'failed' => 'Öneriler şu anda kullanılamıyor. Aramak için Enter tuşuna basın.',
     ],
+    'select' => [
+        'label' => 'Seçim',
+        'placeholder' => 'Seçin…',
+        'nothing' => 'Hiçbir şey bulunamadı',
+        'more' => 'Daha fazla göster',
+        'count' => 'Seçenek: :count',
+        'failed' => 'Liste yüklenemedi. Tekrar deneyin.',
+        'searching' => 'Aranıyor…',
+    ],
 ];

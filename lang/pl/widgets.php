@@ -203,4 +203,13 @@ return [
         'count' => 'Podpowiedzi: :count',
         'failed' => 'Podpowiedzi są teraz niedostępne. Naciśnij Enter, aby wyszukać.',
     ],
+    'select' => [
+        'label' => 'Wybór',
+        'placeholder' => 'Wybierz…',
+        'nothing' => 'Nic nie znaleziono',
+        'more' => 'Pokaż więcej',
+        'count' => 'Opcje: :count',
+        'failed' => 'Nie udało się wczytać listy. Spróbuj ponownie.',
+        'searching' => 'Szukamy…',
+    ],
 ];

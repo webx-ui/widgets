@@ -1,0 +1,174 @@
+/*
+ * A list with a search (spec §17): the select of a page without JavaScript looks like a field of
+ * the site; with it the field the visitor types into stands in its place and the list opens under
+ * it, as wide as the field, scrolling inside itself. One flat class per rule (THEMES §8).
+ */
+
+:where(:root) {
+  --webx-select-height: 44px;
+  --webx-select-radius: var(--site-radius-md);
+  --webx-select-border: var(--site-color-border);
+  --webx-select-bg: var(--site-color-bg);
+  --webx-select-focus: var(--site-color-accent);
+  --webx-select-list-bg: var(--site-color-surface);
+  --webx-select-list-shadow: var(--site-shadow-md);
+  --webx-select-active-bg: var(--site-color-surface-muted);
+  --webx-select-max: 20rem;
+  --webx-select-z: 30;
+}
+
+.webx-select {
+  position: relative;
+  min-width: 0;
+}
+
+/* The label is the field's name for a screen reader; shown when the owner asks. */
+.webx-select__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.webx-select__label.webx-select__label--shown {
+  position: static;
+  display: block;
+  width: auto;
+  height: auto;
+  margin-block-end: var(--site-space-1);
+  overflow: visible;
+  clip-path: none;
+  color: var(--site-color-text);
+  font-weight: 600;
+  white-space: normal;
+}
+
+.webx-select__native,
+.webx-select__input {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-block-size: var(--webx-select-height);
+  margin: 0;
+  padding: var(--site-space-2) var(--site-space-3);
+  border: 1px solid var(--webx-select-border);
+  border-radius: var(--webx-select-radius);
+  background: var(--webx-select-bg);
+  color: var(--site-color-text);
+  font: inherit;
+  font-size: var(--site-font-size-base);
+}
+
+.webx-select__native[hidden] {
+  display: none;
+}
+
+.webx-select__native:focus-visible,
+.webx-select__input:focus-visible {
+  outline: 2px solid var(--webx-select-focus);
+  outline-offset: -1px;
+}
+
+.webx-select__input[aria-invalid='true'],
+.webx-select__native[aria-invalid='true'] {
+  border-color: var(--site-color-danger);
+}
+
+.webx-select__box {
+  position: relative;
+  min-width: 0;
+}
+
+.webx-select__list {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: calc(100% + var(--site-space-1));
+  z-index: var(--webx-select-z);
+  max-block-size: var(--webx-select-max);
+  margin: 0;
+  padding: var(--site-space-1) 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  list-style: none;
+  border: 1px solid var(--webx-select-border);
+  border-radius: var(--webx-select-radius);
+  background: var(--webx-select-list-bg);
+  box-shadow: var(--webx-select-list-shadow);
+  color: var(--site-color-text);
+}
+
+/* In the flow of a dialog: the dialog grows with it and scrolls as a whole. */
+.webx-select__list.webx-select__list--inline {
+  position: static;
+  margin-block-start: var(--site-space-1);
+  box-shadow: none;
+}
+
+.webx-select__list[hidden] {
+  display: none;
+}
+
+/* A finger's height, a pointer, and the option chosen by keys painted the same as under the mouse. */
+.webx-select__option,
+.webx-select__more {
+  display: grid;
+  gap: var(--site-space-1);
+  min-block-size: var(--webx-select-height);
+  padding: var(--site-space-2) var(--site-space-3);
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.webx-select__option:hover,
+.webx-select__more:hover,
+.webx-select__option[aria-selected='true'],
+.webx-select__more[aria-selected='true'] {
+  background: var(--webx-select-active-bg);
+}
+
+.webx-select__option[aria-selected='true'] {
+  box-shadow: inset 3px 0 0 var(--webx-select-focus);
+}
+
+.webx-select__option.is-chosen {
+  font-weight: 600;
+}
+
+.webx-select__option[aria-disabled='true'] {
+  color: var(--site-color-text-muted);
+  cursor: default;
+}
+
+.webx-select__hint {
+  color: var(--site-color-text-muted);
+  font-size: var(--site-font-size-6);
+  font-weight: 400;
+}
+
+.webx-select__more {
+  align-items: center;
+  border-block-start: 1px solid var(--webx-select-border);
+  color: var(--site-color-accent);
+}
+
+.webx-select__empty {
+  padding: var(--site-space-2) var(--site-space-3);
+  color: var(--site-color-text-muted);
+}
+
+.webx-select.is-loading {
+  cursor: progress;
+}
+
+/* Read by a screen reader: how many came, or that nothing did. */
+.webx-select__status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

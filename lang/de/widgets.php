@@ -203,4 +203,13 @@ return [
         'count' => 'Vorschläge: :count',
         'failed' => 'Vorschläge sind gerade nicht verfügbar. Drücken Sie die Eingabetaste, um zu suchen.',
     ],
+    'select' => [
+        'label' => 'Auswahl',
+        'placeholder' => 'Auswählen…',
+        'nothing' => 'Nichts gefunden',
+        'more' => 'Mehr anzeigen',
+        'count' => 'Optionen: :count',
+        'failed' => 'Die Liste konnte nicht geladen werden. Bitte erneut versuchen.',
+        'searching' => 'Suche…',
+    ],
 ];

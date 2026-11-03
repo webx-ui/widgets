@@ -129,6 +129,8 @@ export default {
         mask: join(root, 'resources/js/mask.js'),
         // Suggestions while typing: the combobox over a GET search; the panel's HTML is the site's.
         suggest: join(root, 'resources/js/suggest.js'),
+        // A list with a search: a select the visitor types into, the server asked for the rest.
+        select: join(root, 'resources/js/select.js'),
         // Lenis, built in here and only here: a page without `data-webx-smooth-scroll` never loads it.
         'smooth-scroll': join(root, 'resources/js/smooth-scroll.js'),
       },
