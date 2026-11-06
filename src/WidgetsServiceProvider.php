@@ -14,6 +14,7 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use WebxUi\Admin\Help\HelpRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Audit\Checks\AuditChecks;
 use WebxUi\Audit\Crawl\PageReaders;
@@ -129,6 +130,8 @@ class WidgetsServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->app->make(HelpRegistry::class)->directory(__DIR__.'/../resources/help');
+
         $this->loadViewsFrom(Widgets::path().'/resources/views', 'webx-widgets');
 
         // The quick contact after the footer of the layout (COMPOSITIONS §5.3).
