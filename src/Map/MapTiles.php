@@ -28,6 +28,8 @@ final readonly class MapTiles
     public static function configured(): self
     {
         $name = (string) config('webx-widgets.map.provider', 'openstreetmap');
+        // Google is not tiles (GoogleMaps): the config's word for it, overruled by the Map tab, leaves OpenStreetMap.
+        $name = $name === GoogleMaps::NAME ? 'openstreetmap' : $name;
         $entry = config("webx-widgets.map.providers.{$name}");
 
         if (! is_array($entry) || ! is_string($entry['tiles'] ?? null) || trim($entry['tiles']) === '') {

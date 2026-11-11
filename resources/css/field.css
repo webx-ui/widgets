@@ -255,10 +255,17 @@ html:not(.webx-js) .webx-field__file-name {
   cursor: not-allowed;
 }
 
-.webx-field__hint {
+.webx-field__hint,
+.webx-field__condition {
   margin: 0;
   color: var(--site-color-text-muted);
   font-size: calc(var(--site-font-size-base) * 0.875);
+}
+
+/* When a field applies, for a page without the script (form.js hides the line): italic, so it
+   does not read as the field's own hint. */
+.webx-field__condition {
+  font-style: italic;
 }
 
 /* The error in words, in the danger colour, with a bar beside it: not the colour alone. */
@@ -280,5 +287,124 @@ html:not(.webx-js) .webx-field__file-name {
   .webx-field__choice.webx-field__choice--inline {
     display: inline-flex;
     margin-inline-end: var(--site-space-5);
+  }
+}
+
+/*
+ * Choices as cards (FORM_STEPS §5.2): a grid of labels, each with its input in the corner, the
+ * picture above and the description under the label. One column, then as many as the field asks
+ * for once the form is wide enough — the width of the form decides, not that of the window.
+ * Chosen and focused are read off the input inside (:has), so no script keeps a class in step.
+ */
+:where(:root) {
+  --webx-field-card-gap: var(--site-space-3);
+  --webx-field-card-padding: var(--site-space-3);
+  --webx-field-card-bg: var(--site-color-bg);
+  --webx-field-card-checked-bg: var(--site-color-surface);
+  --webx-field-card-image-ratio: 4 / 3;
+}
+
+.webx-field__cards {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--webx-field-card-gap);
+}
+
+.webx-field__card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    'image image'
+    'check title'
+    '. text';
+  align-items: start;
+  gap: var(--site-space-1) var(--site-space-2);
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: var(--webx-field-height);
+  padding: var(--webx-field-card-padding);
+  border: 1px solid var(--webx-field-border);
+  border-radius: var(--webx-field-radius);
+  background: var(--webx-field-card-bg);
+  color: var(--site-color-text);
+  cursor: pointer;
+  transition:
+    border-color var(--site-duration) var(--site-easing),
+    background-color var(--site-duration) var(--site-easing);
+}
+
+.webx-field__card:hover {
+  border-color: var(--site-color-text-muted);
+}
+
+/* Chosen: the accent border and a tint, not the colour of the dot alone. */
+.webx-field__card:has(:checked) {
+  border-color: var(--webx-field-focus);
+  background: var(--webx-field-card-checked-bg);
+  box-shadow: inset 0 0 0 1px var(--webx-field-focus);
+}
+
+/* The focus ring of the card, where the eye looks — the input's own stays inside it. */
+.webx-field__card:has(:focus-visible) {
+  outline: 2px solid var(--webx-field-focus);
+  outline-offset: 2px;
+}
+
+.webx-field__card:has(:disabled) {
+  background: var(--site-color-surface);
+  color: var(--site-color-text-muted);
+  cursor: not-allowed;
+}
+
+.webx-field__card:has([aria-invalid='true']) {
+  border-color: var(--site-color-danger);
+}
+
+.webx-field__card-check {
+  grid-area: check;
+}
+
+.webx-field__card-image {
+  grid-area: image;
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: var(--webx-field-card-image-ratio);
+  margin-block-end: var(--site-space-1);
+  border-radius: var(--site-radius-sm);
+  object-fit: cover;
+}
+
+.webx-field__card-title {
+  grid-area: title;
+  min-width: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.webx-field__card-text {
+  grid-area: text;
+  min-width: 0;
+  color: var(--site-color-text-muted);
+  font-size: calc(var(--site-font-size-base) * 0.875);
+  overflow-wrap: anywhere;
+}
+
+/* Two to a row from the width of two cards with their words; the rest from a wider form. */
+@container (min-width: 30rem) {
+  .webx-field__cards.webx-field__cards--cols-2,
+  .webx-field__cards.webx-field__cards--cols-3,
+  .webx-field__cards.webx-field__cards--cols-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container (min-width: 44rem) {
+  .webx-field__cards.webx-field__cards--cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .webx-field__cards.webx-field__cards--cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }

@@ -38,4 +38,18 @@ return [
         'managed' => 'Auf der Seite sichtbar',
         'invisible-run' => 'Unsichtbar, beim Absenden',
     ],
+    'map' => [
+        'tab' => 'Karte',
+        'provider' => 'Kartendienst',
+        'provider-help' => 'Wessen Karte die Website zeigt: OpenStreetMap braucht keinen Schlüssel, Google Maps einen Browser-Schlüssel der Website. Beide laden erst, wenn der Besucher eingebetteten Medien zustimmt – außer Karten sollen ohne Nachfrage laden.',
+        'tiles' => 'OpenStreetMap',
+        'google' => 'Google Maps',
+        'key' => 'Google-Maps-API-Schlüssel',
+        'key-help' => 'Ein Browser-Schlüssel der Maps JavaScript API. Jeder Besucher sieht ihn in der Seite, beschränken Sie ihn daher in der Google Cloud Console auf die Domains der Website (HTTP-Referrer) und auf die Maps JavaScript API.',
+        'map-id' => 'Karten-ID',
+        'map-id-help' => 'Optional: Eine Karten-ID aus der Google Cloud Console macht die Nadel zum erweiterten Marker und gibt der Karte den dafür angelegten Stil. Leer – die übliche Google-Karte.',
+        'no-key' => 'Google Maps ist gewählt, aber es gibt keinen Schlüssel: Besucher sehen statt der Karte die Adresse mit einem Link zu Google Maps.',
+        'at-once' => 'Karte ohne Einwilligung anzeigen',
+        'at-once-help' => 'Beim Laden übermittelt die Karte die IP-Adresse des Besuchers an den Kartendienst (Google Maps oder den Kachelserver) und kann Cookies setzen; bei Besuchern aus der EU braucht das ihre Einwilligung. Aus: Die Karte wartet auf die Einwilligung zu eingebetteten Medien. An: Sie ist sofort auf der Seite, nur in diesem Block — auf eigene Verantwortung.',
+    ],
 ];

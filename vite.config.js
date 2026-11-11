@@ -90,6 +90,8 @@ export default {
         'language-switcher': join(root, 'resources/css/language-switcher.css'),
         // Swiper is built in here, and only here: a page without a slider never loads it.
         slider: join(root, 'resources/js/slider.js'),
+        // The photos of a card turning on their own: a few lines, no library.
+        photos: join(root, 'resources/js/photos.js'),
         // PhotoSwipe, the same way: only where a picture opens over the page.
         lightbox: join(root, 'resources/js/lightbox.js'),
         // The facade and the notice before consent: no player library, the provider's is in its iframe.
@@ -97,6 +99,10 @@ export default {
         video: join(root, 'resources/js/video.js'),
         // Leaflet, built in here and only here: tiles wait for consent to media (§11).
         map: join(root, 'resources/js/map.js'),
+        // Google Maps instead, when the site chose it: no Leaflet, Google's API asked for after consent (§11.1).
+        'map-google': join(root, 'resources/js/map-google.js'),
+        // Google's "Embed a map": its own <iframe>, no key and no library, after consent (§11.2).
+        'map-embed': join(root, 'resources/js/map-embed.js'),
         // The shadows at the edge of a table of prose, claimed by the server when it wrapped one.
         table: join(root, 'resources/js/table.js'),
         'back-to-top': join(root, 'resources/js/back-to-top.js'),
@@ -115,12 +121,22 @@ export default {
         'load-more': join(root, 'resources/js/load-more.js'),
         // The close button; the head hides a closed bar before this arrives.
         'notice-bar': join(root, 'resources/js/notice-bar.js'),
+        // The offer of the first visit's language: only where the server decided to make it.
+        'language-offer': join(root, 'resources/js/language-offer.js'),
         // A picture magnified under the mouse or two fingers; the keyboard's way in is the lightbox.
         zoom: join(root, 'resources/js/zoom.js'),
         // The fields of a form: Show on a password, the line beside a file — the rest is HTML.
         field: join(root, 'resources/js/field.js'),
         // The shell of a form: sending in place, the errors of a 422 by field, the answer.
         form: join(root, 'resources/js/form.js'),
+        // One step of a form at a time, «Next» and «Back»: only where <x-webx-form steps> stands.
+        steps: join(root, 'resources/js/steps.js'),
+        // The answers so far with «Edit» beside each: only where <x-webx-form.summary> stands.
+        summary: join(root, 'resources/js/summary.js'),
+        // A calendar and the times of a day, in the site's zone: only where a field of type datetime stands.
+        datetime: join(root, 'resources/js/datetime.js'),
+        // Where the visitor came from, into the submission: only with a form that asks for it.
+        attribution: join(root, 'resources/js/attribution.js'),
         // The site's captcha in a form: the invisible ones run on submit, a checkbox is checked before.
         captcha: join(root, 'resources/js/captcha.js'),
         // The files of a field: dropping, the list with sizes and previews, removing before sending.

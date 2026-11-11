@@ -1,0 +1,112 @@
+/*
+ * `data-webx-parallax` (spec §14). Nothing here moves an element by its attribute: the script adds
+ * `webx-parallax` — on the picture, and `webx-parallax-frame` on the ancestor whose view timeline it
+ * follows (behaviours/parallax.js says which), or `webx-parallax--script` where there is none — so
+ * a page without JavaScript, with reduced motion or in print shows the picture as it is.
+ *
+ * The picture travels from `-amount` to `+amount` percent of its frame's height while the frame
+ * crosses the screen. The overscan that keeps its edges out of the frame is laid out, not scaled:
+ * an absolutely placed picture (both the hero's and a banner's are) is made taller by twice the
+ * amount, so the browser draws it at the size it is seen — `scale` would stretch a raster drawn at
+ * the frame's size, and soften the photo the stronger the effect. It grows downwards only and is
+ * lifted back by `translate`: a box whose top moves is a layout shift, a taller one and a
+ * transform are not, and the box is out of the flow inside the frame's `overflow` — nothing around
+ * it moves (no CLS). The script marks such a picture `webx-parallax--grown`; one in the flow cannot
+ * grow so, and is scaled instead. The motion itself is `translate` only.
+ *
+ * The attribute's value is the strength: `soft`, `medium` (also empty) or `strong`, a factor on
+ * the amount.
+ */
+
+:where(:root) {
+  /* How far the picture travels each way, in percent of its frame's height; less in a narrow container. */
+  --webx-parallax-shift: 20;
+  --webx-parallax-shift-narrow: 10;
+  /* What `soft` and `strong` make of it; `medium` is the shift itself. */
+  --webx-parallax-soft: 0.5;
+  --webx-parallax-strong: 1.5;
+  /* Where the frame is on its way across the screen, 0 to 1 — the fallback script writes it. */
+  --webx-parallax-progress: 0.5;
+}
+
+/* The timeline the picture follows: the frame (or what crops it) crossing the page's screen. */
+.webx-parallax-frame {
+  view-timeline: --webx-parallax block;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .webx-parallax {
+    --webx-parallax-strength: 1;
+    --webx-parallax-amount: calc(var(--webx-parallax-shift) * var(--webx-parallax-strength));
+    --webx-parallax-travel: calc(var(--webx-parallax-amount) * 1%);
+    --webx-parallax-lift: 0%;
+
+    scale: calc(1 + var(--webx-parallax-amount) / 50);
+    will-change: translate;
+    animation: webx-parallax linear both;
+    /* After the shorthand, which resets it. */
+    animation-timeline: --webx-parallax;
+    animation-range: cover;
+  }
+
+  .webx-parallax[data-webx-parallax='soft'] {
+    --webx-parallax-strength: var(--webx-parallax-soft);
+  }
+
+  .webx-parallax[data-webx-parallax='strong'] {
+    --webx-parallax-strength: var(--webx-parallax-strong);
+  }
+
+  /* Placed absolutely: taller rather than larger. Twice the class — over a block's own `inset` and
+     `height` for its picture, whichever stylesheet comes later. */
+  .webx-parallax--grown.webx-parallax--grown {
+    /* The same distance in percent of the picture's own, taller height: what `translate` counts in. */
+    --webx-parallax-travel: calc(
+      var(--webx-parallax-amount) * 100% / (100 + 2 * var(--webx-parallax-amount))
+    );
+    /* The half of the overscan above the frame: the box keeps its top, the transform lifts it. */
+    --webx-parallax-lift: var(--webx-parallax-travel);
+
+    bottom: auto;
+    height: calc(100% + var(--webx-parallax-amount) * 2%);
+    scale: none;
+  }
+
+  .webx-parallax--script {
+    translate: 0
+      calc(
+        (var(--webx-parallax-progress) * 2 - 1) * var(--webx-parallax-travel) -
+          var(--webx-parallax-lift)
+      );
+    animation: none;
+  }
+}
+
+/* The nearest container decides — a block's, a banner's frame — not the window. */
+@container (max-width: 40rem) {
+  .webx-parallax {
+    --webx-parallax-shift: var(--webx-parallax-shift-narrow);
+  }
+}
+
+@keyframes webx-parallax {
+  from {
+    translate: 0 calc(var(--webx-parallax-travel) * -1 - var(--webx-parallax-lift));
+  }
+
+  to {
+    translate: 0 calc(var(--webx-parallax-travel) - var(--webx-parallax-lift));
+  }
+}
+
+@media print {
+  .webx-parallax {
+    translate: none;
+    scale: none;
+    animation: none;
+  }
+
+  .webx-parallax--grown.webx-parallax--grown {
+    height: 100%;
+  }
+}

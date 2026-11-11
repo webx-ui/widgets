@@ -17,6 +17,9 @@
 
 .webx-form__body {
   display: grid;
+  /* One column as wide as the form: an implicit one grows to the widest content — the indicator of
+     the steps with every title in it — and pushes the form out of a narrow column. */
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--webx-form-gap);
   min-width: 0;
 }

@@ -53,7 +53,7 @@ const words = {
 // What `<x-webx-slider>` prints, with the settings it resolved.
 const slider = (
   config = {},
-  { slides = 4, perView = 1, pause = false, arrows = true, pagination = true } = {},
+  { slides = 4, perView = 1, pause = false, arrows = true, pagination = true, count = false } = {},
 ) => {
   const data = {
     variant: 'cards',
@@ -81,6 +81,7 @@ const slider = (
       ${pause ? '<button type="button" class="webx-slider__button webx-slider__pause" aria-label="Pause"></button>' : ''}
       ${arrows ? '<button type="button" class="webx-slider__button webx-slider__prev"></button>' : ''}
       ${pagination ? '<div class="webx-slider__pagination"></div>' : ''}
+      ${count ? `<div class="webx-slider__count" aria-hidden="true"><span class="webx-slider__current">1</span><span class="webx-slider__count-divider">/</span><span class="webx-slider__total">${slides}</span></div>` : ''}
       ${arrows ? '<button type="button" class="webx-slider__button webx-slider__next"></button>' : ''}
     </div>
   </section>`
@@ -251,6 +252,61 @@ describe('slider', () => {
 
     window.webx.unmount()
     expect(root.querySelectorAll('.webx-slider__slide')).toHaveLength(2)
+  })
+
+  it('counts "current/total" for `pagination="fraction"`, without and with a loop', async () => {
+    const fraction = { pagination: false, count: true, slides: 3 }
+    const { root } = await start(slider({}, fraction))
+    const counter = root.querySelector('.webx-slider__count')
+    const now = () => counter.querySelector('.webx-slider__current').textContent
+
+    expect(now()).toBe('1')
+    expect(counter.querySelector('.webx-slider__total').textContent).toBe('3')
+    // No dots: Swiper's pagination is off, and the counter is not a second live region.
+    expect(root.querySelector('.webx-slider__bullet')).toBeNull()
+    expect(counter.getAttribute('aria-hidden')).toBe('true')
+    expect(counter.hasAttribute('aria-live')).toBe(false)
+
+    root.querySelector('.webx-slider__next').click()
+    expect(now()).toBe('2')
+    root.querySelector('.webx-slider__next').click()
+    expect(now()).toBe('3')
+    expect(counter.classList.contains('is-locked')).toBe(false)
+
+    window.webx.unmount()
+    document.body.innerHTML = ''
+
+    // In a loop the number is the slide's own, round past the last back to one.
+    const looped = await start(slider({ loop: true }, { ...fraction, slides: 4 }))
+    const counter2 = looped.root.querySelector('.webx-slider__count')
+    looped.swiper.slidePrev()
+    expect(looped.swiper.realIndex).toBe(3)
+    expect(counter2.querySelector('.webx-slider__current').textContent).toBe('4')
+    looped.swiper.slideNext()
+    expect(counter2.querySelector('.webx-slider__current').textContent).toBe('1')
+  })
+
+  it('counts only the slides of a running strip, not its copies', async () => {
+    const { root, swiper } = await start(
+      slider(
+        { continuous: true, loop: true, speed: 4000 },
+        { slides: 2, perView: 3, arrows: false, pagination: false, count: true },
+      ),
+    )
+    const counter = root.querySelector('.webx-slider__count')
+
+    expect(root.querySelectorAll('.webx-slider__slide').length).toBeGreaterThan(2)
+    expect(counter.querySelector('.webx-slider__total').textContent).toBe('2')
+    const real = new Set()
+    for (let i = 0; i < 5; i++) {
+      swiper.slideNext(0)
+      real.add(swiper.realIndex)
+      const shown = Number(counter.querySelector('.webx-slider__current').textContent)
+      expect(shown).toBe((swiper.realIndex % 2) + 1)
+      expect(shown).toBeLessThanOrEqual(2)
+    }
+    // It did come to a copy: Swiper numbers the copies past the two slides.
+    expect(Math.max(...real)).toBeGreaterThanOrEqual(2)
   })
 
   it('lets go of Swiper and gives the strip back on unmount', async () => {

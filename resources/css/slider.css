@@ -19,6 +19,10 @@
   --webx-slider-bullet-size: 10px;
   --webx-slider-bullet-color: var(--site-color-border);
   --webx-slider-bullet-active: var(--site-color-accent);
+  --webx-slider-count-color: var(--site-color-text-muted);
+  --webx-slider-count-current: var(--site-color-text);
+  --webx-slider-count-size: var(--site-font-size-6);
+  --webx-slider-count-gap: 2px;
   --webx-slider-thumb-size: 72px;
   --webx-slider-thumb-gap: var(--site-space-2);
   --webx-slider-pause-shown: inline-flex;
@@ -221,6 +225,29 @@
 .webx-slider__bullet:focus-visible {
   outline: 2px solid var(--site-color-accent);
   outline-offset: -4px;
+}
+
+/* `pagination="fraction"`: "2/6" between the arrows, figures of one width so it does not jump. */
+.webx-slider__count {
+  display: inline-flex;
+  flex: none;
+  align-items: baseline;
+  gap: var(--webx-slider-count-gap);
+  min-width: var(--webx-slider-arrow-size);
+  justify-content: center;
+  color: var(--webx-slider-count-color);
+  font-size: var(--webx-slider-count-size);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.webx-slider__count.is-locked {
+  display: none;
+}
+
+.webx-slider__current {
+  color: var(--webx-slider-count-current);
+  font-weight: 600;
 }
 
 /* Thumbnails of `gallery`: the script makes them, a button per slide. */

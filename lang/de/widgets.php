@@ -22,6 +22,8 @@ return [
         'reject' => 'Alle ablehnen',
         'customize' => 'Anpassen',
         'save' => 'Auswahl speichern',
+        'dialog_reject' => 'Alle ablehnen',
+        'dialog_accept' => 'Alle akzeptieren',
         'policy' => 'Cookie-Richtlinie',
         'link' => 'Cookie-Einstellungen',
         'dialog' => 'Cookie-Einstellungen',
@@ -79,6 +81,17 @@ return [
     'language' => [
         'label' => 'Sprache',
         'fallback' => 'Noch nicht übersetzt: die Startseite in dieser Sprache',
+        // Asked in this language, which names itself (ROUTING §18.6).
+        'offer' => [
+            'question' => 'Zu Deutsch wechseln?',
+            'accept' => 'Ja',
+            'stay' => 'Bleiben',
+            'close' => 'Schließen',
+        ],
+    ],
+    'photos' => [
+        'label' => 'Fotos',
+        'show' => 'Foto :index von :count',
     ],
     'slider' => [
         'carousel' => 'Karussell',
@@ -118,7 +131,10 @@ return [
         'load' => 'Laden',
         'always' => 'Karten immer laden',
         'open' => 'In Karten öffnen',
+        'open_google' => 'In Google Maps öffnen',
         'hint' => 'Klicken Sie auf die Karte, um mit dem Mausrad zu zoomen',
+        'failed' => 'Die Karte konnte nicht geladen werden.',
+        'embed_refused' => 'Das ist kein Code einer Google-Maps-Karte. Öffnen Sie in Google Maps „Teilen“ → „Karte einbetten“, kopieren Sie den HTML-Code und fügen Sie ihn hier ein – oder nur seine Adresse, https://www.google.com/maps/embed?pb=…',
     ],
     'table' => [
         'label' => 'Tabelle',
@@ -183,6 +199,17 @@ return [
         'drop_file' => 'oder Datei hierher ziehen',
         'drop_files' => 'oder Dateien hierher ziehen',
     ],
+    // A day and a time (FORM_STEPS §6.4, §12.2): month and day names are the browser's Intl and Carbon.
+    'datetime' => [
+        'date' => 'Datum',
+        'time' => 'Uhrzeit',
+        'previous' => 'Vorheriger Monat',
+        'next' => 'Nächster Monat',
+        'zone' => 'Uhrzeiten in :zone',
+        'none' => 'Heute sind keine Uhrzeiten mehr frei',
+        'unavailable' => 'nicht verfügbar',
+        'times' => 'Uhrzeiten am :date',
+    ],
     'captcha' => [
         'missing' => 'Bitte bestätigen Sie, dass Sie kein Roboter sind, und senden Sie das Formular erneut.',
         'script' => 'Dieses Formular prüft mit JavaScript, dass Sie kein Roboter sind. Bitte schalten Sie es ein und senden Sie das Formular erneut.',
@@ -192,6 +219,17 @@ return [
         'failed' => 'Das Formular konnte nicht gesendet werden. Prüfen Sie die Verbindung und versuchen Sie es erneut.',
         'expired' => 'Die Seite ist schon zu lange geöffnet. Laden Sie sie neu und senden Sie das Formular noch einmal.',
         'again' => 'Weitere senden',
+        // A form of several steps (FORM_STEPS §3, §12.2): `:current`/`:total` without plural forms.
+        'steps' => [
+            'label' => 'Schritte',
+            'step' => 'Schritt :current von :total',
+            'next' => 'Weiter',
+            'back' => 'Zurück',
+            'return' => 'Zurück zu Schritt :number: :title',
+            'fix' => 'Bitte prüfen Sie Schritt :number: :message',
+            'edit' => 'Ändern',
+            'edit-field' => 'Ändern: :field',
+        ],
     ],
     'suggest' => [
         'label' => 'Suche',

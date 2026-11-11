@@ -1,7 +1,7 @@
 {
   "slug": "gallery",
   "title": "Gallery",
-  "description": "Pictures from the media library as a grid or as a slider with thumbnails; a click opens a picture over the page, the arrows page through the rest, and the slider can magnify a picture under the mouse.",
+  "description": "Pictures from the media library as a grid, a slider with thumbnails or a mosaic of one large and two small; a click opens a picture over the page, the arrows page through the rest, and the slider can magnify a picture under the mouse.",
   "icon": null,
   "group": "media",
   "sort": 0,
@@ -36,8 +36,35 @@
           {
             "value": "slider",
             "label": "Slider"
+          },
+          {
+            "value": "mosaic",
+            "label": "Mosaic"
           }
         ]
+      }
+    },
+    {
+      "id": "mosaic",
+      "type": "wx-segmented",
+      "label": "Mosaic",
+      "help": "One large picture and two smaller ones. Still shows the first three; a carousel pages through the rest in threes. The lightbox pages through them all either way.",
+      "default": "still",
+      "props": {
+        "options": [
+          {
+            "value": "still",
+            "label": "Three pictures"
+          },
+          {
+            "value": "slider",
+            "label": "Carousel of threes"
+          }
+        ]
+      },
+      "visible": {
+        "when": "view",
+        "is": "mosaic"
       }
     },
     {
@@ -56,10 +83,259 @@
       }
     },
     {
+      "id": "per_view",
+      "type": "wx-segmented",
+      "label": "Slides at a time",
+      "help": "At most; a narrow column shows fewer.",
+      "default": 1,
+      "props": {
+        "options": [
+          {
+            "value": 1,
+            "label": "1"
+          },
+          {
+            "value": 2,
+            "label": "2"
+          },
+          {
+            "value": 3,
+            "label": "3"
+          }
+        ]
+      },
+      "visible": {
+        "when": "view",
+        "is": "slider"
+      }
+    },
+    {
+      "id": "effect",
+      "type": "wx-segmented",
+      "label": "Change of slides",
+      "default": "slide",
+      "props": {
+        "options": [
+          {
+            "value": "slide",
+            "label": "Slide"
+          },
+          {
+            "value": "fade",
+            "label": "Fade"
+          }
+        ]
+      },
+      "visible": {
+        "all": [
+          {
+            "when": "view",
+            "is": "slider"
+          },
+          {
+            "when": "per_view",
+            "is": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "arrows",
+      "type": "wx-switch",
+      "label": "Arrows",
+      "default": true,
+      "visible": {
+        "any": [
+          {
+            "when": "view",
+            "is": "slider"
+          },
+          {
+            "all": [
+              {
+                "when": "view",
+                "is": "mosaic"
+              },
+              {
+                "when": "mosaic",
+                "is": "slider"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "dots",
+      "type": "wx-switch",
+      "label": "Dots",
+      "default": false,
+      "visible": {
+        "any": [
+          {
+            "when": "view",
+            "is": "slider"
+          },
+          {
+            "all": [
+              {
+                "when": "view",
+                "is": "mosaic"
+              },
+              {
+                "when": "mosaic",
+                "is": "slider"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "thumbs",
+      "type": "wx-switch",
+      "label": "Thumbnails under the slider",
+      "default": true,
+      "visible": {
+        "all": [
+          {
+            "when": "view",
+            "is": "slider"
+          },
+          {
+            "when": "per_view",
+            "is": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "endless",
+      "type": "wx-switch",
+      "label": "Start over after the last slide",
+      "default": false,
+      "visible": {
+        "any": [
+          {
+            "when": "view",
+            "is": "slider"
+          },
+          {
+            "all": [
+              {
+                "when": "view",
+                "is": "mosaic"
+              },
+              {
+                "when": "mosaic",
+                "is": "slider"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "autoplay",
+      "type": "wx-switch",
+      "label": "Turn on its own",
+      "help": "Stops under the mouse and in focus, has a pause button, and does not start for a visitor who asked for less motion.",
+      "default": false,
+      "visible": {
+        "any": [
+          {
+            "when": "view",
+            "is": "slider"
+          },
+          {
+            "all": [
+              {
+                "when": "view",
+                "is": "mosaic"
+              },
+              {
+                "when": "mosaic",
+                "is": "slider"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "interval",
+      "type": "wx-input-number",
+      "label": "Seconds between slides",
+      "default": 5,
+      "props": {
+        "min": 2,
+        "max": 30
+      },
+      "visible": {
+        "all": [
+          {
+            "any": [
+              {
+                "when": "view",
+                "is": "slider"
+              },
+              {
+                "all": [
+                  {
+                    "when": "view",
+                    "is": "mosaic"
+                  },
+                  {
+                    "when": "mosaic",
+                    "is": "slider"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "when": "autoplay",
+            "is": true
+          }
+        ]
+      }
+    },
+    {
       "id": "zoom",
       "type": "wx-switch",
       "label": "Open a picture over the page on click",
       "default": true
+    },
+    {
+      "id": "ratio",
+      "type": "wx-select",
+      "label": "Frame over the page",
+      "help": "The shape a picture opens in; the whole picture stays inside it, nothing is cut off.",
+      "default": "auto",
+      "props": {
+        "options": [
+          {
+            "value": "auto",
+            "label": "As is"
+          },
+          {
+            "value": "4:3",
+            "label": "4:3"
+          },
+          {
+            "value": "16:9",
+            "label": "16:9"
+          },
+          {
+            "value": "1:1",
+            "label": "1:1"
+          }
+        ]
+      },
+      "visible": {
+        "when": "zoom",
+        "not": false
+      }
     },
     {
       "id": "magnify",
@@ -89,8 +365,8 @@
       }
     }
   ],
-  "template": "@php\n    // A picture deleted from the library resolves without an address: left out, not printed broken.\n    $shown = array_values(array_filter(is_array($pictures) ? $pictures : [], static fn ($picture): bool => is_array($picture) && ! empty($picture['url'])));\n    $across = max(1, min(6, (int) ($columns ?: 3)));\n    $label = $heading ? wx_text($heading)->plain() : null;\n    // One group per block: the arrows of the lightbox page through this gallery and no other.\n    $group = 'gallery-'.$block->key;\n    // A slide's picture magnified under the mouse and two fingers (§14): the lightbox's link carries it, so a keyboard opens the picture as before.\n    $hover = $zoom && $view === 'slider' && in_array($magnify, ['inner', 'side'], true) ? $magnify : null;\n@endphp\n@if ($shown)\n<section class=\"b-gallery b-gallery--{{ $view === 'slider' ? 'slider' : 'grid' }}\" data-wx-block=\"gallery\" style=\"--gallery-columns: {{ $across }}\">\n    @if ($heading)\n        <h2 class=\"b-gallery__heading\">{{ $heading }}</h2>\n    @endif\n    @if ($view === 'slider')\n        <x-webx-slider variant=\"gallery\" :label=\"$label\">\n            @foreach ($shown as $picture)\n                <x-webx-slide :thumb=\"$picture['thumb'] ?? null\">\n                    <figure class=\"b-gallery__figure\">\n                        @if ($zoom)\n                            <x-webx-lightbox :image=\"$picture\" :group=\"$group\" :data-webx-zoom=\"$hover ? '' : null\" :data-zoom-mode=\"$hover\"><img class=\"b-gallery__image\" src=\"{{ $picture['url'] }}\" alt=\"{{ $picture['alt'] ?? '' }}\" @if ($picture['width']) width=\"{{ $picture['width'] }}\" height=\"{{ $picture['height'] }}\" @endif></x-webx-lightbox>\n                        @else\n                            <img class=\"b-gallery__image\" src=\"{{ $picture['url'] }}\" alt=\"{{ $picture['alt'] ?? '' }}\" @if ($picture['width']) width=\"{{ $picture['width'] }}\" height=\"{{ $picture['height'] }}\" @endif>\n                        @endif\n                        @if (! empty($picture['title']))\n                            <figcaption class=\"b-gallery__caption\">{{ $picture['title'] }}</figcaption>\n                        @endif\n                    </figure>\n                </x-webx-slide>\n            @endforeach\n        </x-webx-slider>\n    @else\n        <ul class=\"b-gallery__grid\">\n            @foreach ($shown as $picture)\n                @php\n                    // The square preview of the library, and the picture itself where a cell is wider than it.\n                    $sources = $picture['thumb'] && $picture['width'] ? $picture['thumb'].' 320w, '.$picture['url'].' '.$picture['width'].'w' : null;\n                @endphp\n                <li class=\"b-gallery__cell\">\n                    <figure class=\"b-gallery__figure\">\n                        @if ($zoom)\n                            <x-webx-lightbox :image=\"$picture\" :group=\"$group\"><img class=\"b-gallery__image\" src=\"{{ $picture['thumb'] ?: $picture['url'] }}\" @if ($sources) srcset=\"{{ $sources }}\" sizes=\"(max-width: 40rem) 50vw, {{ (int) ceil(100 / $across) }}vw\" @endif alt=\"{{ $picture['alt'] ?? '' }}\" width=\"320\" height=\"320\" @if ($loop->index >= $across) loading=\"lazy\" @endif></x-webx-lightbox>\n                        @else\n                            <img class=\"b-gallery__image\" src=\"{{ $picture['thumb'] ?: $picture['url'] }}\" @if ($sources) srcset=\"{{ $sources }}\" sizes=\"(max-width: 40rem) 50vw, {{ (int) ceil(100 / $across) }}vw\" @endif alt=\"{{ $picture['alt'] ?? '' }}\" width=\"320\" height=\"320\" @if ($loop->index >= $across) loading=\"lazy\" @endif>\n                        @endif\n                        @if (! empty($picture['title']))\n                            <figcaption class=\"b-gallery__caption\">{{ $picture['title'] }}</figcaption>\n                        @endif\n                    </figure>\n                </li>\n            @endforeach\n        </ul>\n    @endif\n</section>\n@endif\n",
-  "styles": ".b-gallery {\n    container-type: inline-size;\n    --gallery-gap: 0.75em;\n}\n\n.b-gallery__heading {\n    margin: 0 0 1em;\n}\n\n/* Up to `--gallery-columns` across, fewer when a cell would be narrower than 9em: the width of the\n   column the block stands in decides, not the window. */\n.b-gallery__grid {\n    display: grid;\n    grid-template-columns: repeat(\n        auto-fill,\n        minmax(min(100%, max(9em, (100% - (var(--gallery-columns, 3) - 1) * var(--gallery-gap)) / var(--gallery-columns, 3))), 1fr)\n    );\n    gap: var(--gallery-gap);\n    margin: 0;\n    padding: 0;\n    list-style: none;\n}\n\n/* No margin of its own: a theme's prose spaces `li + li`, which in a grid lifts the first cell\n   above its row. */\n.b-gallery__cell {\n    min-width: 0;\n    margin: 0;\n}\n\n.b-gallery__figure {\n    margin: 0;\n}\n\n.b-gallery__image {\n    display: block;\n    width: 100%;\n    height: auto;\n    border-radius: 0.25em;\n}\n\n/* The library's preview is square, and so is a cell: pictures of every shape line up. */\n.b-gallery__grid .b-gallery__image {\n    aspect-ratio: 1;\n    object-fit: cover;\n}\n\n.b-gallery__caption {\n    margin-top: 0.5em;\n    font-size: 0.875em;\n    opacity: 0.75;\n}\n",
+  "template": "@php\n    // A picture deleted from the library resolves without an address: left out, not printed broken.\n    $shown = array_values(array_filter(is_array($pictures) ? $pictures : [], static fn ($picture): bool => is_array($picture) && ! empty($picture['url'])));\n    $across = max(1, min(6, (int) ($columns ?: 3)));\n    $label = $heading ? wx_text($heading)->plain() : null;\n    // One group per block: the arrows of the lightbox page through this gallery and no other.\n    $group = 'gallery-'.$block->key;\n    // The shape a picture opens in over the page; `auto`, and a block saved before the field, open it as it is.\n    $frame = isset($ratio) && is_string($ratio) ? $ratio : null;\n    // A slide's picture magnified under the mouse and two fingers (§14): the lightbox's link carries it, so a keyboard opens the picture as before.\n    $hover = $zoom && $view === 'slider' && in_array($magnify, ['inner', 'side'], true) ? $magnify : null;\n    // The slider's settings; a block saved before them gets what the slider always was: one picture, arrows, thumbnails.\n    $at = in_array((int) ($per_view ?? 1), [1, 2, 3], true) ? (int) ($per_view ?? 1) : 1;\n    // By the width of the column, as the grid's columns: one in a phone's column, more where they fit.\n    $views = [1 => 1, 2 => ['sm' => 1, 'md' => 2], 3 => ['sm' => 1, 'md' => 2, 'lg' => 3]][$at];\n    $fade = $at === 1 && ($effect ?? 'slide') === 'fade' ? 'fade' : 'slide';\n    $turn = ! empty($autoplay) ? max(2, min(30, (int) ($interval ?? 5) ?: 5)) * 1000 : false;\n@endphp\n@if ($shown)\n<section class=\"b-gallery b-gallery--{{ $view === 'slider' ? 'slider' : ($view === 'mosaic' ? 'mosaic' : 'grid') }}{{ $view === 'slider' && $at > 1 ? ' b-gallery--row' : '' }}\" data-wx-block=\"gallery\" style=\"--gallery-columns: {{ $across }}\">\n    @if ($heading)\n        <h2 class=\"b-gallery__heading\">{{ $heading }}</h2>\n    @endif\n    @if ($view === 'slider')\n        <x-webx-slider variant=\"gallery\" :label=\"$label\" :per-view=\"$views\" :effect=\"$fade\" :arrows=\"(bool) ($arrows ?? true)\" :pagination=\"(bool) ($dots ?? false)\" :thumbs=\"$at === 1 && (bool) ($thumbs ?? true)\" :loop=\"(bool) ($endless ?? false)\" :autoplay=\"$turn\">\n            @foreach ($shown as $picture)\n                <x-webx-slide :thumb=\"$picture['thumb'] ?? null\">\n                    <figure class=\"b-gallery__figure\">\n                        @if ($zoom)\n                            <x-webx-lightbox :image=\"$picture\" :group=\"$group\" :ratio=\"$frame\" :data-webx-zoom=\"$hover ? '' : null\" :data-zoom-mode=\"$hover\"><img class=\"b-gallery__image\" src=\"{{ $picture['url'] }}\" alt=\"{{ $picture['alt'] ?? '' }}\" @if ($picture['width']) width=\"{{ $picture['width'] }}\" height=\"{{ $picture['height'] }}\" @endif></x-webx-lightbox>\n                        @else\n                            <img class=\"b-gallery__image\" src=\"{{ $picture['url'] }}\" alt=\"{{ $picture['alt'] ?? '' }}\" @if ($picture['width']) width=\"{{ $picture['width'] }}\" height=\"{{ $picture['height'] }}\" @endif>\n                        @endif\n                        @if (! empty($picture['title']))\n                            <figcaption class=\"b-gallery__caption\">{{ $picture['title'] }}</figcaption>\n                        @endif\n                    </figure>\n                </x-webx-slide>\n            @endforeach\n        </x-webx-slider>\n    @elseif ($view === 'mosaic')\n        @php\n            // Three at a time, the first large; a carousel of threes only with more than three to page through.\n            $turning = ($mosaic ?? 'still') === 'slider' && count($shown) > 3;\n            $groups = $turning ? array_chunk($shown, 3) : [array_slice($shown, 0, 3)];\n            // Still: the pictures past the third are not shown, but the lightbox pages through them all.\n            $unseen = $turning || ! $zoom ? [] : array_slice($shown, 3);\n            $tiles = [];\n        @endphp\n        @foreach ($groups as $three)\n            @php ob_start(); @endphp\n            <ul class=\"b-gallery__mosaic b-gallery__mosaic--{{ count($three) }}\">\n                @foreach ($three as $picture)\n                    <li class=\"b-gallery__tile\">\n                        <figure class=\"b-gallery__figure\">\n                            <div class=\"b-gallery__shot\">\n                                @if ($zoom)\n                                    <x-webx-lightbox :image=\"$picture\" :group=\"$group\" :ratio=\"$frame\"><img class=\"b-gallery__image\" src=\"{{ $picture['url'] }}\" alt=\"{{ $picture['alt'] ?? '' }}\" @if ($picture['width']) width=\"{{ $picture['width'] }}\" height=\"{{ $picture['height'] }}\" @endif></x-webx-lightbox>\n                                @else\n                                    <img class=\"b-gallery__image\" src=\"{{ $picture['url'] }}\" alt=\"{{ $picture['alt'] ?? '' }}\" @if ($picture['width']) width=\"{{ $picture['width'] }}\" height=\"{{ $picture['height'] }}\" @endif>\n                                @endif\n                            </div>\n                            @if (! empty($picture['title']))\n                                <figcaption class=\"b-gallery__caption\">{{ $picture['title'] }}</figcaption>\n                            @endif\n                        </figure>\n                    </li>\n                @endforeach\n            </ul>\n            @php $tiles[] = ob_get_clean(); @endphp\n        @endforeach\n        @if ($turning)\n            <x-webx-slider variant=\"gallery\" :label=\"$label\" :per-view=\"1\" :thumbs=\"false\" :arrows=\"(bool) ($arrows ?? true)\" :pagination=\"(bool) ($dots ?? false)\" :loop=\"(bool) ($endless ?? false)\" :autoplay=\"$turn\">\n                @foreach ($tiles as $tile)\n                    <x-webx-slide>{!! $tile !!}</x-webx-slide>\n                @endforeach\n            </x-webx-slider>\n        @else\n            {!! $tiles[0] !!}\n        @endif\n        @if ($unseen)\n            <div class=\"b-gallery__unseen\" hidden>\n                @foreach ($unseen as $picture)\n                    <x-webx-lightbox :image=\"$picture\" :group=\"$group\" :ratio=\"$frame\" :aria-label=\"$picture['alt'] ?? null\"><span>{{ $picture['title'] ?? '' }}</span></x-webx-lightbox>\n                @endforeach\n            </div>\n        @endif\n    @else\n        <ul class=\"b-gallery__grid\">\n            @foreach ($shown as $picture)\n                @php\n                    // The square preview of the library, and the picture itself where a cell is wider than it.\n                    $sources = $picture['thumb'] && $picture['width'] ? $picture['thumb'].' 320w, '.$picture['url'].' '.$picture['width'].'w' : null;\n                @endphp\n                <li class=\"b-gallery__cell\">\n                    <figure class=\"b-gallery__figure\">\n                        @if ($zoom)\n                            <x-webx-lightbox :image=\"$picture\" :group=\"$group\" :ratio=\"$frame\"><img class=\"b-gallery__image\" src=\"{{ $picture['thumb'] ?: $picture['url'] }}\" @if ($sources) srcset=\"{{ $sources }}\" sizes=\"(max-width: 40rem) 50vw, {{ (int) ceil(100 / $across) }}vw\" @endif alt=\"{{ $picture['alt'] ?? '' }}\" width=\"320\" height=\"320\" @if ($loop->index >= $across) loading=\"lazy\" @endif></x-webx-lightbox>\n                        @else\n                            <img class=\"b-gallery__image\" src=\"{{ $picture['thumb'] ?: $picture['url'] }}\" @if ($sources) srcset=\"{{ $sources }}\" sizes=\"(max-width: 40rem) 50vw, {{ (int) ceil(100 / $across) }}vw\" @endif alt=\"{{ $picture['alt'] ?? '' }}\" width=\"320\" height=\"320\" @if ($loop->index >= $across) loading=\"lazy\" @endif>\n                        @endif\n                        @if (! empty($picture['title']))\n                            <figcaption class=\"b-gallery__caption\">{{ $picture['title'] }}</figcaption>\n                        @endif\n                    </figure>\n                </li>\n            @endforeach\n        </ul>\n    @endif\n</section>\n@endif\n",
+  "styles": ".b-gallery {\n    container: b-gallery / inline-size;\n    --gallery-gap: 0.75em;\n}\n\n.b-gallery__heading {\n    margin: 0 0 1em;\n}\n\n/* Up to `--gallery-columns` across, fewer when a cell would be narrower than 9em: the width of the\n   column the block stands in decides, not the window. */\n.b-gallery__grid {\n    display: grid;\n    grid-template-columns: repeat(\n        auto-fill,\n        minmax(min(100%, max(9em, (100% - (var(--gallery-columns, 3) - 1) * var(--gallery-gap)) / var(--gallery-columns, 3))), 1fr)\n    );\n    gap: var(--gallery-gap);\n    margin: 0;\n    padding: 0;\n    list-style: none;\n}\n\n/* No margin of its own: a theme's prose spaces `li + li`, which in a grid lifts the first cell\n   above its row. */\n.b-gallery__cell {\n    min-width: 0;\n    margin: 0;\n}\n\n.b-gallery__figure {\n    margin: 0;\n}\n\n.b-gallery__image {\n    display: block;\n    width: 100%;\n    height: auto;\n    border-radius: 0.25em;\n}\n\n/* The library's preview is square, and so is a cell: pictures of every shape line up. */\n.b-gallery__grid .b-gallery__image {\n    aspect-ratio: 1;\n    object-fit: cover;\n}\n\n/* Several slides at a time line up as the grid's cells do, whatever the shape of each picture. */\n.b-gallery--row .b-gallery__image {\n    aspect-ratio: 4 / 3;\n    object-fit: cover;\n}\n\n.b-gallery__caption {\n    margin-top: 0.5em;\n    font-size: 0.875em;\n    opacity: 0.75;\n}\n\n/* The mosaic: the first picture of three large, the other two smaller. A narrow column puts the\n   large one on top and the two side by side under it; from 36em of the block's own width the large\n   one stands on the left and the two one above the other on its right. Every picture is cut to its\n   cell (cover); the lightbox shows it whole. */\n.b-gallery__mosaic {\n    display: grid;\n    grid-template-columns: 1fr 1fr;\n    gap: var(--gallery-gap);\n    margin: 0;\n    padding: 0;\n    list-style: none;\n}\n\n/* No margin of its own, as a cell of the grid: a theme's prose spaces `li + li`. */\n.b-gallery__tile {\n    display: flex;\n    min-width: 0;\n    margin: 0;\n}\n\n.b-gallery__mosaic .b-gallery__figure {\n    display: flex;\n    flex: 1;\n    flex-direction: column;\n    min-width: 0;\n}\n\n.b-gallery__shot {\n    position: relative;\n    flex: 1 1 auto;\n    aspect-ratio: 4 / 3;\n    overflow: hidden;\n    border-radius: 0.25em;\n}\n\n/* The picture fills the cell whatever its shape: the cell, not the picture, sets the height. */\n.b-gallery__shot > a,\n.b-gallery__shot img {\n    position: absolute;\n    inset: 0;\n    display: block;\n    width: 100%;\n    height: 100%;\n}\n\n.b-gallery__mosaic .b-gallery__image {\n    object-fit: cover;\n    border-radius: 0;\n}\n\n.b-gallery__mosaic > .b-gallery__tile:first-child,\n.b-gallery__mosaic--2 > .b-gallery__tile {\n    grid-column: 1 / -1;\n}\n\n@container b-gallery (min-width: 36em) {\n    .b-gallery__mosaic--3 {\n        grid-template-columns: 2fr 1fr;\n        grid-template-rows: 1fr 1fr;\n    }\n\n    .b-gallery__mosaic--3 > .b-gallery__tile:first-child {\n        grid-column: 1;\n        grid-row: 1 / span 2;\n    }\n\n    /* The two small ones take the height the large one gives them, half each. */\n    .b-gallery__mosaic--3 > .b-gallery__tile:not(:first-child) .b-gallery__shot {\n        aspect-ratio: auto;\n        min-height: 4em;\n    }\n\n    /* Fewer than three — the last group of a carousel, a short gallery — keep the height of three:\n       two square halves, or one picture twice as wide as high. */\n    .b-gallery__mosaic--2 > .b-gallery__tile {\n        grid-column: auto;\n    }\n\n    .b-gallery__mosaic--2 .b-gallery__shot {\n        aspect-ratio: 1;\n    }\n\n    .b-gallery__mosaic--1 .b-gallery__shot {\n        aspect-ratio: 2;\n    }\n}\n",
   "script": null,
   "sample": {
     "heading": "Gallery",
@@ -98,6 +374,16 @@
     "view": "grid",
     "columns": 3,
     "zoom": true,
-    "magnify": "none"
+    "magnify": "none",
+    "ratio": "auto",
+    "per_view": 1,
+    "effect": "slide",
+    "arrows": true,
+    "dots": false,
+    "thumbs": true,
+    "endless": false,
+    "autoplay": false,
+    "interval": 5,
+    "mosaic": "still"
   }
 }

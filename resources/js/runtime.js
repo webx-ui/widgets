@@ -6,7 +6,7 @@
  * `mount` it found, so `webx.mount(root)` starts both the blocks and the widgets inside `root`,
  * whichever loaded first. `webx.unmount(root)` lets the widgets inside `root` go.
  *
- * The light behaviours (§6), the mobile menu and the header, the dropdown panel and the form in a dialog (§6.1–§6.4), the reveal on scroll (§14) live here and not in files of their own: an attribute in any
+ * The light behaviours (§6), the mobile menu and the header, the dropdown panel and the form in a dialog (§6.1–§6.4), the reveal on scroll, the parallax of a picture and the section that slides over the one above (§14) live here and not in files of their own: an attribute in any
  * template switches them on, with no component to claim them.
  */
 
@@ -21,6 +21,8 @@ import { header } from './behaviours/header.js'
 import { headerNav } from './behaviours/header-nav.js'
 import { mobileMenu } from './behaviours/mobile-menu.js'
 import { mobileNav } from './behaviours/mobile-nav.js'
+import { overlap } from './behaviours/overlap.js'
+import { parallax } from './behaviours/parallax.js'
 import { reveal } from './behaviours/reveal.js'
 import { tabs } from './behaviours/tabs.js'
 
@@ -54,6 +56,8 @@ if (typeof webx.widget !== 'function') {
   webx.widget('tabs', '[data-webx-tabs]', tabs)
   webx.widget('accordion', '[data-webx-accordion]', accordion)
   webx.widget('reveal', '[data-webx-reveal]', reveal)
+  webx.widget('parallax', '[data-webx-parallax]', parallax)
+  webx.widget('overlap', '[data-webx-overlap]', overlap)
   webx.widget('mobile-menu', '[data-webx-mobile-menu]', mobileMenu)
   webx.widget('mobile-nav', '[data-webx-mobile-nav]', mobileNav)
   webx.widget('header-nav', '[data-webx-header-nav]', headerNav)

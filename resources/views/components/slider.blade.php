@@ -7,7 +7,11 @@
     so the widths are written here); the script reads back what the browser chose.
 
     Classes: webx-slider, webx-slider--<variant>, __viewport, __track, __slide, __controls,
-    __button, __prev, __next, __pause, __pagination, __bullet, __thumbs, __thumb; is-ready.
+    __button, __prev, __next, __pause, __pagination, __bullet, __count, __current, __total,
+    __thumbs, __thumb; is-ready.
+
+    `pagination="fraction"` prints the counter "1/6" where the dots would be. It is hidden from a
+    screen reader: the slides are named "2 / 6" already, and Swiper's live region says the move.
 --}}
 @php
     $sliders = app(\WebxUi\Widgets\View\Sliders::class);
@@ -31,7 +35,7 @@
         <div class="webx-slider__track" id="{{ $id }}-track">{{ $slot }}</div>
     </div>
 
-    @if ($count > 1 && ($hasArrows || $hasPagination || $hasPause))
+    @if ($count > 1 && ($hasArrows || $hasPagination || $hasCount || $hasPause))
         <div class="webx-slider__controls" hidden>
             @if ($hasPause)
                 <button type="button" class="webx-slider__button webx-slider__pause" aria-label="{{ $words['pause'] }}">
@@ -44,6 +48,9 @@
             @endif
             @if ($hasPagination)
                 <div class="webx-slider__pagination"></div>
+            @endif
+            @if ($hasCount)
+                <div class="webx-slider__count" aria-hidden="true"><span class="webx-slider__current">1</span><span class="webx-slider__count-divider">/</span><span class="webx-slider__total">{{ $count }}</span></div>
             @endif
             @if ($hasArrows)
                 <button type="button" class="webx-slider__button webx-slider__next" aria-label="{{ $words['next'] }}" aria-controls="{{ $id }}-track"><x-webx-icon name="chevron-right" /></button>

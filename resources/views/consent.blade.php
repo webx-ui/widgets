@@ -7,6 +7,10 @@
     size: consent won with unequal buttons is no consent. A category with nothing on the site is
     printed hidden; the script shows it when something on the page asks for it.
 
+    The dialog's buttons have words of their own (`consent.dialog_reject`, `consent.dialog_accept`,
+    `consent.save`): a design often says "Decline" in the banner and "Reject optional" in the dialog,
+    and a site gives each its own translation instead of copying this view.
+
     Classes: webx-consent, __inner, __text, __title, __body, __policy, __actions, __button, __customize,
     webx-consent-dialog, webx-consent-dialog__intro, __gpc, __list, __item, __label, __switch, __name,
     __description, __always, __actions.
@@ -66,9 +70,9 @@
                 @endforeach
             </ul>
             <div class="webx-consent-dialog__actions">
-                <button type="button" class="webx-consent__button" data-webx-consent-reject>{{ __('webx-widgets::widgets.consent.reject') }}</button>
+                <button type="button" class="webx-consent__button" data-webx-consent-reject>{{ __('webx-widgets::widgets.consent.dialog_reject') }}</button>
                 <button type="button" class="webx-consent__button" data-webx-consent-save>{{ __('webx-widgets::widgets.consent.save') }}</button>
-                <button type="button" class="webx-consent__button" data-webx-consent-accept>{{ __('webx-widgets::widgets.consent.accept') }}</button>
+                <button type="button" class="webx-consent__button" data-webx-consent-accept>{{ __('webx-widgets::widgets.consent.dialog_accept') }}</button>
             </div>
         </div>
     </dialog>

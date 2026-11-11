@@ -22,6 +22,8 @@ return [
         'reject' => 'Відхилити все',
         'customize' => 'Налаштувати',
         'save' => 'Зберегти вибір',
+        'dialog_reject' => 'Відхилити все',
+        'dialog_accept' => 'Прийняти все',
         'policy' => 'Політика cookie',
         'link' => 'Налаштування cookie',
         'dialog' => 'Налаштування cookie',
@@ -79,6 +81,17 @@ return [
     'language' => [
         'label' => 'Мова',
         'fallback' => 'Перекладу поки немає: головна сторінка цією мовою',
+        // Asked in this language, which names itself (ROUTING §18.6).
+        'offer' => [
+            'question' => 'Перейти на українську?',
+            'accept' => 'Так',
+            'stay' => 'Залишитись',
+            'close' => 'Закрити',
+        ],
+    ],
+    'photos' => [
+        'label' => 'Фотографії',
+        'show' => 'Фото :index з :count',
     ],
     'slider' => [
         'carousel' => 'карусель',
@@ -118,7 +131,10 @@ return [
         'load' => 'Завантажити',
         'always' => 'Завжди завантажувати мапи',
         'open' => 'Відкрити на мапі',
+        'open_google' => 'Відкрити в Google Maps',
         'hint' => 'Натисніть на мапу, щоб масштабувати коліщатком',
+        'failed' => 'Мапу не вдалося завантажити.',
+        'embed_refused' => 'Це не код карти Google Maps. У Google Maps відкрийте «Поділитися» → «Вбудувати карту», скопіюйте HTML і вставте сюди — або лише його адресу, https://www.google.com/maps/embed?pb=…',
     ],
     'table' => [
         'label' => 'Таблиця',
@@ -183,6 +199,17 @@ return [
         'drop_file' => 'або перетягніть файл сюди',
         'drop_files' => 'або перетягніть файли сюди',
     ],
+    // A day and a time (FORM_STEPS §6.4, §12.2): month and day names are the browser's Intl and Carbon.
+    'datetime' => [
+        'date' => 'Дата',
+        'time' => 'Час',
+        'previous' => 'Попередній місяць',
+        'next' => 'Наступний місяць',
+        'zone' => 'Час указано за поясом :zone',
+        'none' => 'На сьогодні часу не залишилося',
+        'unavailable' => 'недоступно',
+        'times' => 'Час на :date',
+    ],
     'captcha' => [
         'missing' => 'Підтвердьте, що ви не робот, і надішліть форму ще раз.',
         'script' => 'Ця форма перевіряє, що ви не робот, за допомогою JavaScript. Увімкніть його й надішліть форму ще раз.',
@@ -192,6 +219,17 @@ return [
         'failed' => 'Не вдалося надіслати форму. Перевірте з’єднання і спробуйте ще раз.',
         'expired' => 'Сторінка відкрита надто довго. Оновіть її і надішліть форму ще раз.',
         'again' => 'Надіслати ще',
+        // A form of several steps (FORM_STEPS §3, §12.2): `:current`/`:total` without plural forms.
+        'steps' => [
+            'label' => 'Кроки',
+            'step' => 'Крок :current з :total',
+            'next' => 'Далі',
+            'back' => 'Назад',
+            'return' => 'Повернутися до кроку :number: :title',
+            'fix' => 'Перевірте крок :number: :message',
+            'edit' => 'Змінити',
+            'edit-field' => 'Змінити: :field',
+        ],
     ],
     'suggest' => [
         'label' => 'Пошук',

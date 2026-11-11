@@ -22,6 +22,8 @@ return [
         'reject' => 'Tümünü reddet',
         'customize' => 'Özelleştir',
         'save' => 'Seçimleri kaydet',
+        'dialog_reject' => 'Tümünü reddet',
+        'dialog_accept' => 'Tümünü kabul et',
         'policy' => 'Çerez politikası',
         'link' => 'Çerez ayarları',
         'dialog' => 'Çerez ayarları',
@@ -79,6 +81,17 @@ return [
     'language' => [
         'label' => 'Dil',
         'fallback' => 'Henüz çevrilmedi: bu dildeki ana sayfa',
+        // Asked in this language, which names itself (ROUTING §18.6).
+        'offer' => [
+            'question' => 'Türkçeye geçilsin mi?',
+            'accept' => 'Evet',
+            'stay' => 'Kal',
+            'close' => 'Kapat',
+        ],
+    ],
+    'photos' => [
+        'label' => 'Fotoğraflar',
+        'show' => 'Fotoğraf :index / :count',
     ],
     'slider' => [
         'carousel' => 'karusel',
@@ -118,7 +131,10 @@ return [
         'load' => 'Yükle',
         'always' => 'Haritaları her zaman yükle',
         'open' => 'Haritada aç',
+        'open_google' => 'Google Haritalar’da aç',
         'hint' => 'Tekerlekle yakınlaştırmak için haritaya tıklayın',
+        'failed' => 'Harita yüklenemedi.',
+        'embed_refused' => 'Bu bir Google Haritalar haritasının kodu değil. Google Haritalar’da Paylaş → Harita yerleştir’i açın, HTML’yi kopyalayıp buraya yapıştırın — ya da yalnızca adresini, https://www.google.com/maps/embed?pb=…',
     ],
     'table' => [
         'label' => 'Tablo',
@@ -183,6 +199,17 @@ return [
         'drop_file' => 'ya da dosyayı buraya bırakın',
         'drop_files' => 'ya da dosyaları buraya bırakın',
     ],
+    // A day and a time (FORM_STEPS §6.4, §12.2): month and day names are the browser's Intl and Carbon.
+    'datetime' => [
+        'date' => 'Tarih',
+        'time' => 'Saat',
+        'previous' => 'Önceki ay',
+        'next' => 'Sonraki ay',
+        'zone' => 'Saatler :zone saat dilimindedir',
+        'none' => 'Bugün için saat kalmadı',
+        'unavailable' => 'uygun değil',
+        'times' => ':date için saatler',
+    ],
     'captcha' => [
         'missing' => 'Lütfen robot olmadığınızı doğrulayın ve formu yeniden gönderin.',
         'script' => 'Bu form robot olmadığınızı JavaScript ile denetler. Lütfen JavaScript’i açın ve formu yeniden gönderin.',
@@ -192,6 +219,17 @@ return [
         'failed' => 'Form gönderilemedi. Bağlantıyı kontrol edip tekrar deneyin.',
         'expired' => 'Sayfa çok uzun süredir açık. Sayfayı yenileyip formu tekrar gönderin.',
         'again' => 'Bir tane daha gönder',
+        // A form of several steps (FORM_STEPS §3, §12.2): `:current`/`:total` without plural forms.
+        'steps' => [
+            'label' => 'Adımlar',
+            'step' => 'Adım :current / :total',
+            'next' => 'İleri',
+            'back' => 'Geri',
+            'return' => ':number. adıma dön: :title',
+            'fix' => 'Lütfen :number. adımı kontrol edin: :message',
+            'edit' => 'Değiştir',
+            'edit-field' => 'Değiştir: :field',
+        ],
     ],
     'suggest' => [
         'label' => 'Arama',

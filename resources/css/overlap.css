@@ -1,0 +1,145 @@
+/*
+ * `data-webx-overlap` (spec §14.1): a section that slides over the one above it, its top edge a
+ * picture (fog, clouds) from `webx-overlap__edge`.
+ *
+ * The attribute itself styles nothing (the edge picture is a class of its own). Without JavaScript
+ * the sections stand one after another and the edge, as wide as the section, lies over the bottom
+ * of the one above. The script adds `webx-overlap` to the section (over the one above, on the
+ * page's background), `webx-overlap-scope` to its parent and `webx-overlap__edge--page` to the
+ * edge (as wide as the page) — under reduced motion too, which pins nothing.
+ *
+ * The pin and the fading are the script's classes only (behaviours/overlap.js): `webx-overlap-pinned`
+ * on the section above, `webx-overlap-fade` on its marked words and layers, `webx-overlap-pinned--script`
+ * and `webx-overlap-fade--script` where the browser has no scroll-driven animations. With reduced
+ * motion or in print nothing is pinned.
+ */
+
+:where(:root) {
+  /* Under the section where its block has no background of its own, and beside it to the page's edges. */
+  --webx-overlap-bg: var(--site-color-bg);
+  /* The script measures and writes the rest on the section above (behaviours/overlap.js says how). */
+  --webx-overlap-timeline: none;
+  --webx-overlap-top: 0px;
+  --webx-overlap-start: 0px;
+  --webx-overlap-hold: 1px;
+  --webx-overlap-leave: 1px;
+  /* The fallback script's: how far the words have faded, 0 to 1, and how far the section has gone up. */
+  --webx-overlap-progress: 0;
+  --webx-overlap-lift: 0px;
+}
+
+/* The script's, even under reduced motion: the section stands over the one above, on a
+   background of its own. In a layer, so a block's own background wins over it whatever comes
+   later; the bands of box shadow carry it to both sides of a section in the column. */
+.webx-overlap {
+  position: relative;
+  z-index: 1;
+  box-shadow:
+    25vw 0 var(--webx-overlap-bg),
+    -25vw 0 var(--webx-overlap-bg),
+    50vw 0 var(--webx-overlap-bg),
+    -50vw 0 var(--webx-overlap-bg),
+    75vw 0 var(--webx-overlap-bg),
+    -75vw 0 var(--webx-overlap-bg),
+    100vw 0 var(--webx-overlap-bg),
+    -100vw 0 var(--webx-overlap-bg);
+}
+
+@layer webx-overlap {
+  .webx-overlap {
+    background-color: var(--webx-overlap-bg);
+  }
+}
+
+/* The parent of the section: what spans past the page sideways is cut at its edges — `clip`
+   is not a scroll container, so `sticky` above still follows the page. */
+.webx-overlap-scope {
+  overflow-x: clip;
+}
+
+/* Over the section's top, its bottom row a pixel into the section: no seam. As wide as the
+   section without the script (the section's own width never widens the page); as wide as the
+   page with it, inside the clipping parent. Over the section above. */
+.webx-overlap__edge {
+  position: absolute;
+  bottom: calc(100% - 1px);
+  left: 0;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  max-width: none;
+  pointer-events: none;
+}
+
+.webx-overlap__edge--page {
+  left: 50%;
+  width: 100vw;
+  translate: -50% 0;
+}
+
+.webx-overlap__image {
+  display: block;
+  width: 100%;
+  max-width: none;
+  height: auto;
+  border-radius: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Two classes: over a block's own `position: relative`, whichever stylesheet comes later. */
+  .webx-overlap-pinned.webx-overlap-pinned--held {
+    position: sticky;
+    top: var(--webx-overlap-top);
+    animation: webx-overlap-leave linear both;
+    /* After the shorthand, which resets them. */
+    animation-timeline: var(--webx-overlap-timeline);
+    animation-range: cover calc(var(--webx-overlap-start) + var(--webx-overlap-hold)) cover
+      calc(var(--webx-overlap-start) + var(--webx-overlap-hold) + var(--webx-overlap-leave));
+  }
+
+  .webx-overlap-fade {
+    animation: webx-overlap-fade linear both;
+    animation-timeline: var(--webx-overlap-timeline);
+    animation-range: cover var(--webx-overlap-start) cover
+      calc(var(--webx-overlap-start) + var(--webx-overlap-hold));
+  }
+
+  .webx-overlap-pinned.webx-overlap-pinned--script {
+    translate: 0 calc(var(--webx-overlap-lift) * -1);
+    animation: none;
+  }
+
+  .webx-overlap-fade--script {
+    opacity: calc(1 - var(--webx-overlap-progress));
+    animation: none;
+  }
+}
+
+@keyframes webx-overlap-leave {
+  from {
+    translate: none;
+  }
+
+  to {
+    translate: 0 calc(var(--webx-overlap-leave) * -1);
+  }
+}
+
+@keyframes webx-overlap-fade {
+  to {
+    opacity: 0;
+  }
+}
+
+@media print {
+  .webx-overlap-pinned.webx-overlap-pinned--held {
+    position: relative;
+    translate: none;
+    animation: none;
+  }
+
+  .webx-overlap-fade {
+    opacity: 1;
+    animation: none;
+  }
+}

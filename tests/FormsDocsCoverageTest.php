@@ -87,6 +87,47 @@ final class FormsDocsCoverageTest extends PlainTestCase
         $this->assertSame([], $missing, 'Events of form.js named nowhere in the docs.');
     }
 
+    /** A form of steps (FORM_STEPS §3): the events of steps.js and form.js's ask for a step, the components. */
+    #[Test]
+    public function every_event_of_the_steps_is_named(): void
+    {
+        $docs = self::docs();
+        $scripts = (string) file_get_contents(dirname(__DIR__).'/resources/js/steps.js').(string) file_get_contents(dirname(__DIR__).'/resources/js/form.js');
+        preg_match_all("/'(webx:form:[a-z]+)'/", $scripts, $events);
+
+        $this->assertContains('webx:form:step', $events[1]);
+        $missing = [...array_unique($events[1]), '<x-webx-form.step', 'data-webx-check', 'webx_step'];
+
+        $this->assertSame([], array_values(array_filter($missing, static fn (string $word): bool => ! str_contains($docs, $word))), 'Events and parts of a form of steps named nowhere in the docs.');
+    }
+
+    /**
+     * The rest of FORM_STEPS: a field shown for some answers (§4), the views of a group (§5), the
+     * summary (§7) and where the visitor came from (§8) — the words a site writes, the events
+     * the scripts send and the names `attribution.js` adds to a submission.
+     */
+    #[Test]
+    public function every_part_of_conditions_cards_summary_and_attribution_is_named(): void
+    {
+        $docs = self::docs();
+        $js = dirname(__DIR__).'/resources/js/';
+        $scripts = (string) file_get_contents($js.'summary.js').(string) file_get_contents($js.'datetime.js').(string) file_get_contents($js.'attribution.js');
+        preg_match_all("/'(webx:form:[a-z]+)'/", $scripts, $events);
+        preg_match_all("/['`](webx_[a-z_]+)(?:\\[|')/", (string) file_get_contents($js.'attribution.js'), $names);
+
+        $this->assertContains('webx:form:reveal', $events[1]);
+        $this->assertContains('webx_landing', $names[1]);
+        $missing = [
+            ...array_unique($events[1]),
+            ...array_unique($names[1]),
+            ...array_map(static fn (string $view): string => 'view="'.$view.'"', array_diff(Field::VIEWS, ['list'])),
+            ':when', ':unless', ':condition', 'data-webx-when', 'data-webx-unless',
+            '<x-webx-form.summary', 'summary.js', 'datetime.js', 'attribution.js', 'data-webx-attribution',
+        ];
+
+        $this->assertSame([], array_values(array_filter($missing, static fn (string $word): bool => ! str_contains($docs, $word))), 'Parts of FORM_STEPS named nowhere in the docs.');
+    }
+
     /** The suggestions while typing (W6.5): their events and the marks a site's HTML carries. */
     #[Test]
     public function every_event_and_mark_of_the_suggestions_is_named(): void

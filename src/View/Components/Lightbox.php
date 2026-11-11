@@ -19,6 +19,9 @@ use WebxUi\Widgets\Facades\Widgets;
  * props `src`, `width`, `height`, `thumb`, `alt` say the same by hand, or over it. The slot, when
  * given, is what the link shows in place of the thumbnail.
  *
+ * `ratio="4:3"` opens the picture in a frame of that shape, whole inside it (nothing — the picture
+ * as it is — by default); `opacity` is the backdrop's, over `--webx-lightbox-backdrop-opacity`.
+ *
  * A link written by hand with the same attributes needs no component: the page finds it (§8).
  */
 final class Lightbox extends Component
@@ -36,6 +39,11 @@ final class Lightbox extends Component
 
     public string $text;
 
+    /** The frame's shape as `W:H`, or none: the picture as it is. */
+    public ?string $frame;
+
+    public ?string $backdrop;
+
     public function __construct(
         mixed $image = null,
         ?string $src = null,
@@ -44,6 +52,8 @@ final class Lightbox extends Component
         ?string $thumb = null,
         ?string $alt = null,
         public string $group = '',
+        ?string $ratio = null,
+        int|float|string|null $opacity = null,
     ) {
         $this->href = self::filled($src) ?? self::filled(self::read($image, 'url')) ?? self::filled(self::read($image, 'src'));
 
@@ -55,6 +65,21 @@ final class Lightbox extends Component
         $this->pictureHeight = self::size($height ?? self::read($image, 'height'));
         $this->preview = self::filled($thumb) ?? self::filled(self::read($image, 'thumb')) ?? $this->href;
         $this->text = $alt ?? (is_string($said = self::read($image, 'alt')) ? $said : '');
+        $this->frame = self::ratio($ratio);
+        $this->backdrop = is_numeric($opacity) ? (string) max(0, min(1, (float) $opacity)) : null;
+    }
+
+    /**
+     * `4:3`, `4/3`, `16 : 9` as `W:H`. Anything else — empty, `auto`, a word, a zero — is no frame:
+     * the block's select says `auto` for "as is", and a typo shows the picture as it always was.
+     */
+    public static function ratio(?string $value): ?string
+    {
+        if ($value === null || preg_match('~^\s*(\d+(?:\.\d+)?)\s*[:/]\s*(\d+(?:\.\d+)?)\s*$~', $value, $match) !== 1) {
+            return null;
+        }
+
+        return (float) $match[1] > 0 && (float) $match[2] > 0 ? $match[1].':'.$match[2] : null;
     }
 
     public function render(): View

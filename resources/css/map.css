@@ -7,11 +7,18 @@
 
 :where(:root) {
   --webx-map-height: 24rem;
+  /* The component prints both on every map: the narrow one is the height unless told. */
+  --webx-map-height-narrow: 24rem;
   --webx-map-bg: var(--site-color-surface-muted);
   --webx-map-radius: var(--site-radius-md);
   --webx-map-marker: var(--site-color-accent);
   --webx-map-notice-bg: var(--site-color-surface-muted);
   --webx-map-notice-color: var(--site-color-text);
+  --webx-map-card-bg: var(--site-color-surface);
+  --webx-map-street: color-mix(in srgb, var(--site-color-text) 5%, transparent);
+  --webx-map-road: color-mix(in srgb, var(--site-color-text) 9%, transparent);
+  --webx-map-park: color-mix(in srgb, var(--site-color-success) 12%, transparent);
+  --webx-map-water: color-mix(in srgb, var(--site-color-accent) 9%, transparent);
   --webx-map-button-bg: var(--site-color-accent);
   --webx-map-button-color: var(--site-color-accent-contrast);
   --webx-map-attribution-bg: color-mix(in srgb, var(--site-color-bg) 85%, transparent);
@@ -68,7 +75,27 @@
   margin: 0;
   padding: var(--site-space-4) var(--site-space-3) var(--site-space-6);
   overflow: auto;
-  background: var(--webx-map-notice-bg);
+  /* A map before the map: streets, two avenues, a park and water, drawn in the theme's own
+     colours — the text's at a few per cent, so it is a quiet drawing in a light theme and in a
+     dark one. No picture and no request: nothing leaves the page before consent. */
+  background:
+    radial-gradient(ellipse 12% 18% at 82% 24%, var(--webx-map-park) 97%, transparent 100%),
+    linear-gradient(162deg, transparent 0 74%, var(--webx-map-water) 74% 86%, transparent 86%),
+    linear-gradient(
+      118deg,
+      transparent 0 calc(36% - 5px),
+      var(--webx-map-road) calc(36% - 5px) calc(36% + 5px),
+      transparent 0
+    ),
+    linear-gradient(
+      24deg,
+      transparent 0 calc(60% - 4px),
+      var(--webx-map-road) calc(60% - 4px) calc(60% + 4px),
+      transparent 0
+    ),
+    repeating-linear-gradient(0deg, var(--webx-map-street) 0 2px, transparent 2px 56px),
+    repeating-linear-gradient(90deg, var(--webx-map-street) 0 2px, transparent 2px 84px),
+    var(--webx-map-notice-bg);
   color: var(--webx-map-notice-color);
   text-align: center;
 }
@@ -77,9 +104,36 @@
   display: none;
 }
 
-/* The place of an address with no coordinates stands in the flow. */
+/* The place of an address with no coordinates stands in the flow, with no drawing behind it. */
 .webx-map__place--static {
   position: static;
+  background: var(--webx-map-notice-bg);
+}
+
+/* What the place says, on the theme's surface: the text reads on it as anywhere on the site,
+   whatever the drawing does behind. */
+.webx-map__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--site-space-3);
+  box-sizing: border-box;
+  max-width: min(100%, 30em);
+  margin: 0;
+  padding: var(--site-space-4) var(--site-space-5);
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-lg);
+  background: var(--webx-map-card-bg);
+  box-shadow: var(--site-shadow-md);
+}
+
+.webx-map__pin {
+  display: block;
+  flex: none;
+  width: 1.75em;
+  height: 1.75em;
+  margin: 0;
+  color: var(--webx-map-marker);
 }
 
 .webx-map__address {
@@ -184,10 +238,32 @@ html:not(.webx-js) .webx-map__actions {
   opacity: 1;
 }
 
+/* A phone's column: the height told for it (`height-narrow`), else the same height. The column is the
+   nearest container around the map — a block's — never the map itself; without one, the height. */
+@container (max-width: 36em) {
+  .webx-map {
+    height: var(--webx-map-height-narrow);
+  }
+
+  .webx-map--place {
+    height: auto;
+  }
+}
+
 @container webx-map (max-width: 22rem) {
   .webx-map__place {
     gap: var(--site-space-2);
     padding: var(--site-space-2) var(--site-space-2) var(--site-space-6);
+  }
+
+  .webx-map__card {
+    gap: var(--site-space-2);
+    padding: var(--site-space-3);
+  }
+
+  /* A phone's map is low: the line of text the pin would push out matters more. */
+  .webx-map__pin {
+    display: none;
   }
 
   .webx-map__button {

@@ -38,4 +38,18 @@ return [
         'managed' => 'Visível na página',
         'invisible-run' => 'Invisível, ao enviar',
     ],
+    'map' => [
+        'tab' => 'Mapa',
+        'provider' => 'Serviço de mapas',
+        'provider-help' => 'De quem é o mapa que o site mostra: o OpenStreetMap não precisa de chave, o Google Maps precisa de uma chave de navegador do site. Qualquer um só carrega depois de o visitante aceitar os media incorporados, a menos que os mapas carreguem sem perguntar.',
+        'tiles' => 'OpenStreetMap',
+        'google' => 'Google Maps',
+        'key' => 'Chave da API do Google Maps',
+        'key-help' => 'Uma chave de navegador da Maps JavaScript API. Qualquer visitante a vê na página, por isso restrinja-a na consola do Google Cloud aos domínios do site (referenciadores HTTP) e à Maps JavaScript API.',
+        'map-id' => 'ID do mapa',
+        'map-id-help' => 'Opcional: um ID de mapa da consola do Google Cloud mostra o marcador como marcador avançado e dá ao mapa o estilo criado para ele. Vazio: o mapa habitual do Google.',
+        'no-key' => 'O Google Maps está escolhido, mas não há chave: em vez do mapa, os visitantes veem a morada com uma ligação para o Google Maps.',
+        'at-once' => 'Mostrar o mapa sem consentimento',
+        'at-once-help' => 'Ao carregar, o mapa envia o endereço IP do visitante ao serviço de mapas (Google Maps ou o servidor de blocos) e pode definir cookies; para visitantes da UE, isso exige o consentimento deles. Desligado: o mapa espera o consentimento para mídia incorporada. Ligado: aparece na página de imediato, só neste bloco — por sua conta e risco.',
+    ],
 ];

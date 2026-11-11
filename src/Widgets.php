@@ -54,7 +54,7 @@ final class Widgets implements HeadPart
     public const string EARLY = '<!--webx-widgets:early-->';
 
     /** The behaviours inside the runtime: claiming one is allowed and loads nothing more. */
-    public const array RUNTIME = ['disclosure', 'dialog', 'tabs', 'accordion', 'mobile-menu', 'header', 'dropdown', 'form-dialog', 'reveal'];
+    public const array RUNTIME = ['disclosure', 'dialog', 'tabs', 'accordion', 'mobile-menu', 'header', 'dropdown', 'form-dialog', 'reveal', 'parallax', 'overlap'];
 
     /** `data-webx-smooth-scroll` on the page's <html> or <body>: the switch of the glide (spec §14). */
     private const string SMOOTH_SCROLL = '~<(?:html|body)\b[^>]*\sdata-webx-smooth-scroll(?:\s*=|[\s>])~i';

@@ -139,6 +139,10 @@ const quiet = () => Boolean(motion()?.matches || navigator.connection?.saveData)
  * on screen and the tab is in front, never by itself under reduced motion or on a connection
  * saving data. The poster stands until the first frame is up. The pause button is always there
  * (WCAG 2.2.2); the visitor's pause is remembered, their play holds for the page.
+ *
+ * In a slide of `<x-webx-slider>` (a hero of banners) it plays only while its slide is shown: the
+ * fade effect lays every slide on the same spot, transparent, and to the observer a slide out of
+ * sight is as much on screen as the one in front.
  */
 export function background(root) {
   const media = root.querySelector('.webx-video__background')
@@ -147,8 +151,16 @@ export function background(root) {
   const query = motion()
   let chosen = remembered()
   let seen = typeof IntersectionObserver === 'undefined'
+  const slide = root.closest('.webx-slider__slide')
 
   const wanted = () => (chosen ? chosen === 'play' : !quiet())
+
+  // Before the slider's script took the track it is a strip that scrolls: the observer decides.
+  const shown = () =>
+    !slide?.parentElement?.classList.contains('is-ready') ||
+    slide.classList.contains('is-active') ||
+    (!slide.classList.contains('webx-slider__slide--fade') &&
+      slide.classList.contains('is-visible'))
 
   const show = (paused) => {
     if (!button) return
@@ -157,7 +169,7 @@ export function background(root) {
   }
 
   const update = () => {
-    const run = wanted() && seen && !document.hidden
+    const run = wanted() && seen && shown() && !document.hidden
     if (run && media.paused) {
       // A browser that refuses even a muted play (a phone saving power): paused, the button says so.
       media.play()?.catch?.(() => {
@@ -188,8 +200,13 @@ export function background(root) {
           update()
         })
 
+  // The slider says which slide is shown by its classes, and changes them on every turn.
+  const turns =
+    slide && typeof MutationObserver !== 'undefined' ? new MutationObserver(update) : null
+
   media.muted = true
   media.addEventListener('playing', framed)
+  turns?.observe(slide, { attributes: true, attributeFilter: ['class'] })
   button?.addEventListener('click', toggle)
   document.addEventListener('visibilitychange', update)
   query?.addEventListener?.('change', update)
@@ -198,6 +215,7 @@ export function background(root) {
 
   return () => {
     observer?.disconnect()
+    turns?.disconnect()
     media.removeEventListener('playing', framed)
     button?.removeEventListener('click', toggle)
     document.removeEventListener('visibilitychange', update)

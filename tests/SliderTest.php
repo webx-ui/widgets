@@ -124,6 +124,47 @@ final class SliderTest extends TestCase
     }
 
     #[Test]
+    public function fraction_pagination_prints_a_counter_in_place_of_the_dots(): void
+    {
+        $html = Blade::render('<x-webx-slider id="flat" pagination="fraction"><x-webx-slide>1</x-webx-slide><x-webx-slide>2</x-webx-slide><x-webx-slide>3</x-webx-slide></x-webx-slider>');
+
+        // Inside the controls, which are hidden until the script comes; hidden from a screen
+        // reader, which hears the slide's name "2 / 3" and Swiper's live region instead.
+        $this->assertMatchesRegularExpression(
+            '~<div class="webx-slider__controls" hidden>.*<div class="webx-slider__count" aria-hidden="true"><span class="webx-slider__current">1</span><span class="webx-slider__count-divider">/</span><span class="webx-slider__total">3</span></div>.*</div>~s',
+            $html,
+        );
+        $this->assertStringNotContainsString('webx-slider__pagination', $html);
+        $this->assertStringContainsString('webx-slider__prev', $html);
+
+        // With no arrows the counter alone still gets its controls — and the copies of a running
+        // strip are the script's, so the total is the slides written.
+        $logos = Blade::render('<x-webx-slider variant="logos" pagination="fraction"><x-webx-slide>1</x-webx-slide><x-webx-slide>2</x-webx-slide></x-webx-slider>');
+        $this->assertStringContainsString('<span class="webx-slider__total">2</span>', $logos);
+
+        // One slide: nothing to count.
+        $this->assertStringNotContainsString('webx-slider__count', Blade::render('<x-webx-slider pagination="fraction"><x-webx-slide>Only</x-webx-slide></x-webx-slider>'));
+    }
+
+    #[Test]
+    public function the_old_values_of_pagination_mean_what_they_did(): void
+    {
+        $dots = '<div class="webx-slider__pagination"></div>';
+        $two = '<x-webx-slide>1</x-webx-slide><x-webx-slide>2</x-webx-slide>';
+
+        $this->assertStringContainsString($dots, Blade::render("<x-webx-slider>{$two}</x-webx-slider>"));
+        $this->assertStringContainsString($dots, Blade::render("<x-webx-slider :pagination=\"true\">{$two}</x-webx-slider>"));
+        $this->assertStringContainsString($dots, Blade::render("<x-webx-slider pagination=\"bullets\">{$two}</x-webx-slider>"));
+        $this->assertStringContainsString($dots, Blade::render("<x-webx-slider variant=\"gallery\" pagination>{$two}</x-webx-slider>"));
+        $this->assertStringNotContainsString('webx-slider__pagination', Blade::render("<x-webx-slider :pagination=\"false\">{$two}</x-webx-slider>"));
+        $this->assertStringNotContainsString('webx-slider__pagination', Blade::render("<x-webx-slider pagination=\"false\">{$two}</x-webx-slider>"));
+
+        foreach (['', ':pagination="true"', ':pagination="false"', 'pagination="bullets"'] as $prop) {
+            $this->assertStringNotContainsString('webx-slider__count', Blade::render("<x-webx-slider {$prop}>{$two}</x-webx-slider>"));
+        }
+    }
+
+    #[Test]
     public function only_the_first_slides_in_view_load_their_pictures_at_once(): void
     {
         $slides = implode('', array_map(
@@ -202,6 +243,7 @@ final class SliderTest extends TestCase
         yield 'per view' => ['per-view="0"'];
         yield 'autoplay' => ['autoplay="soon"'];
         yield 'id' => ['id="a b"'];
+        yield 'pagination' => ['pagination="numbers"'];
     }
 
     #[Test]

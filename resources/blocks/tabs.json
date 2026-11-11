@@ -1,0 +1,144 @@
+{
+  "slug": "tabs",
+  "title": "Tabs",
+  "description": "Tabs over a picture and a text each: one tab is open, a click or the arrow keys open another. Without JavaScript every tab stands under its title.",
+  "icon": null,
+  "group": "content",
+  "sort": 0,
+  "allow": null,
+  "allowed_in": null,
+  "max_per_entity": null,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "heading",
+      "type": "wx-input",
+      "label": "Heading",
+      "localized": true
+    },
+    {
+      "id": "tabs",
+      "type": "wx-repeater",
+      "label": "Tabs",
+      "help": "The first is open when the page opens.",
+      "props": {
+        "itemLabel": "title",
+        "addLabel": "Add a tab",
+        "max": 12,
+        "sortable": true
+      },
+      "children": [
+        {
+          "id": "title",
+          "type": "wx-input",
+          "label": "Title of the tab",
+          "help": "A tab without a title, or with nothing under it, is not shown.",
+          "localized": true,
+          "props": {
+            "maxlength": 60
+          }
+        },
+        {
+          "id": "picture",
+          "type": "wx-media",
+          "label": "Picture",
+          "props": {
+            "accept": "image"
+          }
+        },
+        {
+          "id": "text",
+          "type": "wx-rich-text",
+          "label": "Text",
+          "localized": true
+        }
+      ]
+    },
+    {
+      "id": "picture_side",
+      "type": "wx-segmented",
+      "label": "Picture",
+      "help": "Beside the text where the column has room for both, above it where it has not.",
+      "default": "top",
+      "props": {
+        "options": [
+          {
+            "value": "top",
+            "label": "Above the text"
+          },
+          {
+            "value": "start",
+            "label": "Before the text"
+          },
+          {
+            "value": "end",
+            "label": "After the text"
+          }
+        ]
+      }
+    },
+    {
+      "id": "align",
+      "type": "wx-segmented",
+      "label": "Tabs and heading",
+      "default": "start",
+      "props": {
+        "options": [
+          {
+            "value": "start",
+            "label": "At the start"
+          },
+          {
+            "value": "center",
+            "label": "In the middle"
+          }
+        ]
+      }
+    },
+    {
+      "id": "transition",
+      "type": "wx-segmented",
+      "label": "Change of tab",
+      "help": "Fade keeps the block as tall as its tallest tab, so it does not jump between pictures of different proportions. Where the visitor asked for less motion it changes at once.",
+      "default": "instant",
+      "props": {
+        "options": [
+          {
+            "value": "instant",
+            "label": "At once"
+          },
+          {
+            "value": "fade",
+            "label": "Fade"
+          }
+        ]
+      }
+    }
+  ],
+  "template": "@php\n    // A tab needs its title — it is the tab — and something to show under it; a picture deleted\n    // from the library resolves without an address and is left out, not printed broken.\n    $shown = [];\n    foreach (is_array($tabs) ? $tabs : [] as $item) {\n        if (! is_array($item)) {\n            continue;\n        }\n        $title = wx_text($item['title'] ?? null)->plain();\n        $image = is_array($item['picture'] ?? null) && ! empty($item['picture']['url']) ? $item['picture'] : null;\n        $body = is_string($item['text'] ?? null) ? trim($item['text']) : '';\n        if ($title === '' || ($image === null && $body === '')) {\n            continue;\n        }\n        $shown[] = ['title' => $title, 'picture' => $image, 'text' => $body];\n    }\n    $label = $heading ? wx_text($heading)->plain() : null;\n    // A block saved before a field had a value looks as a new one does.\n    $place = in_array($picture_side ?? null, ['top', 'start', 'end'], true) ? $picture_side : 'top';\n    $centred = ($align ?? null) === 'center';\n    $fade = ($transition ?? null) === 'fade';\n@endphp\n@if ($shown)\n<section @class(['b-tabs', 'b-tabs--'.$place, 'b-tabs--center' => $centred]) data-wx-block=\"tabs\">\n    @if ($heading)\n        <h2 class=\"b-tabs__heading\">{{ $heading }}</h2>\n    @endif\n    <x-webx-tabs class=\"b-tabs__tabs\" :label=\"$label\" :transition=\"$fade ? 'fade' : null\">\n        @foreach ($shown as $item)\n            {{-- Without JavaScript every panel stands under its title; the runtime makes the titles tabs. --}}\n            <x-webx-tabs.panel :title=\"$item['title']\" :level=\"$heading ? 3 : 2\">\n                <div @class(['b-tabs__body', 'b-tabs__body--picture' => $item['picture'] && $item['text'] !== ''])>\n                    @if ($item['picture'])\n                        <img class=\"b-tabs__picture\" src=\"{{ $item['picture']['url'] }}\" alt=\"{{ $item['picture']['alt'] ?? '' }}\" @if ($item['picture']['width']) width=\"{{ $item['picture']['width'] }}\" height=\"{{ $item['picture']['height'] }}\" @endif @unless ($loop->first) loading=\"lazy\" @endunless>\n                    @endif\n                    @if ($item['text'] !== '')\n                        <div class=\"b-tabs__text\">{!! $item['text'] !!}</div>\n                    @endif\n                </div>\n            </x-webx-tabs.panel>\n        @endforeach\n    </x-webx-tabs>\n</section>\n@endif\n",
+  "styles": ".b-tabs {\n    container-type: inline-size;\n}\n\n.b-tabs__heading {\n    margin: 0 0 1em;\n}\n\n.b-tabs--center .b-tabs__heading {\n    text-align: center;\n}\n\n/* Centred by the margins of the end tabs, not by justify-content: a row wider than the column\n   then still scrolls from its first tab instead of cutting it off on the left. */\n.b-tabs--center .webx-tabs__tab:first-child {\n    margin-inline-start: auto;\n}\n\n.b-tabs--center .webx-tabs__tab:last-child {\n    margin-inline-end: auto;\n}\n\n.b-tabs__body {\n    display: grid;\n    gap: 1em;\n    align-items: start;\n}\n\n.b-tabs__picture {\n    display: block;\n    width: 100%;\n    height: auto;\n    border-radius: 0.25em;\n}\n\n.b-tabs__text {\n    min-width: 0;\n}\n\n.b-tabs__text > :first-child {\n    margin-top: 0;\n}\n\n.b-tabs__text > :last-child {\n    margin-bottom: 0;\n}\n\n/* Beside the text where the column has room for both, above it where it has not: the width of\n   the column the block stands in decides, not the window. */\n@container (min-width: 40em) {\n    .b-tabs--start .b-tabs__body--picture,\n    .b-tabs--end .b-tabs__body--picture {\n        grid-template-columns: repeat(2, minmax(0, 1fr));\n        gap: 2em;\n    }\n\n    .b-tabs--end .b-tabs__body--picture .b-tabs__picture {\n        order: 1;\n    }\n}\n",
+  "script": null,
+  "sample": {
+    "heading": "About the place",
+    "tabs": [
+      {
+        "title": "Overview",
+        "picture": null,
+        "text": "<p>A short word about what this is and who it is for.</p>"
+      },
+      {
+        "title": "Details",
+        "picture": null,
+        "text": "<ul><li>What is included</li><li>What it is made of</li><li>How big it is</li></ul>"
+      },
+      {
+        "title": "Location",
+        "picture": null,
+        "text": "<p>Where it is and how to get there.</p>"
+      }
+    ],
+    "picture_side": "top",
+    "align": "start",
+    "transition": "instant"
+  }
+}

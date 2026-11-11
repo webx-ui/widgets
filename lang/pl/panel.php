@@ -38,4 +38,18 @@ return [
         'managed' => 'Widoczna na stronie',
         'invisible-run' => 'Niewidoczna, przy wysyłaniu',
     ],
+    'map' => [
+        'tab' => 'Mapa',
+        'provider' => 'Usługa map',
+        'provider-help' => 'Czyją mapę pokazuje strona: OpenStreetMap nie wymaga klucza, Google Maps wymaga klucza przeglądarkowego strony. Każda wczytuje się dopiero po zgodzie odwiedzającego na osadzone media, chyba że mapy mają się wczytywać bez pytania.',
+        'tiles' => 'OpenStreetMap',
+        'google' => 'Google Maps',
+        'key' => 'Klucz API Google Maps',
+        'key-help' => 'Klucz przeglądarkowy Maps JavaScript API. Każdy odwiedzający widzi go w stronie, więc w konsoli Google Cloud ogranicz go do domen strony (odsyłacze HTTP) i do Maps JavaScript API.',
+        'map-id' => 'Identyfikator mapy',
+        'map-id-help' => 'Opcjonalnie: identyfikator mapy z konsoli Google Cloud pokazuje pinezkę jako zaawansowany znacznik i nadaje mapie styl utworzony dla niego. Puste — zwykła mapa Google.',
+        'no-key' => 'Wybrano Google Maps, ale brak klucza: zamiast mapy odwiedzający widzą adres z linkiem do Google Maps.',
+        'at-once' => 'Pokazuj mapę bez zgody',
+        'at-once-help' => 'Ładując się, mapa przekazuje adres IP odwiedzającego usłudze map (Google Maps lub serwerowi kafelków) i może zapisywać pliki cookie; w przypadku odwiedzających z UE wymaga to ich zgody. Wyłączone: mapa czeka na zgodę na osadzone multimedia. Włączone: jest od razu na stronie, tylko w tym bloku — na własną odpowiedzialność.',
+    ],
 ];

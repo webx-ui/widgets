@@ -602,3 +602,109 @@ describe('the form sent in place', () => {
     expect(calls).toHaveLength(0)
   })
 })
+
+describe('fields shown by a condition', () => {
+  const required = JSON.stringify([{ rule: 'required', message: 'The agency is required.' }])
+  const purpose = `<fieldset class="webx-field" data-webx-field="fields.purpose">
+     <legend>Purpose</legend>
+     <input type="radio" id="p1" name="fields[purpose]" value="direct">
+     <input type="radio" id="p2" name="fields[purpose]" value="agency">
+     <p class="webx-field__error" id="field-purpose-error" hidden></p>
+   </fieldset>`
+  const agency = `<div class="webx-field is-required" data-webx-field="fields.agency" data-webx-rules='${required}' data-webx-when='{"fields.purpose":["agency"]}'>
+     <label for="agency">Agency</label>
+     <input type="text" id="agency" name="fields[agency]" data-webx-required="true">
+     <p class="webx-field__condition" data-webx-condition>If chosen: Agency meeting</p>
+     <p class="webx-field__error" id="agency-error" hidden></p>
+   </div>`
+  const office = `<div class="webx-field" data-webx-field="fields.office" data-webx-unless='{"fields.agency_kind":["remote"]}' data-webx-when='{"fields.purpose":["agency"]}'>
+     <input type="text" id="office" name="fields[office]">
+     <p class="webx-field__error" hidden></p>
+   </div>`
+  const kind = `<div class="webx-field" data-webx-field="fields.agency_kind" data-webx-when='{"fields.purpose":["agency"]}'>
+     <select id="kind" name="fields[agency_kind]"><option value=""></option><option value="remote">Remote</option></select>
+     <p class="webx-field__error" hidden></p>
+   </div>`
+
+  const choose = (form, id) => {
+    const input = form.querySelector(`#${id}`)
+    if (input.tagName === 'SELECT') input.value = 'remote'
+    else input.checked = true
+    input.dispatchEvent(new Event('change', { bubbles: true }))
+  }
+
+  it('hides a field until its answer is chosen, then shows it with what was typed — the line for the page without the script gone', async () => {
+    const form = await start(shell(purpose + agency))
+    const box = form.querySelector('[data-webx-field="fields.agency"]')
+    const input = form.querySelector('#agency')
+
+    expect(box.hidden).toBe(true)
+    expect(input.disabled).toBe(true)
+    expect(input.required).toBe(false)
+    expect(box.querySelector('[data-webx-condition]').hidden).toBe(true)
+
+    choose(form, 'p2')
+    expect(box.hidden).toBe(false)
+    expect(input.disabled).toBe(false)
+    expect(input.required).toBe(true)
+
+    input.value = 'Example agency'
+    choose(form, 'p1')
+    expect(box.hidden).toBe(true)
+    expect(new FormData(form).has('fields[agency]')).toBe(false)
+
+    choose(form, 'p2')
+    expect(input.value).toBe('Example agency')
+  })
+
+  it('neither checks nor sends a hidden field, and checks it once it is shown', async () => {
+    const calls = answers(json(200, { ok: true, message: 'Thanks' }))
+    const form = await start(shell(purpose + agency))
+
+    choose(form, 'p2')
+    send(form)
+    await settle()
+    expect(calls).toHaveLength(0)
+    expect(form.querySelector('#agency-error').textContent).toBe('The agency is required.')
+
+    choose(form, 'p1')
+    send(form)
+    await settle()
+    expect(calls).toHaveLength(1)
+    expect(calls[0].body['fields[purpose]']).toBe('direct')
+    expect('fields[agency]' in calls[0].body).toBe(false)
+  })
+
+  it('reads one pass in order: `unless`, and a field hidden passes no answer on', async () => {
+    const form = await start(shell(purpose + kind + office))
+    const officeBox = form.querySelector('[data-webx-field="fields.office"]')
+
+    choose(form, 'p2')
+    expect(officeBox.hidden).toBe(false)
+
+    choose(form, 'kind')
+    expect(officeBox.hidden).toBe(true)
+
+    // The kind is hidden with the purpose changed: its "remote" counts no more, but the office is
+    // hidden by its own `when` anyway; back to agency, the kind is there again and so is its answer.
+    choose(form, 'p1')
+    expect(form.querySelector('[data-webx-field="fields.agency_kind"]').hidden).toBe(true)
+    expect(officeBox.hidden).toBe(true)
+    choose(form, 'p2')
+    expect(officeBox.hidden).toBe(true)
+  })
+
+  it('leaves alone a control the page itself switched off', async () => {
+    const form = await start(
+      shell(
+        purpose +
+          `<div class="webx-field" data-webx-field="fields.note" data-webx-when='{"fields.purpose":["agency"]}'>
+             <input type="text" id="note" name="fields[note]" disabled>
+           </div>`,
+      ),
+    )
+    choose(form, 'p2')
+    expect(form.querySelector('[data-webx-field="fields.note"]').hidden).toBe(false)
+    expect(form.querySelector('#note').disabled).toBe(true)
+  })
+})

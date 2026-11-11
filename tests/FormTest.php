@@ -114,6 +114,17 @@ final class FormTest extends TestCase
         });
     }
 
+    #[Test]
+    public function a_form_that_asks_for_attribution_claims_its_script_and_one_that_does_not_does_not(): void
+    {
+        self::form('action="/callback"');
+        $this->assertNotContains('attribution', Widgets::claimed());
+
+        $html = self::form('action="/callback" data-webx-attribution');
+        $this->assertStringContainsString('data-webx-attribution', $html);
+        $this->assertContains('attribution', Widgets::claimed());
+    }
+
     private static function form(string $props, string $slot = ''): string
     {
         return Blade::render("<x-webx-form {$props}>{$slot}</x-webx-form>");
@@ -405,6 +416,36 @@ final class FormTest extends TestCase
             'words' => ['heading' => 'All right', 'message' => 'Checked twice.'],
             'check' => ['name' => 'Ann', 'email' => 'ann@example.com', 'phone' => '+48 512 345 678', 'day' => '2026-05-01', 'password' => 'secret12', 'password_confirmation' => 'secret12', 'plan' => 'team', 'agree' => '1'],
         ])->assertJson(['ok' => true, 'heading' => 'All right', 'message' => '<p>Checked twice.</p>']);
+    }
+
+    #[Test]
+    public function the_steps_showcase_doors_check_a_step_without_taking_it_and_count_the_meeting_out(): void
+    {
+        $this->postJson('/webx/widgets/showcase/steps/check', ['webx_step' => 'purpose'])->assertNotFound();
+        file_put_contents($this->journal, '{"version":1,"entries":[]}');
+
+        // A step: its rules and the ones before it, none after — and nothing is answered but 204.
+        $this->postJson('/webx/widgets/showcase/steps/check', ['webx_step' => 'purpose', 'steps' => ['purpose' => 'question']])->assertNoContent();
+        $refused = $this->postJson('/webx/widgets/showcase/steps/check', ['webx_step' => 'purpose', 'labels' => ['purpose' => 'Purpose']])->assertStatus(422);
+        $this->assertSame(['steps.purpose'], array_keys((array) $refused->json('errors')));
+        $this->assertStringContainsString('Purpose', (string) $refused->json('errors')['steps.purpose'][0]);
+        // The meeting's rules only for a meeting.
+        $contacts = ['webx_step' => 'contacts', 'steps' => ['purpose' => 'question', 'name' => 'admin', 'email' => 'ann@example.com']];
+        $this->assertSame(['steps.name'], array_keys((array) $this->postJson('/webx/widgets/showcase/steps/check', $contacts)->assertStatus(422)->json('errors')));
+        $meeting = array_replace_recursive($contacts, ['steps' => ['purpose' => 'meeting', 'name' => 'Ann']]);
+        $this->assertSame(['steps.day', 'steps.time'], array_keys((array) $this->postJson('/webx/widgets/showcase/steps/check', $meeting)->assertStatus(422)->json('errors')));
+        // A day at the weekend is the server's word alone, in the page's words.
+        $saturday = array_replace_recursive($meeting, ['webx_step' => 'meeting', 'steps' => ['day' => '2026-11-14', 'time' => 'morning'], 'words' => ['weekday' => 'Not at the weekend.']]);
+        $this->assertSame(['steps.day' => ['Not at the weekend.']], $this->postJson('/webx/widgets/showcase/steps/check', $saturday)->assertStatus(422)->json('errors'));
+        $this->postJson('/webx/widgets/showcase/steps/check', array_replace_recursive($saturday, ['steps' => ['day' => '2026-11-16']]))->assertNoContent();
+        // The browser knows the day's rules, not the weekday: its «Next» lets a Saturday through.
+        $this->assertSame(['required', 'date', 'after'], array_column(FormRules::for(ShowcaseController::stepRules())->field('steps.day')['checks'], 'rule'));
+        // A step the form does not have is no step.
+        $this->postJson('/webx/widgets/showcase/steps/check', ['webx_step' => 'other'])->assertStatus(422);
+
+        $this->postJson('/webx/widgets/showcase/steps', ['steps' => ['purpose' => 'question', 'name' => '<b>Ann</b>', 'email' => 'ann@example.com'], 'words' => ['heading' => 'Booked', 'message' => 'See you, :name.']])
+            ->assertJson(['ok' => true, 'heading' => 'Booked', 'message' => '<p>See you, &lt;b&gt;Ann&lt;/b&gt;.</p>']);
+        $this->assertSame(['steps.day', 'steps.time'], array_keys((array) $this->postJson('/webx/widgets/showcase/steps', ['steps' => ['purpose' => 'meeting', 'name' => 'Ann', 'email' => 'ann@example.com']])->assertStatus(422)->json('errors')));
     }
 
     #[Test]

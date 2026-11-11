@@ -38,4 +38,18 @@ return [
         'managed' => 'Shown on the page',
         'invisible-run' => 'Invisible, run on submit',
     ],
+    'map' => [
+        'tab' => 'Map',
+        'provider' => 'Map service',
+        'provider-help' => 'Whose map the site shows: OpenStreetMap needs no key, Google Maps needs a browser key of the site. Either one loads only after the visitor agrees to embedded media, unless maps are set to load without asking.',
+        'tiles' => 'OpenStreetMap',
+        'google' => 'Google Maps',
+        'key' => 'Google Maps API key',
+        'key-help' => 'A browser key of the Maps JavaScript API. Every visitor can see it in the page, so restrict it in the Google Cloud console to the site\'s domains (HTTP referrers) and to the Maps JavaScript API.',
+        'map-id' => 'Map ID',
+        'map-id-help' => 'Optional: a Map ID from the Google Cloud console gives the pin as an advanced marker and the map the style made for it. Empty: Google\'s usual map.',
+        'no-key' => 'Google Maps is chosen, but there is no key: visitors see the address with a link to Google Maps instead of the map.',
+        'at-once' => 'Show the map without consent',
+        'at-once-help' => 'Loading, the map gives the visitor’s IP address to the map service (Google Maps, or the tile server) and may set cookies; for visitors from the EU that needs their consent. Off: the map waits for consent to embedded media. On: it is on the page at once, for this block only — at your own risk.',
+    ],
 ];

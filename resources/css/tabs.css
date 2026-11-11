@@ -41,8 +41,38 @@
   outline-offset: var(--site-space-1);
 }
 
+/* Cross-fade (`data-webx-tabs-transition="fade"`): every panel stands in one grid cell, so the
+   leaving one fades out over the coming one and the tabs are as tall as the tallest panel — no
+   jump between pictures of different proportions. The runtime marks the root and the panels
+   `is-fade`, an unselected panel `is-hidden` rather than `hidden` (a theme may pin `[hidden]` to
+   `display: none`): laid out but invisible, `visibility: hidden` keeps it out of the
+   accessibility tree and the Tab order. Without JavaScript nothing here applies. */
+.webx-tabs.is-fade {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.webx-tabs__panel.is-fade {
+  grid-row: 2;
+  grid-column: 1;
+  transition:
+    opacity var(--site-duration) var(--site-easing),
+    visibility 0s;
+}
+
+.webx-tabs__panel.is-hidden {
+  visibility: hidden;
+  opacity: 0;
+  /* The leaving panel stays visible while it fades, then drops out. */
+  transition:
+    opacity var(--site-duration) var(--site-easing),
+    visibility 0s var(--site-duration);
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .webx-tabs__tab {
+  .webx-tabs__tab,
+  .webx-tabs__panel.is-fade,
+  .webx-tabs__panel.is-hidden {
     transition: none;
   }
 }

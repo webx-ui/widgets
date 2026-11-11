@@ -26,6 +26,10 @@
  *    listener with something to finish first — a captcha to run — holds the form with
  *    `detail.wait(promise)`: busy from the press on, the form read again and sent when it
  *    resolves, let go as it was when it rejects.
+ *
+ * A form of steps (FORM_STEPS §3) is steps.js's, on top of this: `webx.formOf(form)` hands it the
+ * checks, the request and the 422 of this form, so there is one of each. An error found on a step
+ * that is not shown — the server's on the last press — asks for it with `webx:form:reveal`.
  */
 
 import '../css/form.css'
@@ -42,6 +46,10 @@ const listeners = () => {
   on.off = () => added.splice(0).forEach((remove) => remove())
   return on
 }
+
+/** What steps.js asks of a form this script drives. */
+const forms = new WeakMap()
+webx.formOf = (el) => forms.get(el) ?? null
 
 /** Where a redirect goes: the page itself, or a test's stand-in (jsdom cannot navigate). */
 export const navigation = { go: (url) => window.location.assign(url) }
@@ -60,6 +68,9 @@ const fieldsOf = (form) =>
 
 const controlsOf = (field) =>
   Array.from(field.querySelectorAll('input, select, textarea')).filter((el) => el.type !== 'hidden')
+
+/** Where the focus goes in a field: what a script drew over its controls asks for it (`data-webx-focus`). */
+const focusOf = (field) => field.querySelector('[data-webx-focus]') ?? controlsOf(field)[0] ?? null
 
 const buttonsOf = (form) =>
   Array.from(
@@ -208,6 +219,26 @@ function request(action, body, progress) {
     xhr.addEventListener('error', () => reject(new Error('network')))
     xhr.send(body)
   })
+}
+
+/** The request again, once, with a fresh token after a 419: the page was cached with a stale one. */
+async function post(action, data, refresh, progress) {
+  // The cookie's token is the fresh one; the HTML's may have been cached with the page, and
+  // Laravel would read `_token` first.
+  const send = () => {
+    if (token()) data.delete('_token')
+    return request(action, data, progress)
+  }
+  let answer = await send()
+  if (answer.status === 419 && refresh) {
+    await fetch(refresh, {
+      credentials: 'same-origin',
+      cache: 'no-store',
+      headers: { Accept: 'application/json' },
+    })
+    answer = await send()
+  }
+  return answer
 }
 
 /*
@@ -405,6 +436,77 @@ const watching = (form, key) =>
     ),
   )
 
+/*
+ * When a field is shown (FORM_STEPS §4.3): `data-webx-when` / `data-webx-unless` on it — `{ name:
+ * [values] }`, "or" inside a list, "and" between names, the names the validator's (`fields.purpose`).
+ * One pass in the page's order: a hidden field has no value, so what was chosen in it reaches no field
+ * below — the server's rule. Hidden is `hidden` and its controls `disabled`: nothing of it is sent or
+ * checked. Shown again, it has what was typed in it; a `required` the server left off for the page
+ * without the script comes back.
+ */
+const conditionOf = (el, name) => {
+  try {
+    return JSON.parse(el.getAttribute(name) || 'null')
+  } catch {
+    return null
+  }
+}
+
+const holds = (condition, answers) =>
+  Object.entries(condition).every(([name, values]) =>
+    (answers.get(name) ?? []).some((value) => [].concat(values).map(String).includes(value)),
+  )
+
+const chosen = (field) =>
+  controlsOf(field).flatMap((control) =>
+    control.tagName === 'SELECT'
+      ? Array.from(control.selectedOptions, (option) => option.value).filter(Boolean)
+      : ['radio', 'checkbox'].includes(control.type) && control.checked
+        ? [control.value]
+        : [],
+  )
+
+const hiddenIn = (el) => el.closest('[data-webx-hidden]')
+
+function show(el, shown) {
+  // A step's `hidden` is steps.js's: it shows one step at a time, and counts this one out.
+  if (!el.hasAttribute('data-webx-step')) el.hidden = !shown
+  el.toggleAttribute('data-webx-hidden', !shown)
+  for (const control of el.querySelectorAll('input, select, textarea, button')) {
+    if (shown && control.hasAttribute('data-webx-off')) {
+      control.disabled = false
+      control.removeAttribute('data-webx-off')
+    } else if (!shown && !control.disabled) {
+      control.disabled = true
+      control.setAttribute('data-webx-off', '')
+    }
+    if (control.hasAttribute('data-webx-required')) control.required = shown
+  }
+}
+
+export function conditions(form) {
+  const answers = new Map()
+  for (const el of form.querySelectorAll(
+    '[data-webx-field], [data-webx-when], [data-webx-unless]',
+  )) {
+    if (el.closest('form') !== form) continue
+    const when = conditionOf(el, 'data-webx-when')
+    const unless = conditionOf(el, 'data-webx-unless')
+    if (when || unless) {
+      show(
+        el,
+        !(el.parentElement && hiddenIn(el.parentElement)) &&
+          (!when || holds(when, answers)) &&
+          !(unless && holds(unless, answers)),
+      )
+      // Said for the page without the script: with it, the field is there only when it applies.
+      for (const line of el.querySelectorAll('[data-webx-condition]')) line.hidden = true
+    }
+    const key = el.dataset.webxField
+    if (key && !hiddenIn(el)) answers.set(key, chosen(el))
+  }
+}
+
 export function form(el) {
   if (!(el instanceof HTMLFormElement)) return undefined
   const on = listeners()
@@ -467,12 +569,13 @@ export function form(el) {
     if (again) again.hidden = true
     say(el, null, null)
     el.reset()
+    conditions(el)
     return true
   }
 
   const first = () => {
     const field = fieldsOf(el)[0]
-    const control = field ? controlsOf(field)[0] : null
+    const control = field ? focusOf(field) : null
     control?.focus({ preventScroll: true })
     control?.scrollIntoView?.({ block: 'center', behavior: 'smooth' })
   }
@@ -481,9 +584,17 @@ export function form(el) {
     el.dispatchEvent(new CustomEvent(`webx:form:${name}`, { bubbles: true, cancelable, detail }))
 
   const focusFirst = () => {
-    const first = fieldsOf(el).find((field) => field.classList.contains('is-invalid'))
-    const control = first ? controlsOf(first)[0] : null
+    const first = fieldsOf(el).find(
+      (field) => field.classList.contains('is-invalid') && !hiddenIn(field),
+    )
+    const control = first ? focusOf(first) : null
     if (!control) return
+    // On a step not shown: steps.js brings it before the focus goes.
+    const step = first.closest('[data-webx-step]')
+    if (step?.hidden)
+      step.dispatchEvent(
+        new CustomEvent('webx:form:reveal', { bubbles: true, detail: { field: first } }),
+      )
     control.focus({ preventScroll: true })
     control.scrollIntoView?.({ block: 'center', behavior: 'smooth' })
   }
@@ -508,6 +619,7 @@ export function form(el) {
       say(el, data.heading, data.message, data.heading_html)
       el.classList.add('is-sent')
       el.reset()
+      conditions(el)
       aside()
       if (!dialog)
         own(el, '.webx-form__message')?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' })
@@ -515,7 +627,7 @@ export function form(el) {
     return false
   }
 
-  const reject = (answer) => {
+  const reject = (answer, quiet = false) => {
     const data = answer.json ? answer.data : {}
     // A 429 says why as well (too many attempts, wait so long): by field, or in a sentence.
     const explained = answer.status === 422 || answer.status === 429
@@ -546,7 +658,33 @@ export function form(el) {
     }
     refuse(el, unplaced.filter(Boolean))
     focusFirst()
-    emit('error', { status: answer.status, errors, message: data.message ?? null })
+    if (!quiet) emit('error', { status: answer.status, errors, message: data.message ?? null })
+  }
+
+  // The browser's checks of these fields: wrong ones said, the focus on the first; true — all right.
+  const verify = (fields) => {
+    const all = new FormData(el)
+    let wrong = false
+    for (const field of fields) {
+      // Hidden by its condition: not sent, so not checked — as the server does.
+      if (hiddenIn(field)) continue
+      const said = check(el, field, all)
+      if (said.length) {
+        invalid(field, said)
+        refused.add(field)
+        wrong = true
+      } else if (refused.has(field)) {
+        // Its error was the browser's, and it is right now; one of the server's stays.
+        valid(field)
+        refused.delete(field)
+      }
+    }
+    if (wrong) {
+      refuse(el, [])
+      say(el, null, null)
+      focusFirst()
+    }
+    return !wrong
   }
 
   on(el, 'submit', async (event) => {
@@ -554,28 +692,7 @@ export function form(el) {
     if (sending) return
 
     // A button with formnovalidate sends without the browser's checks — straight to the server's.
-    if (!event.submitter?.formNoValidate) {
-      const all = new FormData(el)
-      let wrong = false
-      for (const field of fieldsOf(el)) {
-        const said = check(el, field, all)
-        if (said.length) {
-          invalid(field, said)
-          refused.add(field)
-          wrong = true
-        } else if (refused.has(field)) {
-          // Its error was the browser's, and it is right now; one of the server's stays.
-          valid(field)
-          refused.delete(field)
-        }
-      }
-      if (wrong) {
-        refuse(el, [])
-        say(el, null, null)
-        focusFirst()
-        return
-      }
-    }
+    if (!event.submitter?.formNoValidate && !verify(fieldsOf(el))) return
 
     const read = () => {
       try {
@@ -613,24 +730,7 @@ export function form(el) {
         }
       }
 
-      const send = () => {
-        // The cookie's token is the fresh one; the HTML's may have been cached with the page,
-        // and Laravel would read `_token` first.
-        if (token()) data.delete('_token')
-        return request(action, data, progress)
-      }
-
-      let answer = await send()
-
-      if (answer.status === 419 && refresh) {
-        await fetch(refresh, {
-          credentials: 'same-origin',
-          cache: 'no-store',
-          headers: { Accept: 'application/json' },
-        })
-        answer = await send()
-      }
-
+      const answer = await post(action, data, refresh, progress)
       if (answer.status >= 200 && answer.status < 300) leaving = succeed(answer)
       else reject(answer)
     } catch {
@@ -657,6 +757,7 @@ export function form(el) {
     }
   }
   const changed = (event) => {
+    if (event.type === 'change') conditions(el)
     const field = event.target instanceof Element ? event.target.closest('[data-webx-field]') : null
     if (!field || field.closest('form') !== el) return
     touched.add(field)
@@ -691,6 +792,27 @@ export function form(el) {
     }
   })
 
+  forms.set(el, {
+    verify,
+    reject: (answer) => reject(answer, true),
+    clear: () => clear(el),
+    // A step checked by the server (FORM_STEPS §3.4): held like a submission, nothing taken.
+    async ask(url, data) {
+      if (sending) return null
+      busy(true)
+      try {
+        return await post(url, data, refresh, () => {})
+      } catch {
+        return { status: 0, data: {}, json: false }
+      } finally {
+        if (!gone) busy(false)
+      }
+    },
+  })
+
+  // What is chosen now decides what is shown — the page may have come back with answers.
+  conditions(el)
+
   // The browser's bubbles off: the same errors in every language and browser. Without this
   // script the browser's own checks stay — the only ones before the round trip.
   const validated = el.noValidate
@@ -717,6 +839,7 @@ export function form(el) {
 
   return () => {
     gone = true
+    forms.delete(el)
     on.off()
     el.noValidate = validated
     watch?.disconnect()

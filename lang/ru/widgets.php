@@ -22,6 +22,8 @@ return [
         'reject' => 'Отклонить все',
         'customize' => 'Настроить',
         'save' => 'Сохранить выбор',
+        'dialog_reject' => 'Отклонить все',
+        'dialog_accept' => 'Принять все',
         'policy' => 'Политика cookie',
         'link' => 'Настройки cookie',
         'dialog' => 'Настройки cookie',
@@ -79,6 +81,17 @@ return [
     'language' => [
         'label' => 'Язык',
         'fallback' => 'Перевода пока нет: главная страница на этом языке',
+        // Asked in this language, which names itself (ROUTING §18.6).
+        'offer' => [
+            'question' => 'Перейти на русский?',
+            'accept' => 'Да',
+            'stay' => 'Остаться',
+            'close' => 'Закрыть',
+        ],
+    ],
+    'photos' => [
+        'label' => 'Фотографии',
+        'show' => 'Фото :index из :count',
     ],
     'slider' => [
         'carousel' => 'карусель',
@@ -118,7 +131,10 @@ return [
         'load' => 'Загрузить',
         'always' => 'Всегда загружать карты',
         'open' => 'Открыть на карте',
+        'open_google' => 'Открыть в Google Maps',
         'hint' => 'Нажмите на карту, чтобы масштабировать колесом',
+        'failed' => 'Карту не удалось загрузить.',
+        'embed_refused' => 'Это не код карты Google Maps. В Google Maps откройте «Поделиться» → «Встраивание карт», скопируйте HTML и вставьте сюда — или только его адрес, https://www.google.com/maps/embed?pb=…',
     ],
     'table' => [
         'label' => 'Таблица',
@@ -183,6 +199,17 @@ return [
         'drop_file' => 'или перетащите файл сюда',
         'drop_files' => 'или перетащите файлы сюда',
     ],
+    // A day and a time (FORM_STEPS §6.4, §12.2): month and day names are the browser's Intl and Carbon.
+    'datetime' => [
+        'date' => 'Дата',
+        'time' => 'Время',
+        'previous' => 'Предыдущий месяц',
+        'next' => 'Следующий месяц',
+        'zone' => 'Время указано по поясу :zone',
+        'none' => 'На сегодня времени не осталось',
+        'unavailable' => 'недоступно',
+        'times' => 'Время на :date',
+    ],
     'captcha' => [
         'missing' => 'Подтвердите, что вы не робот, и отправьте форму ещё раз.',
         'script' => 'Эта форма проверяет, что вы не робот, с помощью JavaScript. Включите его и отправьте форму ещё раз.',
@@ -192,6 +219,17 @@ return [
         'failed' => 'Не удалось отправить форму. Проверьте соединение и попробуйте ещё раз.',
         'expired' => 'Страница открыта слишком давно. Обновите её и отправьте форму ещё раз.',
         'again' => 'Отправить ещё',
+        // A form of several steps (FORM_STEPS §3, §12.2): `:current`/`:total` without plural forms.
+        'steps' => [
+            'label' => 'Шаги',
+            'step' => 'Шаг :current из :total',
+            'next' => 'Далее',
+            'back' => 'Назад',
+            'return' => 'Вернуться к шагу :number: :title',
+            'fix' => 'Проверьте шаг :number: :message',
+            'edit' => 'Изменить',
+            'edit-field' => 'Изменить: :field',
+        ],
     ],
     'suggest' => [
         'label' => 'Поиск',

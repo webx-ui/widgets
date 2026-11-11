@@ -10,6 +10,11 @@
 
 :where(:root) {
   --webx-lightbox-backdrop: var(--site-color-bg);
+  /* Opaque: a page showing through competes with the counter and the buttons on a phone. A theme
+     or a section may lower it; a link's `data-webx-lightbox-opacity` says it for its own group. */
+  --webx-lightbox-backdrop-opacity: 1;
+  /* Behind a picture fitted into a frame of another shape (`data-webx-lightbox-ratio`). */
+  --webx-lightbox-frame: var(--site-color-surface-muted);
   --webx-lightbox-color: var(--site-color-text);
   /* Around the icons, so they stay readable over a picture. */
   --webx-lightbox-outline: var(--site-color-bg);
@@ -31,6 +36,13 @@
   --pswp-preloader-color-secondary: var(--site-color-accent);
   --pswp-transition-duration: var(--site-duration);
   font-family: var(--site-font-body);
+}
+
+/* A frame of the asked shape with the whole picture inside it, undistorted: PhotoSwipe sizes the
+   box, the picture is contained in it. */
+.webx-lightbox__framed {
+  object-fit: contain;
+  background: var(--webx-lightbox-frame);
 }
 
 /* The chain's icons in PhotoSwipe's buttons, centred in whatever size the button has. */

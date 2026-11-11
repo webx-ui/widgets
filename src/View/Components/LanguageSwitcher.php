@@ -10,6 +10,7 @@ use InvalidArgumentException;
 use WebxUi\Widgets\Facades\Widgets;
 use WebxUi\Widgets\Languages\LanguageLink;
 use WebxUi\Widgets\Languages\LanguageLinks;
+use WebxUi\Widgets\Languages\LanguageOffer;
 
 /**
  * `<x-webx-language-switcher />` — the same page in the site's other languages (spec §13).
@@ -21,6 +22,10 @@ use WebxUi\Widgets\Languages\LanguageLinks;
  * Each language is named in itself; a page with no translation leads to that language's home
  * page, marked `is-fallback`. On a site with one language it prints nothing. `:languages` hands
  * it others (`LanguageLink` objects).
+ *
+ * With the offer of the first visit's language on (ROUTING §18.6), the first switcher of the page
+ * carries it — over the page, so nothing moves; `:offer="false"` keeps it off a switcher, the
+ * copy in a mobile menu, say. Without it the markup is the same as ever.
  */
 final class LanguageSwitcher extends Component
 {
@@ -39,6 +44,7 @@ final class LanguageSwitcher extends Component
         ?array $languages = null,
         public ?string $label = null,
         public ?string $fallbackLabel = null,
+        public bool $offer = true,
     ) {
         if (! in_array($layout, self::LAYOUTS, true)) {
             throw new InvalidArgumentException("<x-webx-language-switcher layout=\"{$layout}\">: dropdown or list.");
@@ -62,7 +68,17 @@ final class LanguageSwitcher extends Component
             $current ??= $link->current ? $link : null;
         }
 
+        // One offer a page, at the first switcher that may carry it.
+        $offer = $this->offer ? LanguageOffer::for(request(), $this->links) : null;
+
+        if ($offer !== null && Widgets::sequence('language-offer') === 1) {
+            Widgets::need('language-offer');
+        } else {
+            $offer = null;
+        }
+
         return view('webx-widgets::components.language-switcher', [
+            'offerBox' => $offer,
             'current' => $current ?? $this->links[0],
             'labelText' => $this->label ?? __('webx-widgets::widgets.language.label'),
             'fallbackText' => $this->fallbackLabel ?? __('webx-widgets::widgets.language.fallback'),

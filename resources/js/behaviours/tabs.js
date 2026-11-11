@@ -7,6 +7,10 @@
  *
  * The first panel is selected, unless the address points into another one or one is marked
  * `data-webx-tab-selected`.
+ *
+ * `data-webx-tabs-transition="fade"` cross-fades: the root and the panels get `is-fade`, every
+ * panel stays laid out in one grid cell and the unselected ones get `is-hidden` (`visibility: hidden` — out of the accessibility tree and the
+ * Tab order, as `hidden` would be) instead of `hidden`, which a theme may pin to `display: none`.
  */
 
 import { idOf, listeners } from '../core.js'
@@ -16,6 +20,7 @@ const HEADING = ':scope > h1, :scope > h2, :scope > h3, :scope > h4, :scope > h5
 export function tabs(root) {
   const panels = Array.from(root.children).filter((el) => el.hasAttribute('data-webx-tab'))
   if (panels.length === 0) return
+  const fade = root.getAttribute('data-webx-tabs-transition') === 'fade'
 
   const on = listeners()
   const list = document.createElement('div')
@@ -45,6 +50,7 @@ export function tabs(root) {
     panel.setAttribute('role', 'tabpanel')
     panel.setAttribute('aria-labelledby', button.id)
     panel.tabIndex = 0
+    if (fade) panel.classList.add('is-fade')
     list.append(button)
     return button
   })
@@ -55,7 +61,8 @@ export function tabs(root) {
       button.setAttribute('aria-selected', String(selected))
       button.tabIndex = selected ? 0 : -1
       button.classList.toggle('is-selected', selected)
-      panels[i].hidden = !selected
+      if (fade) panels[i].classList.toggle('is-hidden', !selected)
+      else panels[i].hidden = !selected
     })
     if (focus) buttons[index].focus()
   }
@@ -89,15 +96,17 @@ export function tabs(root) {
   })
 
   root.classList.add('webx-tabs', 'is-enhanced')
+  if (fade) root.classList.add('is-fade')
   root.prepend(list)
 
   return () => {
     on.off()
     list.remove()
-    root.classList.remove('is-enhanced')
+    root.classList.remove('is-enhanced', 'is-fade')
     hidden.forEach((heading) => (heading.hidden = false))
     for (const panel of panels) {
       panel.hidden = false
+      panel.classList.remove('is-hidden', 'is-fade')
       panel.removeAttribute('role')
       panel.removeAttribute('aria-labelledby')
       panel.removeAttribute('tabindex')

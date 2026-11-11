@@ -1,0 +1,251 @@
+/*
+ * A day and a time (FORM_STEPS §6.4, §12.3). Without the script: the date and the list of times side
+ * by side where the field has the room, the zone under them. With it: the calendar and the times of
+ * the chosen day in a row on a form of 40rem and up (the form's width, not the window's), the times
+ * under the calendar on a narrower one — a sheet included. Targets of 44px, the focus that shows.
+ */
+
+:where(:root) {
+  --webx-datetime-day: 44px;
+}
+
+.webx-datetime {
+  container-type: inline-size;
+  display: grid;
+  gap: var(--site-space-2);
+  min-width: 0;
+}
+
+.webx-datetime__plain {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--site-space-3);
+}
+
+.webx-datetime__plain[hidden] {
+  display: none;
+}
+
+.webx-datetime__part {
+  display: flex;
+  flex: 1 1 12rem;
+  flex-direction: column;
+  gap: var(--webx-field-gap);
+  min-width: 0;
+}
+
+.webx-datetime__label {
+  color: var(--site-color-text-muted);
+}
+
+.webx-datetime__zone {
+  margin: 0;
+  color: var(--site-color-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.webx-datetime__picker {
+  display: grid;
+  gap: var(--site-space-4);
+  align-items: start;
+}
+
+/*
+ * Seven days of 44px and the frame — and no wider than the field: on a form narrower than that the
+ * days shrink with it rather than push the form out of the page.
+ */
+.webx-datetime__calendar {
+  justify-self: start;
+  width: min(100%, calc(7 * var(--webx-datetime-day) + 2 * var(--site-space-3) + 2px));
+  padding: var(--site-space-3);
+  box-sizing: border-box;
+  border: 1px solid var(--webx-field-border);
+  border-radius: var(--webx-field-radius);
+  background: var(--webx-field-bg);
+}
+
+.webx-datetime__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--site-space-2);
+}
+
+.webx-datetime__month {
+  margin: 0;
+  color: var(--site-color-text);
+  font-weight: 600;
+  text-align: center;
+}
+
+.webx-datetime__month::first-letter {
+  text-transform: uppercase;
+}
+
+.webx-datetime__nav,
+.webx-datetime__day {
+  display: inline-flex;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
+  width: var(--webx-datetime-day);
+  height: var(--webx-datetime-day);
+  margin: 0;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--site-radius-md);
+  background: transparent;
+  color: var(--site-color-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.webx-datetime__nav:disabled {
+  color: var(--site-color-text-muted);
+  cursor: default;
+  opacity: 0.4;
+}
+
+.webx-datetime__nav:hover,
+.webx-datetime__day.is-available:hover {
+  border-color: var(--webx-field-border);
+}
+
+.webx-datetime__nav:disabled {
+  border-color: transparent;
+}
+
+.webx-datetime__nav:focus-visible,
+.webx-datetime__day:focus-visible,
+.webx-datetime__time:has(:focus-visible) {
+  outline: 2px solid var(--webx-field-focus);
+  outline-offset: 2px;
+}
+
+/* A table of the page's prose gets borders, stripes and a scroll of its own; this one is a calendar. */
+.webx-datetime__grid {
+  display: table;
+  width: 100%;
+  max-width: none;
+  table-layout: fixed;
+  border: 0;
+  border-collapse: collapse;
+  background: none;
+  margin-block-start: var(--site-space-2);
+}
+
+.webx-datetime__weekday {
+  padding: 0 0 var(--site-space-1);
+  border: 0;
+  background: none;
+  font-size: 0.875em;
+  overflow: hidden;
+  text-overflow: clip;
+  color: var(--site-color-text-muted);
+  font-weight: 400;
+  text-align: center;
+}
+
+.webx-datetime__cell {
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: center;
+}
+
+/* A day that cannot be chosen still takes the focus and says why: muted, struck through. */
+.webx-datetime__day[aria-disabled='true'] {
+  color: var(--site-color-text-muted);
+  cursor: default;
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+
+/* As wide as its column, never wider than a finger needs: square either way. */
+.webx-datetime__day {
+  width: 100%;
+  max-width: var(--webx-datetime-day);
+  height: auto;
+  aspect-ratio: 1;
+}
+
+.webx-datetime__day.is-today {
+  font-weight: 700;
+}
+
+.webx-datetime__day.is-selected {
+  border-color: var(--site-color-accent);
+  background: var(--site-color-accent);
+  color: var(--site-color-accent-contrast);
+}
+
+.webx-datetime__times {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.webx-datetime__times[hidden] {
+  display: none;
+}
+
+.webx-datetime__legend {
+  margin-block-end: var(--site-space-2);
+  padding: 0;
+  color: var(--site-color-text);
+  font-weight: 600;
+}
+
+.webx-datetime__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr));
+  gap: var(--site-space-2);
+}
+
+/* A time is a radio drawn as a button: the label is the target, the dot stays for what it says. */
+.webx-datetime__time {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--site-space-2);
+  min-height: var(--webx-field-height);
+  padding: 0 var(--site-space-2);
+  box-sizing: border-box;
+  border: 1px solid var(--webx-field-border);
+  border-radius: var(--webx-field-radius);
+  background: var(--webx-field-bg);
+  color: var(--site-color-text);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.webx-datetime__time:has(:checked) {
+  border-color: var(--site-color-accent);
+  box-shadow: inset 0 0 0 1px var(--site-color-accent);
+}
+
+.webx-datetime__radio {
+  margin: 0;
+}
+
+/* After the rules it overrides: same weight, the later one wins. */
+@container (min-width: 40rem) {
+  .webx-datetime__picker {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  /* Its own width beside the times: a share of an auto column would take the whole row. */
+  .webx-datetime__calendar {
+    width: calc(7 * var(--webx-datetime-day) + 2 * var(--site-space-3) + 2px);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .webx-datetime__day,
+  .webx-datetime__time {
+    transition:
+      border-color var(--site-duration) var(--site-easing),
+      background-color var(--site-duration) var(--site-easing);
+  }
+}

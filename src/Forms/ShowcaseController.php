@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace WebxUi\Widgets\Forms;
 
+use Closure;
 use Illuminate\Container\Container;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Validator;
 use Symfony\Component\HttpFoundation\Response;
@@ -23,6 +25,10 @@ use WebxUi\Admin\Demo\DemoLedger;
  * `POST {path}/showcase/validation` — the door of «Kitchen sink › Forms › Validation» (§17.5):
  * {@see self::CHECKS}, the rules the page's form is checked by in the browser through FormRules,
  * checked here again by the validator — the same words both ways — and a thank-you.
+ *
+ * `POST {path}/showcase/steps` and `…/steps/check` — the doors of «Kitchen sink › Forms › Steps»
+ * (FORM_STEPS §3): {@see self::STEPS}, a step's rules, checked up to the step named `webx_step` (204)
+ * or all of them at the end (a thank-you); the meeting's only when a meeting was chosen.
  *
  * Its words come from the page — the showcase's words are the page's localized fields, never
  * this package's — and the page says its language, so the validator speaks it.
@@ -48,6 +54,111 @@ final class ShowcaseController
         'check.photos.*' => ['image', 'max:2048'],
         'check.agree' => ['accepted'],
     ];
+
+    /**
+     * The steps of the steps showcase and the rules of each. Two more are the server's alone, so a
+     * «Next» that asks the server says what the browser could not: `steps.name` refuses `admin`,
+     * and the day of a meeting is a weekday ({@see self::stepsUpTo()}).
+     */
+    public const array STEPS = [
+        'purpose' => ['steps.purpose' => ['required', 'in:question,meeting']],
+        'meeting' => ['steps.day' => ['required', 'date', 'after:2026-01-01'], 'steps.time' => ['required', 'in:morning,afternoon']],
+        'contacts' => ['steps.name' => ['required', 'string', 'min:2', 'max:60', 'not_in:admin,root'], 'steps.email' => ['required', 'email', 'max:190']],
+    ];
+
+    /**
+     * Every rule of the steps showcase, for FormRules on the page: the browser checks the fields
+     * of the step shown, whatever was chosen.
+     *
+     * @return array<string, list<string>>
+     */
+    public static function stepRules(): array
+    {
+        return array_merge(...array_values(self::STEPS));
+    }
+
+    /**
+     * The rules of the steps up to `$upTo` (all without it), the meeting's only for a meeting —
+     * the way the Inbox counts a step its condition hides out — and its day a weekday, in the
+     * page's words (`words[weekday]`).
+     *
+     * @return array<string, list<mixed>>
+     */
+    private static function stepsUpTo(Request $request, ?string $upTo = null): array
+    {
+        $rules = [];
+        $weekday = $request->input('words.weekday');
+        $weekday = is_string($weekday) && $weekday !== '' ? $weekday : 'Choose a weekday.';
+
+        foreach (self::STEPS as $step => $fields) {
+            if ($step !== 'meeting' || $request->input('steps.purpose') === 'meeting') {
+                $rules = [...$rules, ...$fields];
+            }
+
+            if ($step === 'meeting' && isset($rules['steps.day'])) {
+                $rules['steps.day'][] = static function (string $attribute, mixed $value, Closure $fail) use ($weekday): void {
+                    if (is_string($value) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $value) === 1 && Carbon::parse($value)->isWeekend()) {
+                        $fail($weekday);
+                    }
+                };
+            }
+
+            if ($step === $upTo) {
+                break;
+            }
+        }
+
+        return $rules;
+    }
+
+    /**
+     * The names the validator says, from the labels of the steps' form (`labels[day]` …).
+     *
+     * @return array<string, string>
+     */
+    private static function stepAttributes(Request $request): array
+    {
+        $labels = array_filter((array) $request->input('labels', []), 'is_string');
+        $attributes = [];
+
+        foreach (array_keys(self::stepRules()) as $key) {
+            $short = explode('.', $key)[1];
+
+            if (($labels[$short] ?? '') !== '') {
+                $attributes[$key] = $labels[$short];
+            }
+        }
+
+        return $attributes;
+    }
+
+    /** `POST …/showcase/steps/check`: the steps up to `webx_step`, nothing taken — 204 or a 422. */
+    public function stepCheck(Request $request): Response
+    {
+        abort_unless(self::available(), 404);
+        self::speak($request);
+
+        $step = $request->input('webx_step');
+        abort_unless(is_string($step) && array_key_exists($step, self::STEPS), 422);
+
+        Validator::make($request->all(), self::stepsUpTo($request, $step), [], self::stepAttributes($request))->validate();
+
+        return response()->noContent();
+    }
+
+    /** `POST …/showcase/steps`: every step shown, then a thank-you. */
+    public function steps(Request $request): FormResponse
+    {
+        abort_unless(self::available(), 404);
+        self::speak($request);
+
+        Validator::make($request->all(), self::stepsUpTo($request), [], self::stepAttributes($request))->validate();
+
+        $words = array_filter((array) $request->input('words', []), 'is_string');
+        $name = e((string) $request->input('steps.name'));
+
+        return FormResponse::message($words['heading'] ?? 'Thank you', '<p>'.str_replace(':name', $name, e($words['message'] ?? 'Sent, :name.')).'</p>');
+    }
 
     /**
      * The names the validator says, from the labels of the page's form — on the page for

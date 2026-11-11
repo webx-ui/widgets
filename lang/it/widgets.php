@@ -22,6 +22,8 @@ return [
         'reject' => 'Rifiuta tutti',
         'customize' => 'Personalizza',
         'save' => 'Salva le scelte',
+        'dialog_reject' => 'Rifiuta tutti',
+        'dialog_accept' => 'Accetta tutti',
         'policy' => 'Cookie policy',
         'link' => 'Impostazioni cookie',
         'dialog' => 'Impostazioni cookie',
@@ -79,6 +81,17 @@ return [
     'language' => [
         'label' => 'Lingua',
         'fallback' => 'Non ancora tradotto: la home page in questa lingua',
+        // Asked in this language, which names itself (ROUTING §18.6).
+        'offer' => [
+            'question' => 'Passare all’italiano?',
+            'accept' => 'Sì',
+            'stay' => 'Resta',
+            'close' => 'Chiudi',
+        ],
+    ],
+    'photos' => [
+        'label' => 'Foto',
+        'show' => 'Foto :index di :count',
     ],
     'slider' => [
         'carousel' => 'carosello',
@@ -118,7 +131,10 @@ return [
         'load' => 'Carica',
         'always' => 'Carica sempre le mappe',
         'open' => 'Apri nelle mappe',
+        'open_google' => 'Apri in Google Maps',
         'hint' => 'Fai clic sulla mappa per ingrandire con la rotella',
+        'failed' => 'Impossibile caricare la mappa.',
+        'embed_refused' => 'Questo non è il codice di una mappa di Google Maps. In Google Maps apra Condividi → Incorpora una mappa, copi l’HTML e lo incolli qui, oppure solo il suo indirizzo, https://www.google.com/maps/embed?pb=…',
     ],
     'table' => [
         'label' => 'Tabella',
@@ -183,6 +199,17 @@ return [
         'drop_file' => 'oppure trascina qui un file',
         'drop_files' => 'oppure trascina qui i file',
     ],
+    // A day and a time (FORM_STEPS §6.4, §12.2): month and day names are the browser's Intl and Carbon.
+    'datetime' => [
+        'date' => 'Data',
+        'time' => 'Ora',
+        'previous' => 'Mese precedente',
+        'next' => 'Mese successivo',
+        'zone' => 'Gli orari sono in :zone',
+        'none' => 'Per oggi non restano orari',
+        'unavailable' => 'non disponibile',
+        'times' => 'Orari del :date',
+    ],
     'captcha' => [
         'missing' => 'Conferma di non essere un robot e invia di nuovo il modulo.',
         'script' => 'Questo modulo verifica con JavaScript che tu non sia un robot. Attivalo e invia di nuovo il modulo.',
@@ -192,6 +219,17 @@ return [
         'failed' => 'Non è stato possibile inviare il modulo. Controlla la connessione e riprova.',
         'expired' => 'La pagina è aperta da troppo tempo. Ricaricala e invia di nuovo il modulo.',
         'again' => 'Invia un altro',
+        // A form of several steps (FORM_STEPS §3, §12.2): `:current`/`:total` without plural forms.
+        'steps' => [
+            'label' => 'Passaggi',
+            'step' => 'Passaggio :current di :total',
+            'next' => 'Avanti',
+            'back' => 'Indietro',
+            'return' => 'Torna al passaggio :number: :title',
+            'fix' => 'Controlla il passaggio :number: :message',
+            'edit' => 'Modifica',
+            'edit-field' => 'Modifica: :field',
+        ],
     ],
     'suggest' => [
         'label' => 'Ricerca',

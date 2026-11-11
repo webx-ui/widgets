@@ -38,4 +38,18 @@ return [
         'managed' => 'Visible sur la page',
         'invisible-run' => 'Invisible, à l’envoi',
     ],
+    'map' => [
+        'tab' => 'Carte',
+        'provider' => 'Service de cartes',
+        'provider-help' => 'La carte que montre le site : OpenStreetMap n’a pas besoin de clé, Google Maps demande une clé navigateur du site. L’une comme l’autre ne se charge qu’après l’accord du visiteur pour les médias intégrés, sauf si les cartes se chargent sans demander.',
+        'tiles' => 'OpenStreetMap',
+        'google' => 'Google Maps',
+        'key' => 'Clé d’API Google Maps',
+        'key-help' => 'Une clé navigateur de Maps JavaScript API. Tout visiteur la voit dans la page : restreignez-la dans la console Google Cloud aux domaines du site (référents HTTP) et à Maps JavaScript API.',
+        'map-id' => 'ID de carte',
+        'map-id-help' => 'Facultatif : un ID de carte de la console Google Cloud fait de l’épingle un marqueur avancé et donne à la carte le style créé pour lui. Vide : la carte Google habituelle.',
+        'no-key' => 'Google Maps est choisi, mais il n’y a pas de clé : au lieu de la carte, les visiteurs voient l’adresse avec un lien vers Google Maps.',
+        'at-once' => 'Afficher la carte sans consentement',
+        'at-once-help' => 'En se chargeant, la carte transmet l’adresse IP du visiteur au service de cartes (Google Maps ou le serveur de tuiles) et peut déposer des cookies ; pour les visiteurs de l’UE, cela exige leur consentement. Désactivé : la carte attend le consentement aux médias intégrés. Activé : elle est sur la page tout de suite, dans ce bloc seulement — à vos risques.',
+    ],
 ];

@@ -191,6 +191,49 @@ describe('background video', () => {
     window.webx.unmount()
     expect(video.playing).toBe(false)
   })
+
+  it('in a slider plays only while its slide is the one shown', async () => {
+    // The fade effect: every slide on the same spot, the ones behind transparent — on screen to
+    // the observer all the same.
+    await start(
+      `<div class="webx-slider__track is-ready">
+        <div class="webx-slider__slide webx-slider__slide--fade is-active">${page}</div>
+        <div class="webx-slider__slide webx-slider__slide--fade is-next">${page}</div>
+      </div>`,
+      'video',
+    )
+    const [front, behind] = document.querySelectorAll('video')
+    const [first, second] = document.querySelectorAll('.webx-slider__slide')
+    watched.forEach((observer) => observer.show())
+    expect(front.playing).toBe(true)
+    expect(behind.playing).toBeUndefined()
+
+    // The slider turns: the classes move, and the videos with them.
+    first.classList.replace('is-active', 'is-prev')
+    second.classList.replace('is-next', 'is-active')
+    await Promise.resolve()
+    expect(front.playing).toBe(false)
+    expect(behind.playing).toBe(true)
+  })
+
+  it('in a sliding strip plays in every slide in view, and in a strip the script has not taken', async () => {
+    await start(
+      `<div class="webx-slider__track is-ready">
+        <div class="webx-slider__slide is-active is-visible">${page}</div>
+        <div class="webx-slider__slide is-visible">${page}</div>
+        <div class="webx-slider__slide">${page}</div>
+      </div>
+      <div class="webx-slider__track"><div class="webx-slider__slide">${page}</div></div>`,
+      'video',
+    )
+    watched.forEach((observer) => observer.show())
+    expect([...document.querySelectorAll('video')].map((video) => video.playing === true)).toEqual([
+      true,
+      true,
+      false,
+      true,
+    ])
+  })
 })
 
 describe('counter', () => {

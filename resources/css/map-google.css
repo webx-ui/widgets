@@ -1,0 +1,6 @@
+/*
+ * The map on Google Maps (spec §11.1): the frame, the place and the notice are the map's own —
+ * imported here, so a page with Google's map loads one stylesheet and no Leaflet.
+ */
+
+@import './map.css';

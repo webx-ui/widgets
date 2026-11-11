@@ -91,6 +91,7 @@ export function slider(root) {
   const prev = root.querySelector('.webx-slider__prev')
   const next = root.querySelector('.webx-slider__next')
   const bullets = root.querySelector('.webx-slider__pagination')
+  const counter = root.querySelector('.webx-slider__count')
   const pause = root.querySelector('.webx-slider__pause')
   const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
   const fade = config.effect === 'fade'
@@ -227,6 +228,23 @@ export function slider(root) {
   swiper.on('slideChange', current)
   current()
 
+  // `pagination="fraction"`: the counter "2/6" follows the slide in view. `realIndex` is the slide's
+  // own number in a loop; the copies of a running strip are not counted — they repeat a slide.
+  // A counter with nothing to move (every slide in view) is hidden like the dots are.
+  const counted = () => {
+    if (!counter || slides.length === 0) return
+    const now = counter.querySelector('.webx-slider__current')
+    const total = counter.querySelector('.webx-slider__total')
+    if (now) now.textContent = String((swiper.realIndex % slides.length) + 1)
+    if (total) total.textContent = String(slides.length)
+    counter.classList.toggle('is-locked', swiper.isLocked === true)
+  }
+  swiper.on('realIndexChange', counted)
+  swiper.on('slideChange', counted)
+  swiper.on('lock', counted)
+  swiper.on('unlock', counted)
+  counted()
+
   // Autoplay (WCAG 2.2.2): a pause button always, and a stop while the pointer or the focus is
   // inside. With reduced motion it does not start — the button offers to.
   let stopped = !autoplay || reduced
@@ -319,6 +337,7 @@ export function slider(root) {
     root.classList.remove('is-ready')
     track.classList.remove('is-ready')
     if (controls) controls.hidden = true
+    counter?.classList.remove('is-locked')
   }
 }
 

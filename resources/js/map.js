@@ -16,6 +16,8 @@
  * finger pans; a press anywhere else puts it back to sleep, and so does the mouse leaving it. A
  * wheel over the sleeping map says once, for a moment, how to wake it.
  *
+ * The notice, the waits and the sleep are the shell's (map-shell.js), shared with Google Maps.
+ *
  * Leaflet's own attribution control stays off: the server prints the provider's attribution
  * under every map, with JavaScript or without. The pin is the package's, drawn in currentColor —
  * Leaflet's default icon is a PNG the build leaves out.
@@ -24,67 +26,18 @@
 import 'leaflet/dist/leaflet.css'
 import '../css/map.css'
 import { DivIcon, Map as LeafletMap, Marker, TileLayer } from 'leaflet/dist/leaflet-src.esm.js'
+import { PIN } from './map-pin.js'
+import { coarse, settings, shell } from './map-shell.js'
 
 const webx = (window.webx ??= {})
-
-const PIN =
-  '<svg viewBox="0 0 32 40" width="32" height="40" aria-hidden="true" focusable="false"><path fill="currentColor" fill-rule="evenodd" d="M16 0C7.2 0 0 7 0 15.7 0 27.5 16 40 16 40s16-12.5 16-24.3C32 7 24.8 0 16 0Zm0 9.5a6 6 0 1 0 0 12 6 6 0 1 0 0-12Z"/></svg>'
 
 /** The Leaflet of each root, for whoever has to reach it: the tests, a theme's script. */
 export const maps = new WeakMap()
 
-function settings(root) {
-  try {
-    return JSON.parse(root.getAttribute('data-webx-map') || '{}')
-  } catch {
-    return {}
-  }
-}
-
-const coarse = () => typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches
-
-export function map(root) {
-  const config = settings(root)
-  if (!config.tiles || typeof config.lat !== 'number' || typeof config.lng !== 'number') return
-
-  const place = root.querySelector('.webx-map__place')
-  let instance = null
-  let canvas = null
-  let hint = null
-  let hintTimer = 0
-  let active = false
-  let watcher = null
-  let resizer = null
-
-  // A finger pans the page until the map is woken; a mouse may drag it at once — dragging is no scroll.
-  const handlers = () =>
-    instance
-      ? [instance.scrollWheelZoom, ...(coarse() ? [instance.dragging, instance.touchZoom] : [])]
-      : []
-
-  const wake = () => {
-    if (!instance || active) return
-    active = true
-    handlers().forEach((handler) => handler.enable())
-    root.classList.add('is-active')
-    hint?.classList.remove('is-visible')
-  }
-
-  const sleep = () => {
-    if (!instance || !active) return
-    active = false
-    handlers().forEach((handler) => handler.disable())
-    root.classList.remove('is-active')
-  }
-
-  const build = () => {
-    if (instance) return
-    canvas = document.createElement('div')
-    canvas.className = 'webx-map__canvas'
-    root.prepend(canvas)
-
+function leaflet(root) {
+  return (canvas, config, { wake }) => {
     const touch = coarse()
-    instance = new LeafletMap(canvas, {
+    const instance = new LeafletMap(canvas, {
       center: [config.lat, config.lng],
       zoom: config.zoom ?? 15,
       maxZoom: config.maxZoom ?? 19,
@@ -110,111 +63,32 @@ export function map(root) {
     }
 
     instance.on('click focus', wake)
-    if (place) place.hidden = true
-    root.classList.add('is-loaded')
     maps.set(root, instance)
 
-    // Leaflet follows the window; the frame may change with the column alone.
-    if (typeof ResizeObserver === 'function') {
-      resizer = new ResizeObserver(() => instance?.invalidateSize())
-      resizer.observe(root)
-    }
-  }
+    // A finger pans the page until the map is woken; a mouse may drag it at once — dragging is no scroll.
+    const handlers = () => [
+      instance.scrollWheelZoom,
+      ...(coarse() ? [instance.dragging, instance.touchZoom] : []),
+    ]
 
-  // Near the screen, or at once where nothing tells when it is.
-  const load = () => {
-    if (instance || watcher) return
-    if (typeof IntersectionObserver !== 'function') return build()
-    watcher = new IntersectionObserver(
-      (entries) => {
-        if (!entries.some((entry) => entry.isIntersecting)) return
-        watcher.disconnect()
-        watcher = null
-        build()
+    return {
+      wake: () => handlers().forEach((handler) => handler.enable()),
+      sleep: () => handlers().forEach((handler) => handler.disable()),
+      resize: () => instance.invalidateSize(),
+      remove: () => {
+        // Leaflet's listeners on the window and the document go with its instance.
+        instance.remove()
+        maps.delete(root)
       },
-      { rootMargin: '200px' },
-    )
-    watcher.observe(root)
-  }
-
-  const unblock = () => {
-    root.classList.remove('is-blocked')
-    root.querySelector('.webx-map__notice')?.remove()
-    root.querySelector('.webx-map__actions')?.remove()
-  }
-
-  const onClick = (event) => {
-    const target = event.target instanceof Element ? event.target : null
-    if (target?.closest('[data-webx-map-load]')) {
-      unblock()
-      build()
-    } else if (target?.closest('[data-webx-map-always]')) {
-      // Without the banner's script there is no consent to give: this one loads all the same.
-      if (webx.consent?.set) webx.consent.set([...webx.consent.categories, 'media'])
-      unblock()
-      build()
     }
   }
+}
 
-  const onConsent = (event) => {
-    if (!event.detail?.categories?.includes('media')) return
-    unblock()
-    load()
-  }
+export function map(root) {
+  const config = settings(root)
+  if (!config.tiles || typeof config.lat !== 'number' || typeof config.lng !== 'number') return
 
-  const onWheel = () => {
-    if (!instance || active) return
-    if (!hint) {
-      hint = document.createElement('p')
-      hint.className = 'webx-map__hint'
-      hint.setAttribute('aria-hidden', 'true')
-      hint.textContent = config.hint || ''
-      root.append(hint)
-    }
-    hint.classList.add('is-visible')
-    clearTimeout(hintTimer)
-    hintTimer = setTimeout(() => hint?.classList.remove('is-visible'), 1500)
-  }
-
-  const onPress = (event) => {
-    if (!(event.target instanceof Node) || !root.contains(event.target)) sleep()
-  }
-
-  root.addEventListener('click', onClick)
-  root.addEventListener('wheel', onWheel, { passive: true })
-  root.addEventListener('mouseleave', sleep)
-  document.addEventListener('pointerdown', onPress)
-  document.addEventListener('webx:consent', onConsent)
-  root.classList.add('is-ready')
-
-  if (
-    config.consent === false ||
-    !root.classList.contains('is-blocked') ||
-    webx.consent?.has?.('media')
-  ) {
-    unblock()
-    load()
-  }
-
-  return () => {
-    root.removeEventListener('click', onClick)
-    root.removeEventListener('wheel', onWheel)
-    root.removeEventListener('mouseleave', sleep)
-    document.removeEventListener('pointerdown', onPress)
-    document.removeEventListener('webx:consent', onConsent)
-    watcher?.disconnect()
-    resizer?.disconnect()
-    clearTimeout(hintTimer)
-    // Leaflet's listeners on the window and the document go with its instance.
-    instance?.remove()
-    canvas?.remove()
-    hint?.remove()
-    maps.delete(root)
-    instance = canvas = hint = watcher = resizer = null
-    active = false
-    if (place) place.hidden = false
-    root.classList.remove('is-ready', 'is-loaded', 'is-active')
-  }
+  return shell(root, config, leaflet(root))
 }
 
 webx.widget?.('map', '[data-webx-map]', map)

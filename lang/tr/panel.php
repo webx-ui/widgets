@@ -38,4 +38,18 @@ return [
         'managed' => 'Sayfada görünür',
         'invisible-run' => 'Görünmez, gönderirken',
     ],
+    'map' => [
+        'tab' => 'Harita',
+        'provider' => 'Harita hizmeti',
+        'provider-help' => 'Sitenin gösterdiği harita: OpenStreetMap anahtar istemez, Google Maps sitenin bir tarayıcı anahtarını ister. Haritaların sormadan yüklenmesi ayarlanmadıysa ikisi de ziyaretçi gömülü medyaya onay verdikten sonra yüklenir.',
+        'tiles' => 'OpenStreetMap',
+        'google' => 'Google Maps',
+        'key' => 'Google Maps API anahtarı',
+        'key-help' => 'Maps JavaScript API için bir tarayıcı anahtarı. Her ziyaretçi onu sayfada görür; bu yüzden Google Cloud konsolunda sitenin alan adlarıyla (HTTP yönlendirenler) ve Maps JavaScript API ile sınırlayın.',
+        'map-id' => 'Harita kimliği',
+        'map-id-help' => 'İsteğe bağlı: Google Cloud konsolundan bir harita kimliği, iğneyi gelişmiş işaretçi olarak gösterir ve haritaya onun için hazırlanan stili verir. Boş: Google\'ın alışılmış haritası.',
+        'no-key' => 'Google Maps seçili ama anahtar yok: ziyaretçiler harita yerine adresi ve Google Maps bağlantısını görür.',
+        'at-once' => 'Haritayı onay olmadan göster',
+        'at-once-help' => 'Harita yüklenirken ziyaretçinin IP adresini harita hizmetine (Google Maps veya karo sunucusu) iletir ve çerez bırakabilir; AB’den gelen ziyaretçiler için bu, onların onayını gerektirir. Kapalı: harita gömülü medya onayını bekler. Açık: harita yalnızca bu blokta, hemen sayfada olur — sorumluluk sizdedir.',
+    ],
 ];

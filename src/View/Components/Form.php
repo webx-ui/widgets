@@ -31,6 +31,12 @@ use WebxUi\Widgets\Forms\FormRules;
  * `again` — the thank-you takes the place of the fields, with a button under it that brings them
  * back empty, the focus on the first (`webx-form__again`, its words `:again-label`). Without
  * JavaScript it is a link to the same page, which comes back without the answer.
+ *
+ * `steps` — the fields stand in `<x-webx-form.step>`s (FORM_STEPS §3): one at a time with an
+ * indicator, «Next» checking the step and «Back» checking nothing (`dist/steps.js`, claimed only
+ * here: a flat form does not pay for it). `:check` — the server's door that checks a step without
+ * taking anything (`webx_step` = the step's name; 204 or a 422), else the browser's checks alone.
+ * Without JavaScript the steps are fieldsets one under another and one button sends them all.
  */
 final class Form extends Component
 {
@@ -68,6 +74,12 @@ final class Form extends Component
         mixed $rules = null,
         public bool $again = false,
         public ?string $againLabel = null,
+        public bool $steps = false,
+        public ?string $check = null,
+        public ?string $stepsLabel = null,
+        public ?string $stepLabel = null,
+        public ?string $returnLabel = null,
+        public ?string $fixLabel = null,
     ) {
         $this->webxFormRules = match (true) {
             $rules instanceof FormRules => $rules,
@@ -94,6 +106,10 @@ final class Form extends Component
     {
         Widgets::need('form');
 
+        if ($this->steps) {
+            Widgets::need('steps');
+        }
+
         $answer = $this->answer();
 
         return view('webx-widgets::components.form', [
@@ -106,6 +122,10 @@ final class Form extends Component
                 'expired' => $this->expiredLabel ?? __('webx-widgets::widgets.form.expired'),
                 'close' => $this->closeLabel ?? __('webx-widgets::widgets.dialog.close'),
                 'again' => $this->againLabel ?? __('webx-widgets::widgets.form.again'),
+                'steps' => $this->stepsLabel ?? __('webx-widgets::widgets.form.steps.label'),
+                'step' => $this->stepLabel ?? __('webx-widgets::widgets.form.steps.step'),
+                'return' => $this->returnLabel ?? __('webx-widgets::widgets.form.steps.return'),
+                'fix' => $this->fixLabel ?? __('webx-widgets::widgets.form.steps.fix'),
             ],
             // The page itself, which comes back without what was answered: the flash is gone by
             // then. No `#id` — a link to a fragment of the same page is not a new request.

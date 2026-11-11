@@ -28,6 +28,9 @@ final class Slider extends Component
 
     public const array EFFECTS = ['slide', 'fade'];
 
+    /** What `pagination` takes besides true and false: dots, or a counter "2/6". */
+    public const array PAGINATION = ['bullets', 'fraction'];
+
     /**
      * What each variant is (§7): `cards` a strip of cards, `hero` a slide to the width that fades
      * and turns on its own, `gallery` a big picture with thumbnails, `logos` a running strip
@@ -48,7 +51,11 @@ final class Slider extends Component
 
     public bool $hasArrows;
 
+    /** Dots, one per slide. */
     public bool $hasPagination;
+
+    /** `pagination="fraction"`: the counter "current/total" in place of the dots. */
+    public bool $hasCount;
 
     public bool $hasPause;
 
@@ -57,6 +64,7 @@ final class Slider extends Component
 
     /**
      * @param  float|int|string|array<int|string, float|int|string>|null  $perView  one number, or by breakpoint: a name of {@see BREAKPOINTS} or a width in pixels
+     * @param  bool|string|null  $pagination  true or `bullets` — dots, `fraction` — a counter "2/6", false — none
      * @param  bool|int|string|null  $autoplay  milliseconds between slides; true — the variant's, or 5000; false or 0 — off
      * @param  array<string, mixed>  $options  Swiper's own settings, over everything
      */
@@ -64,7 +72,7 @@ final class Slider extends Component
         public string $variant = 'cards',
         float|int|string|array|null $perView = null,
         ?bool $arrows = null,
-        ?bool $pagination = null,
+        bool|string|null $pagination = null,
         ?bool $loop = null,
         bool|int|string|null $autoplay = null,
         ?bool $continuous = null,
@@ -94,7 +102,9 @@ final class Slider extends Component
         $delay = self::delay($autoplay, $preset['autoplay']);
 
         $this->hasArrows = $arrows ?? $preset['arrows'];
-        $this->hasPagination = $pagination ?? $preset['pagination'];
+        $paging = self::pagination($pagination, $preset['pagination']);
+        $this->hasPagination = $paging === 'bullets';
+        $this->hasCount = $paging === 'fraction';
         // Anything that moves on its own can be stopped (WCAG 2.2.2).
         $this->hasPause = $delay > 0 || $continuous;
 
@@ -172,6 +182,18 @@ final class Slider extends Component
         }
 
         return array_map(null, array_keys($views), array_values($views));
+    }
+
+    /** `bullets`, `fraction` or null — none. */
+    private static function pagination(bool|string|null $pagination, bool $preset): ?string
+    {
+        return match (true) {
+            $pagination === null => $preset ? 'bullets' : null,
+            $pagination === true, $pagination === 'true', $pagination === '' => 'bullets',
+            $pagination === false, $pagination === 'false' => null,
+            in_array($pagination, self::PAGINATION, true) => $pagination,
+            default => throw new InvalidArgumentException('<x-webx-slider pagination>: true, false or one of '.implode(', ', self::PAGINATION).", not \"{$pagination}\"."),
+        };
     }
 
     private static function delay(bool|int|string|null $autoplay, int $preset): int

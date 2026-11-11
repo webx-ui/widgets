@@ -31,6 +31,19 @@ beforeEach(() => {
       show(...els) {
         this.callback(els.map((target) => ({ target, isIntersecting: true })))
       }
+      // What a real observer says of every element right after observe(): where it stands.
+      look() {
+        this.callback(
+          [...this.els].map((target) => {
+            const rect = target.getBoundingClientRect()
+            return {
+              target,
+              isIntersecting: rect.top < window.innerHeight && rect.bottom > 0,
+              boundingClientRect: rect,
+            }
+          }),
+        )
+      }
     },
   )
   vi.stubGlobal(
@@ -82,6 +95,9 @@ describe('reveal', () => {
     <p id="below" data-webx-reveal="scale">below</p>
     <ul id="list" data-webx-reveal="stagger" data-webx-reveal-effect="fade"><li>1</li><li>2</li><li>3</li></ul>`
 
+  // The observers' first word, as the browser gives it once the page is laid out.
+  const look = () => new Set(watched).forEach((observer) => observer.look())
+
   const place = () => {
     at(document.getElementById('above'), 100)
     at(document.getElementById('below'), 2000)
@@ -95,6 +111,7 @@ describe('reveal', () => {
     delete window.webx
     vi.resetModules()
     await import('./runtime.js')
+    look()
 
     const above = document.getElementById('above')
     const below = document.getElementById('below')
@@ -118,6 +135,7 @@ describe('reveal', () => {
     delete window.webx
     vi.resetModules()
     await import('./runtime.js')
+    look()
 
     const items = Array.from(document.querySelectorAll('#list li'))
     expect(document.getElementById('list').className).toBe('')
@@ -145,14 +163,71 @@ describe('reveal', () => {
     delete window.webx
     vi.resetModules()
     await import('./runtime.js')
+    look()
     expect(document.querySelectorAll('.is-pending').length).toBe(0)
 
     reduced = false
     window.webx.unmount()
     window.webx.mount()
+    look()
     expect(document.querySelectorAll('.is-pending').length).toBe(4)
     window.webx.unmount()
     expect(document.querySelectorAll('.webx-reveal, .is-pending').length).toBe(0)
+  })
+
+  it('brings in at once what holds the anchor of a link, before the page moves to it', async () => {
+    document.body.innerHTML =
+      '<a href="#deep">Deep</a><a href="#item">Item</a><a href="/other#far">Other</a>' +
+      '<section id="holder" data-webx-reveal><p id="deep">deep</p></section>' +
+      '<ul id="list" data-webx-reveal="stagger"><li><span id="item">1</span></li><li>2</li></ul>' +
+      '<div id="far-holder" data-webx-reveal><p id="far">far</p></div>'
+    at(document.getElementById('holder'), 2000)
+    at(document.getElementById('far-holder'), 4000)
+    document.querySelectorAll('#list li').forEach((li, i) => at(li, 3000 + i * 50))
+    delete window.webx
+    vi.resetModules()
+    await import('./runtime.js')
+    look()
+    expect(document.querySelectorAll('.is-pending').length).toBe(4)
+
+    // Who measures the way — the browser, the glide — listens after the reveal, which captures.
+    let seen = null
+    const follow = (event) => {
+      seen = document.getElementById('holder').className
+      event.preventDefault()
+    }
+    document.addEventListener('click', follow)
+    const [deep, item, other] = document.querySelectorAll('a')
+    deep.click()
+    expect(seen).toBe('')
+    const holder = document.getElementById('holder')
+    // Not brought in a second time when it scrolls into view.
+    expect(watched.some((o) => o.els.has(holder))).toBe(false)
+
+    item.click()
+    const [first, second] = document.querySelectorAll('#list li')
+    expect(first.className).toBe('')
+    expect(second.classList.contains('is-pending')).toBe(true)
+
+    // A link to another page leaves this one as it is.
+    other.click()
+    expect(document.getElementById('far-holder').classList.contains('is-pending')).toBe(true)
+    document.removeEventListener('click', follow)
+  })
+
+  it('leaves alone what holds the anchor of the address the page opens with', async () => {
+    history.replaceState(null, '', '#below')
+    document.body.innerHTML = page
+    place()
+    delete window.webx
+    vi.resetModules()
+    await import('./runtime.js')
+    look()
+    history.replaceState(null, '', location.pathname)
+
+    // The browser goes to it after the first word: lowered, it would end up under the header.
+    expect(document.getElementById('below').className).toBe('')
+    expect(document.querySelectorAll('#list .is-pending').length).toBe(3)
   })
 
   it('shows everything before printing', async () => {
@@ -161,9 +236,145 @@ describe('reveal', () => {
     delete window.webx
     vi.resetModules()
     await import('./runtime.js')
+    look()
     expect(document.querySelectorAll('.is-pending').length).toBe(4)
     window.dispatchEvent(new Event('beforeprint'))
     expect(document.querySelectorAll('.is-pending').length).toBe(0)
+  })
+})
+
+describe('parallax', () => {
+  const page = `<section id="frame"><img id="picture" data-webx-parallax src="/a.jpg" alt=""></section>`
+  let frames = []
+
+  const run = () => {
+    const queued = frames
+    frames = []
+    queued.forEach((callback) => callback())
+  }
+
+  async function load(supports) {
+    frames = []
+    vi.stubGlobal('CSS', { supports: (query) => supports && query.includes('view-timeline') })
+    vi.stubGlobal('requestAnimationFrame', (callback) => frames.push(callback))
+    vi.stubGlobal('cancelAnimationFrame', () => {})
+    vi.stubGlobal('innerHeight', 800)
+    await start(page)
+    return document.getElementById('picture')
+  }
+
+  it('leaves the motion to the stylesheet where the browser has scroll-driven animations', async () => {
+    const picture = await load(true)
+    const frame = document.getElementById('frame')
+
+    expect(picture.className).toBe('webx-parallax')
+    // The timeline is the frame's: `view()` of the picture would follow the frame that crops it.
+    expect(frame.className).toBe('webx-parallax-frame')
+    // No observer, no frame asked for: the compositor does it.
+    expect(watched.length).toBe(0)
+    window.dispatchEvent(new Event('scroll'))
+    expect(frames.length).toBe(0)
+
+    window.webx.unmount()
+    expect(picture.className).toBe('')
+    expect(frame.className).toBe('')
+  })
+
+  it('makes a picture placed absolutely taller for its overscan, and leaves one in the flow to be scaled', async () => {
+    vi.stubGlobal('CSS', { supports: () => false })
+    vi.stubGlobal('requestAnimationFrame', (callback) => frames.push(callback))
+    vi.stubGlobal('cancelAnimationFrame', () => {})
+    await start(
+      '<section><img id="placed" style="position: absolute" data-webx-parallax="strong" src="/a.jpg" alt=""></section><section><img id="flow" data-webx-parallax src="/b.jpg" alt=""></section>',
+    )
+    const placed = document.getElementById('placed')
+    const flow = document.getElementById('flow')
+
+    expect(placed.className).toBe('webx-parallax webx-parallax--grown webx-parallax--script')
+    expect(flow.className).toBe('webx-parallax webx-parallax--script')
+    // The strength is the stylesheet's to read: the script leaves the value as it was written.
+    expect(placed.getAttribute('data-webx-parallax')).toBe('strong')
+
+    window.webx.unmount()
+    expect(placed.className).toBe('')
+    expect(flow.className).toBe('')
+  })
+
+  it('names the timeline on the outermost frame that crops, and falls back where it is taller', async () => {
+    vi.stubGlobal('CSS', { supports: () => true })
+    vi.stubGlobal('innerHeight', 800)
+    // jsdom reads the longhand only; a browser computes it from the shorthand as well.
+    const slider =
+      '<div id="viewport" style="overflow-y: hidden"><div id="slide" style="overflow-y: hidden"><img id="a" data-webx-parallax src="/a.jpg" alt=""></div><div id="other" style="overflow-y: hidden"><img id="b" data-webx-parallax src="/b.jpg" alt=""></div></div>'
+    await start(slider)
+
+    // Two slides, one viewport: it keeps the name until the last picture lets go.
+    const viewport = document.getElementById('viewport')
+    expect(viewport.className).toBe('webx-parallax-frame')
+    expect(document.getElementById('slide').className).toBe('')
+    window.webx.unmount(document.getElementById('slide'))
+    expect(viewport.className).toBe('webx-parallax-frame')
+    window.webx.unmount()
+    expect(viewport.className).toBe('')
+
+    // A cropping page wrapper taller than the frame: no timeline follows the frame, the script does.
+    document.body.innerHTML =
+      '<div id="page" style="overflow-y: hidden"><section id="frame" style="overflow-y: hidden"><img id="c" data-webx-parallax src="/c.jpg" alt=""></section></div>'
+    at(document.getElementById('page'), 0, 3000)
+    at(document.getElementById('frame'), 400, 500)
+    window.webx.mount()
+    expect(document.getElementById('c').classList.contains('webx-parallax--script')).toBe(true)
+    expect(document.getElementById('page').className).toBe('')
+  })
+
+  it('without them, writes where the frame is on its way across the screen, only while it is seen', async () => {
+    const picture = await load(false)
+    const frame = document.getElementById('frame')
+
+    expect(picture.classList.contains('webx-parallax--script')).toBe(true)
+    // The frame is measured, not the picture: its box carries the shift.
+    const observer = watched.find((o) => o.els.has(frame))
+    expect(observer).toBeTruthy()
+
+    // Off the screen: a scroll asks for nothing.
+    observer.callback([{ target: frame, isIntersecting: false }])
+    window.dispatchEvent(new Event('scroll'))
+    expect(frames.length).toBe(0)
+
+    // Its top at the bottom of the screen: the start of the way.
+    at(frame, 800, 400)
+    observer.callback([{ target: frame, isIntersecting: true }])
+    run()
+    expect(picture.style.getPropertyValue('--webx-parallax-progress')).toBe('0.0000')
+
+    // Halfway: the frame's middle at the middle of the screen.
+    at(frame, 200, 400)
+    window.dispatchEvent(new Event('scroll'))
+    window.dispatchEvent(new Event('scroll'))
+    // Two scrolls in one frame are one measure.
+    expect(frames.length).toBe(1)
+    run()
+    expect(picture.style.getPropertyValue('--webx-parallax-progress')).toBe('0.5000')
+
+    // Gone over the top: the end, and no further.
+    at(frame, -900, 400)
+    window.dispatchEvent(new Event('scroll'))
+    run()
+    expect(picture.style.getPropertyValue('--webx-parallax-progress')).toBe('1.0000')
+
+    window.webx.unmount()
+    expect(picture.className).toBe('')
+    expect(picture.style.getPropertyValue('--webx-parallax-progress')).toBe('')
+    window.dispatchEvent(new Event('scroll'))
+    expect(frames.length).toBe(0)
+  })
+
+  it('moves nothing with reduced motion', async () => {
+    reduced = true
+    const picture = await load(false)
+
+    expect(picture.className).toBe('')
+    expect(watched.length).toBe(0)
   })
 })
 
@@ -369,5 +580,141 @@ describe('share', () => {
 
     expect(document.querySelector('[data-webx-share-native]').hidden).toBe(true)
     expect(document.querySelector('.webx-share__list').hidden).toBe(false)
+  })
+})
+
+describe('overlap', () => {
+  // A hero (the pinned section) of 500px with its words, then the section that slides over it.
+  const page = `<main id="main"><style>.x{}</style><p id="gone" hidden>notice</p><section id="hero"><img src="/a.jpg" alt=""><div id="words" data-webx-overlap-fade><a id="button" href="#">Go</a></div></section><section id="over" data-webx-overlap><picture class="webx-overlap__edge" id="edge"><img class="webx-overlap__image" src="/fog.png" alt=""></picture><p>Words</p></section></main>`
+  let frames = []
+
+  const run = () => {
+    const queued = frames
+    frames = []
+    queued.forEach((callback) => callback())
+  }
+
+  const tall = (el, height) =>
+    Object.defineProperty(el, 'offsetHeight', { configurable: true, value: height })
+
+  async function load(supports) {
+    frames = []
+    vi.stubGlobal('CSS', { supports: () => supports })
+    vi.stubGlobal('requestAnimationFrame', (callback) => frames.push(callback))
+    vi.stubGlobal('cancelAnimationFrame', () => {})
+    vi.stubGlobal('innerHeight', 800)
+    document.body.innerHTML = page
+    tall(document.getElementById('hero'), 500)
+    tall(document.getElementById('over'), 600)
+    tall(document.getElementById('gone'), 40)
+    delete window.webx
+    vi.resetModules()
+    await import('./runtime.js')
+    return {
+      hero: document.getElementById('hero'),
+      over: document.getElementById('over'),
+      words: document.getElementById('words'),
+      main: document.getElementById('main'),
+      edge: document.getElementById('edge'),
+    }
+  }
+
+  it('pins the section above, past what is not shown, and leaves the motion to the stylesheet', async () => {
+    const { hero, over, words, main, edge } = await load(true)
+
+    expect(over.className).toBe('webx-overlap')
+    expect(edge.classList.contains('webx-overlap__edge--page')).toBe(true)
+    expect(main.classList.contains('webx-overlap-scope')).toBe(true)
+    // The <style> and the hidden notice are skipped: the hero is the section above.
+    expect(hero.className).toBe('webx-overlap-pinned webx-overlap-pinned--held')
+    expect(words.className).toBe('webx-overlap-fade')
+    // A screen of 800, a hero of 500, a section of 600: it stops at the top, and is covered over 500.
+    expect(hero.style.getPropertyValue('--webx-overlap-top')).toBe('0px')
+    expect(hero.style.getPropertyValue('--webx-overlap-start')).toBe('300px')
+    expect(hero.style.getPropertyValue('--webx-overlap-hold')).toBe('500px')
+    expect(hero.style.getPropertyValue('--webx-overlap-leave')).toBe('500px')
+    // One timeline, the section's, lifted to the parent the hero is in.
+    const name = hero.style.getPropertyValue('--webx-overlap-timeline')
+    expect(over.style.getPropertyValue('view-timeline')).toBe(`${name} block`)
+    expect(main.style.getPropertyValue('timeline-scope')).toBe(name)
+    expect(watched.length).toBe(0)
+
+    window.webx.unmount()
+    expect(hero.className).toBe('')
+    expect(words.className).toBe('')
+    expect(over.className).toBe('')
+    expect(main.className).toBe('')
+    expect(main.style.getPropertyValue('timeline-scope')).toBe('')
+  })
+
+  it('stops a section taller than the screen at its bottom, and covers no more than the section that comes', async () => {
+    const { hero } = await load(true)
+    tall(hero, 1200)
+    tall(document.getElementById('over'), 300)
+    resized.forEach((observer) => observer.callback([]))
+
+    expect(hero.style.getPropertyValue('--webx-overlap-top')).toBe('-400px')
+    expect(hero.style.getPropertyValue('--webx-overlap-start')).toBe('0px')
+    expect(hero.style.getPropertyValue('--webx-overlap-hold')).toBe('300px')
+    expect(hero.style.getPropertyValue('--webx-overlap-leave')).toBe('800px')
+  })
+
+  it('without scroll-driven animations, writes how far the words faded and the section went up', async () => {
+    const { hero, over, words } = await load(false)
+    expect(hero.classList.contains('webx-overlap-pinned--script')).toBe(true)
+    expect(words.classList.contains('webx-overlap-fade--script')).toBe(true)
+    const observer = watched.find((o) => o.els.has(over))
+    observer.callback([{ target: over, isIntersecting: true }])
+
+    // Its top at 500 (300 up from the bottom): the pin starts.
+    at(over, 500, 600)
+    run()
+    expect(hero.style.getPropertyValue('--webx-overlap-progress')).toBe('0.0000')
+    expect(hero.style.getPropertyValue('--webx-overlap-lift')).toBe('0.0px')
+
+    // Halfway over the hero.
+    at(over, 250, 600)
+    window.dispatchEvent(new Event('scroll'))
+    window.dispatchEvent(new Event('scroll'))
+    expect(frames.length).toBe(1)
+    run()
+    expect(hero.style.getPropertyValue('--webx-overlap-progress')).toBe('0.5000')
+
+    // Past the hold: the hero goes up with the page, as far as it is tall.
+    at(over, -100, 600)
+    window.dispatchEvent(new Event('scroll'))
+    run()
+    expect(hero.style.getPropertyValue('--webx-overlap-progress')).toBe('1.0000')
+    expect(hero.style.getPropertyValue('--webx-overlap-lift')).toBe('100.0px')
+    at(over, -900, 600)
+    window.dispatchEvent(new Event('scroll'))
+    run()
+    expect(hero.style.getPropertyValue('--webx-overlap-lift')).toBe('500.0px')
+  })
+
+  it('brings the words back when focus comes into the section above', async () => {
+    const { over } = await load(true)
+    const scrolled = []
+    vi.stubGlobal('scrollTo', (options) => scrolled.push(options.top))
+    vi.stubGlobal('scrollY', 1000)
+
+    // Before the pin: nothing to bring back.
+    at(over, 600, 600)
+    document.getElementById('button').dispatchEvent(new FocusEvent('focusin', { bubbles: true }))
+    expect(scrolled).toEqual([])
+
+    // 200 into the hold: the page goes back 200.
+    at(over, 300, 600)
+    document.getElementById('button').dispatchEvent(new FocusEvent('focusin', { bubbles: true }))
+    expect(scrolled).toEqual([800])
+  })
+
+  it('under reduced motion pins nothing, and still lays the section over the one above', async () => {
+    reduced = true
+    const { hero, over, edge } = await load(true)
+
+    expect(hero.className).toBe('')
+    expect(over.className).toBe('webx-overlap')
+    expect(edge.classList.contains('webx-overlap__edge--page')).toBe(true)
   })
 })

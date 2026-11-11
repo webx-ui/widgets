@@ -1,7 +1,7 @@
 {
   "slug": "map",
   "title": "Map",
-  "description": "A map with a pin: the main address of the Contacts settings, or coordinates of its own. The tiles wait for the visitor’s consent to media; before it, the address and a link to a map.",
+  "description": "A map: the main address of the Contacts settings, coordinates of its own with a pin, or the code of Google Maps’ “Embed a map”, which needs no key. It waits for the visitor’s consent to media; before it, the address and a link to the map.",
   "icon": null,
   "group": "media",
   "sort": 0,
@@ -30,8 +30,42 @@
           {
             "value": "coordinates",
             "label": "Coordinates"
+          },
+          {
+            "value": "embed",
+            "label": "Google Maps embed"
           }
         ]
+      },
+      "help": "Google Maps embed: in Google Maps, Share → Embed a map → Copy HTML, and paste it below. No key needed."
+    },
+    {
+      "id": "embed",
+      "type": "wx-embed",
+      "label": "Map code or link",
+      "help": "The whole <iframe …> Google gives, or its address alone: https://www.google.com/maps/embed?pb=… Only the address is kept; a code of another site is refused.",
+      "props": {
+        "source": "google-maps",
+        "rows": 4,
+        "placeholder": "<iframe src=\"https://www.google.com/maps/embed?pb=…\"></iframe>"
+      },
+      "visible": {
+        "when": "source",
+        "is": "embed"
+      }
+    },
+    {
+      "id": "link",
+      "type": "wx-input",
+      "label": "Link “Open in Google Maps”",
+      "help": "Empty: read from the code when it says where the map is — the centre of the map, or the search it shows; else no link.",
+      "props": {
+        "type": "url",
+        "placeholder": "https://maps.app.goo.gl/…"
+      },
+      "visible": {
+        "when": "source",
+        "is": "embed"
       }
     },
     {
@@ -70,24 +104,35 @@
       "id": "address",
       "type": "wx-input",
       "label": "Address",
-      "help": "Shown before the map loads and on the pin.",
+      "help": "Shown before the map loads, and on the pin of a map of coordinates.",
       "localized": true,
       "visible": {
         "when": "source",
-        "is": "coordinates"
+        "in": ["coordinates", "embed"]
       }
     },
     {
       "id": "zoom",
       "type": "wx-input-number",
       "label": "Zoom",
-      "help": "From 1, the whole world, to 19, a building; 15 is a few streets.",
+      "help": "From 1, the whole world, to 19, a building; 15 is a few streets. The code of Google Maps carries its own.",
       "default": 15,
       "props": {
         "min": 1,
         "max": 19,
         "step": 1
+      },
+      "visible": {
+        "when": "source",
+        "not": "embed"
       }
+    },
+    {
+      "id": "title",
+      "type": "wx-input",
+      "label": "Name for screen readers",
+      "help": "What a screen reader calls the map: “Map of the office”. Empty: the address, else “Map”.",
+      "localized": true
     },
     {
       "id": "height",
@@ -110,10 +155,62 @@
           }
         ]
       }
+    },
+    {
+      "id": "height_narrow",
+      "type": "wx-segmented",
+      "label": "Height on a phone",
+      "help": "In a column narrower than 36em. Same: the height above.",
+      "default": "same",
+      "props": {
+        "options": [
+          {
+            "value": "same",
+            "label": "Same"
+          },
+          {
+            "value": "small",
+            "label": "Low"
+          },
+          {
+            "value": "medium",
+            "label": "Medium"
+          },
+          {
+            "value": "large",
+            "label": "Tall"
+          }
+        ]
+      }
+    },
+    {
+      "id": "width",
+      "type": "wx-segmented",
+      "label": "Width",
+      "default": "column",
+      "props": {
+        "options": [
+          {
+            "value": "column",
+            "label": "Column"
+          },
+          {
+            "value": "bleed",
+            "label": "Edge to edge"
+          }
+        ]
+      }
+    },
+    {
+      "id": "at_once",
+      "type": "wx-switch",
+      "label": "trans::webx-widgets::panel.map.at-once",
+      "help": "trans::webx-widgets::panel.map.at-once-help",
+      "default": false
     }
   ],
-  "template": "@php\n    // The switch says where the place is; a block saved before it had a value reads the contacts, as new ones do.\n    $fromSettings = $source !== 'coordinates';\n    // What the component would refuse is not handed to it: a number off the earth is no number.\n    $lat = is_numeric($latitude) && abs((float) $latitude) <= 90 ? (float) $latitude : null;\n    $lng = is_numeric($longitude) && abs((float) $longitude) <= 180 ? (float) $longitude : null;\n    $scale = is_numeric($zoom) ? max(1, min(19, (int) round((float) $zoom))) : 15;\n    $tall = ['small' => '16em', 'medium' => '24em', 'large' => '32em'][$height] ?? '24em';\n    $place = $address ? wx_text($address)->plain() : null;\n    $contacts = $fromSettings ? \\WebxUi\\Widgets\\Contacts\\ContactsSource::get()?->primaryAddress() : null;\n    $shown = $fromSettings ? $contacts !== null : $lat !== null && $lng !== null;\n@endphp\n@if ($shown)\n<section class=\"b-map\" data-wx-block=\"map\">\n    @if ($heading)\n        <h2 class=\"b-map__heading\">{{ $heading }}</h2>\n    @endif\n    @if ($fromSettings)\n        <x-webx-map from=\"settings\" :zoom=\"$scale\" :height=\"$tall\" />\n    @else\n        <x-webx-map :lat=\"$lat\" :lng=\"$lng\" :zoom=\"$scale\" :height=\"$tall\" :address=\"$place\" />\n    @endif\n</section>\n@endif\n",
-  "styles": ".b-map {\n    container-type: inline-size;\n}\n\n.b-map__heading {\n    margin: 0 0 1em;\n}\n",
+  "template": "@php\n    // The switch says where the place is; a block saved before it had a value reads the contacts, as new ones do.\n    $mode = in_array($source, ['coordinates', 'embed'], true) ? $source : 'settings';\n    // What the component would refuse is not handed to it: a number off the earth is no number,\n    // a code that is not Google's map is no map — the field refuses it, a page written before must not break.\n    $lat = is_numeric($latitude) && abs((float) $latitude) <= 90 ? (float) $latitude : null;\n    $lng = is_numeric($longitude) && abs((float) $longitude) <= 180 ? (float) $longitude : null;\n    $frame = $mode === 'embed' && is_string($embed ?? null) ? \\WebxUi\\Widgets\\Map\\GoogleMapsEmbed::address($embed) : null;\n    $scale = is_numeric($zoom) ? max(1, min(19, (int) round((float) $zoom))) : 15;\n    $heights = ['small' => '16em', 'medium' => '24em', 'large' => '32em'];\n    $tall = $heights[$height] ?? '24em';\n    $narrow = $heights[$height_narrow ?? ''] ?? null;\n    $place = $address ? wx_text($address)->plain() : null;\n    $name = ($title ?? null) ? wx_text($title)->plain() : null;\n    $open = is_string($link ?? null) && preg_match('~^https?://~i', trim($link)) === 1 ? trim($link) : null;\n    $contacts = $mode === 'settings' ? \\WebxUi\\Widgets\\Contacts\\ContactsSource::get()?->primaryAddress() : null;\n    // On: this block does not wait for consent, whatever the site says; off — and a block saved\n    // before the switch — the site decides, which by default is to wait.\n    $free = in_array($at_once ?? null, [true, 1, '1'], true) ? false : null;\n    $shown = match ($mode) {\n        'settings' => $contacts !== null,\n        'embed' => $frame !== null,\n        default => $lat !== null && $lng !== null,\n    };\n@endphp\n@if ($shown)\n<section @class(['b-map', 'site-bleed' => ($width ?? null) === 'bleed']) data-wx-block=\"map\">\n    @if ($heading)\n        <h2 class=\"b-map__heading\">{{ $heading }}</h2>\n    @endif\n    @if ($mode === 'embed')\n        <x-webx-map :embed=\"$frame\" :height=\"$tall\" :height-narrow=\"$narrow\" :address=\"$place\" :title=\"$name\" :consent=\"$free\" :link=\"$open\" />\n    @elseif ($mode === 'settings')\n        <x-webx-map from=\"settings\" :zoom=\"$scale\" :height=\"$tall\" :height-narrow=\"$narrow\" :title=\"$name\" :consent=\"$free\" />\n    @else\n        <x-webx-map :lat=\"$lat\" :lng=\"$lng\" :zoom=\"$scale\" :height=\"$tall\" :height-narrow=\"$narrow\" :address=\"$place\" :title=\"$name\" :consent=\"$free\" />\n    @endif\n</section>\n@endif\n",
+  "styles": ".b-map {\n    container-type: inline-size;\n}\n\n.b-map__heading {\n    margin: 0 0 1em;\n}\n\n/* Edge to edge: the map to the window's sides, square; the heading keeps to the gutter. */\n.b-map.site-bleed {\n    --webx-map-radius: 0;\n}\n\n.b-map.site-bleed .b-map__heading {\n    padding-inline: var(--site-gutter);\n}\n",
   "script": null,
   "sample": {
     "heading": "Map",
@@ -122,6 +219,12 @@
     "longitude": null,
     "address": "",
     "zoom": 15,
-    "height": "medium"
+    "height": "medium",
+    "embed": "",
+    "link": "",
+    "title": "",
+    "height_narrow": "same",
+    "width": "column",
+    "at_once": false
   }
 }

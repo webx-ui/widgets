@@ -122,6 +122,11 @@ final class PageToolsTest extends TestCase
         $this->assertDoesNotMatchRegularExpression('~/(?:reveal|table|share|back-to-top)\.js~', $html);
         $this->assertContains('reveal', Package::RUNTIME);
         $this->assertStringContainsString('.webx-reveal.is-pending', (string) file_get_contents(Package::path().'/dist/runtime.css'));
+
+        // The parallax too: an attribute on a picture, no file of its own; scroll-driven where the browser can.
+        $this->assertContains('parallax', Package::RUNTIME);
+        $this->assertStringContainsString('view-timeline:--webx-parallax block', (string) file_get_contents(Package::path().'/dist/runtime.css'));
+        $this->assertStringContainsString('.webx-parallax--script', (string) file_get_contents(Package::path().'/dist/runtime.css'));
     }
 
     #[Test]

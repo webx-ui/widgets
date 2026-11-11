@@ -1,4 +1,5 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import PhotoSwipe from 'photoswipe'
 
 // jsdom lays nothing out; PhotoSwipe and Swiper read sizes and watch them.
 globalThis.ResizeObserver = class {
@@ -152,6 +153,22 @@ describe('lightbox', () => {
     expect(document.activeElement).toBe(links[1])
   })
 
+  it('pages through hidden links of its group and gives the focus back to the opener', async () => {
+    const { show } = await start(link(1) + link(2) + '<div hidden>' + link(3) + '</div>')
+    const links = document.querySelectorAll('a')
+
+    const pswp = await show(links[1])
+    expect(pswp.getNumItems()).toBe(3)
+    pswp.next()
+    expect(pswp.currIndex).toBe(2)
+
+    document.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', keyCode: 27, bubbles: true }),
+    )
+    await vi.waitFor(() => expect(viewer()).toBeNull())
+    expect(document.activeElement).toBe(links[1])
+  })
+
   it('lets PhotoSwipe go when its links are unmounted, and starts again when mounted', async () => {
     const { show } = await start('<div id="block">' + link(1) + link(2) + '</div>')
     const block = document.getElementById('block')
@@ -192,6 +209,157 @@ describe('lightbox', () => {
       expect(pswp.options.dataSource[0]).toMatchObject({ width: 900, height: 600 })
     } finally {
       globalThis.Image = Image
+    }
+  })
+
+  it('reads a frame as a width over a height, and anything else as none', async () => {
+    const { ratio } = await start('')
+
+    expect(ratio('4:3')).toBeCloseTo(4 / 3)
+    expect(ratio('16 / 9')).toBeCloseTo(16 / 9)
+    expect(ratio('1.5')).toBe(1.5)
+    for (const none of [undefined, '', 'auto', '0:1', '4:0', 'wide']) expect(ratio(none)).toBeNull()
+  })
+
+  it('fits a picture whole into a frame of the asked shape, and leaves the rest as they are', async () => {
+    const { show } = await start(
+      link(1, 'g', 'data-webx-lightbox-ratio="4:3"') +
+        // A tall picture: the frame grows sideways, not down.
+        '<a href="/tall.jpg" data-webx-lightbox="g" data-width="600" data-height="900" data-webx-lightbox-ratio="1:1"></a>' +
+        link(3),
+    )
+    const pswp = await show(document.querySelector('a'))
+    const [wide, tall, plain] = pswp.options.dataSource
+
+    // 1200×800 is 3:2, wider than 4:3: as wide, taller.
+    expect(wide).toMatchObject({ width: 1200, height: 900 })
+    expect(tall).toMatchObject({ width: 900, height: 900 })
+    expect(plain).toMatchObject({ width: 1200, height: 800, ratio: null })
+    const shown = () =>
+      pswp.currSlide.container.querySelector('img.pswp__img:not(.pswp__img--placeholder)')
+    await vi.waitFor(() => expect(shown()).not.toBeNull())
+    expect(shown().classList.contains('webx-lightbox__framed')).toBe(true)
+    // The thumbnail standing in until the picture loads is framed too (its shape — jsdom has no
+    // aspect-ratio — is measured in a browser).
+    const placeholder = pswp.currSlide.content.placeholder?.element
+    expect(placeholder.classList.contains('webx-lightbox__framed')).toBe(true)
+    // The picture paged to without a frame has no frame's background.
+    pswp.prev()
+    await vi.waitFor(() => expect(shown()).not.toBeNull())
+    expect(shown().classList.contains('webx-lightbox__framed')).toBe(false)
+  })
+
+  it('gives the stand-in thumbnail the frame before the opening zoom, not after it', async () => {
+    const { show } = await start(link(1, 'g', 'data-webx-lightbox-ratio="4:3"'))
+    // In a browser the picture is appended only after the opening zoom, and the zoom animates the
+    // thumbnail: framed only then, it would land in the thumbnail's shape and jump to the frame's.
+    // jsdom appends at once, so the thumbnail is looked at the moment the picture comes in.
+    const seen = []
+    const dispatch = PhotoSwipe.prototype.dispatch
+    const spy = vi
+      .spyOn(PhotoSwipe.prototype, 'dispatch')
+      .mockImplementation(function (name, details) {
+        if (name === 'contentAppend') {
+          const placeholder = details.content.placeholder?.element
+          seen.push(placeholder?.classList.contains('webx-lightbox__framed'))
+        }
+        return dispatch.call(this, name, details)
+      })
+    try {
+      await show(document.querySelector('a'))
+    } finally {
+      spy.mockRestore()
+    }
+    expect(seen.length).toBeGreaterThan(0)
+    // The shape too — jsdom has no aspect-ratio, it is measured in a browser.
+    expect(seen.every(Boolean)).toBe(true)
+  })
+
+  it('zooms up a thumbnail of the shape of the picture only, not a cropped one', async () => {
+    const { thumbnail } = await start('')
+    const img = (w, h, src = '/t.jpg') => ({
+      currentSrc: src,
+      naturalWidth: w,
+      naturalHeight: h,
+      getAttribute: () => src,
+    })
+    // The same shape, give or take a pixel of rounding: zoomed up while the picture loads.
+    expect(thumbnail(img(360, 240), 1200, 800)).toBe('/t.jpg')
+    expect(thumbnail(img(359, 240), 1200, 800)).toBe('/t.jpg')
+    // A square crop of a 3:2 picture would grow square and jump to 3:2: a plain box instead.
+    expect(thumbnail(img(180, 180), 1200, 800)).toBeUndefined()
+    // Nothing to compare with: taken as it is.
+    expect(thumbnail(img(0, 0), 1200, 800)).toBe('/t.jpg')
+    expect(thumbnail(img(180, 180), 0, 0)).toBe('/t.jpg')
+    expect(thumbnail(null, 1200, 800)).toBeUndefined()
+  })
+
+  it('frames a picture measured on opening once its sizes are known', async () => {
+    const Image = globalThis.Image
+    globalThis.Image = class {
+      set src(value) {
+        this.naturalWidth = 1000
+        this.naturalHeight = 1000
+        setTimeout(() => this.onload?.())
+      }
+    }
+
+    try {
+      const { show } = await start(
+        '<a href="/bare.jpg" data-webx-lightbox="" data-webx-lightbox-ratio="16:9"></a>',
+      )
+      const pswp = await show(document.querySelector('a'))
+
+      expect(pswp.options.dataSource[0]).toMatchObject({ width: 1778, height: 1000 })
+    } finally {
+      globalThis.Image = Image
+    }
+  })
+
+  it('keeps the backdrop opaque unless the token or the link says otherwise', async () => {
+    const { show } = await start(link(1) + link(2, 'h', 'data-webx-lightbox-opacity="0.85"'))
+    const [plain, own] = document.querySelectorAll('a')
+
+    expect((await show(plain)).options.bgOpacity).toBe(1)
+    expect((await show(own)).options.bgOpacity).toBe(0.85)
+
+    // What a theme sets on a section reaches its links (jsdom inherits nothing, so on the link).
+    plain.style.setProperty('--webx-lightbox-backdrop-opacity', '0.6')
+    expect((await show(plain)).options.bgOpacity).toBe(0.6)
+  })
+
+  it('leaves the page where it stood, whichever picture it closed on', async () => {
+    const { show } = await start(link(1) + link(2) + link(3) + link(4))
+    const links = document.querySelectorAll('a')
+    const focus = vi.spyOn(HTMLElement.prototype, 'focus')
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
+    let y = 500
+    Object.defineProperty(window, 'scrollY', { configurable: true, get: () => y })
+
+    try {
+      const pswp = await show(links[0])
+      pswp.next()
+      pswp.next()
+      pswp.next()
+      // Something moved the page while it was covered.
+      y = 1800
+      pswp.close()
+      await vi.waitFor(() => expect(viewer()).toBeNull())
+
+      expect(document.activeElement).toBe(links[3])
+      expect(focus).toHaveBeenLastCalledWith({ preventScroll: true })
+      expect(scrollTo).toHaveBeenCalledWith({ left: 0, top: 500, behavior: 'instant' })
+
+      // Where nothing moved, nothing is scrolled.
+      scrollTo.mockClear()
+      y = 500
+      ;(await show(links[1])).close()
+      await vi.waitFor(() => expect(viewer()).toBeNull())
+      expect(scrollTo).not.toHaveBeenCalled()
+    } finally {
+      delete window.scrollY
+      focus.mockRestore()
+      scrollTo.mockRestore()
     }
   })
 })

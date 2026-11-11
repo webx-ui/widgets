@@ -79,6 +79,24 @@ final class LightboxTest extends TestCase
     }
 
     #[Test]
+    public function a_frame_and_a_backdrop_are_said_on_the_link_and_left_out_unless_asked(): void
+    {
+        $html = Blade::render('<x-webx-lightbox src="/a.jpg" width="1200" height="800" ratio="4 / 3" opacity="0.9" />');
+        $this->assertStringContainsString('data-width="1200" data-height="800" data-webx-lightbox-ratio="4:3" data-webx-lightbox-opacity="0.9"', $html);
+
+        $this->assertStringContainsString('data-webx-lightbox-opacity="1"', Blade::render('<x-webx-lightbox src="/a.jpg" opacity="3" />'), 'held to 0…1');
+
+        foreach (['', 'auto', '0:1', 'wide'] as $none) {
+            $plain = Blade::render('<x-webx-lightbox src="/a.jpg" :ratio="$ratio" />', ['ratio' => $none]);
+            $this->assertStringNotContainsString('data-webx-lightbox-', $plain, "'{$none}' is the picture as it is");
+        }
+
+        $this->assertSame('16:9', Lightbox::ratio('16:9'));
+        $this->assertSame('1.5:1', Lightbox::ratio('1.5/1'));
+        $this->assertNull(Lightbox::ratio(null));
+    }
+
+    #[Test]
     public function a_link_to_nothing_is_a_mistake_in_the_template(): void
     {
         $this->expectException(InvalidArgumentException::class);

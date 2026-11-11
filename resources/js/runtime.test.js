@@ -139,6 +139,29 @@ describe('tabs', () => {
       true,
     )
   })
+
+  it('cross-fades with is-hidden instead of hidden, and gives that back too', async () => {
+    const webx = await start(
+      markup.replace('data-webx-tabs ', 'data-webx-tabs data-webx-tabs-transition="fade" '),
+    )
+    const tabs = [...document.querySelectorAll('[role="tab"]')]
+    const panels = [...document.querySelectorAll('[data-webx-tab]')]
+    const concealed = () => panels.map((panel) => panel.classList.contains('is-hidden'))
+
+    expect(panels.every((panel) => !panel.hidden)).toBe(true)
+    expect(concealed()).toEqual([false, true, true])
+    expect(panels[1].getAttribute('role')).toBe('tabpanel')
+    expect(document.querySelector('[data-webx-tabs]').classList.contains('is-fade')).toBe(true)
+    expect(panels.every((panel) => panel.classList.contains('is-fade'))).toBe(true)
+
+    tabs[2].click()
+    expect(concealed()).toEqual([true, true, false])
+    expect(tabs[2].getAttribute('aria-selected')).toBe('true')
+
+    webx.unmount()
+    expect(concealed()).toEqual([false, false, false])
+    expect(document.querySelectorAll('.is-fade')).toHaveLength(0)
+  })
 })
 
 describe('disclosure', () => {

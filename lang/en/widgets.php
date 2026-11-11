@@ -22,6 +22,8 @@ return [
         'reject' => 'Reject all',
         'customize' => 'Customize',
         'save' => 'Save choices',
+        'dialog_reject' => 'Reject all',
+        'dialog_accept' => 'Accept all',
         'policy' => 'Cookie policy',
         'link' => 'Cookie settings',
         'dialog' => 'Cookie settings',
@@ -79,6 +81,17 @@ return [
     'language' => [
         'label' => 'Language',
         'fallback' => 'Not translated yet: the home page in this language',
+        // Asked in the language offered, which names itself; `:language` is its own name.
+        'offer' => [
+            'question' => 'Switch to :language?',
+            'accept' => 'Yes',
+            'stay' => 'Stay',
+            'close' => 'Close',
+        ],
+    ],
+    'photos' => [
+        'label' => 'Photos',
+        'show' => 'Photo :index of :count',
     ],
     'slider' => [
         'carousel' => 'carousel',
@@ -118,7 +131,10 @@ return [
         'load' => 'Load',
         'always' => 'Always load maps',
         'open' => 'Open in maps',
+        'open_google' => 'Open in Google Maps',
         'hint' => 'Click the map to zoom with the wheel',
+        'failed' => 'The map could not be loaded.',
+        'embed_refused' => 'This is not the code of a Google Maps map. In Google Maps open Share → Embed a map, copy the HTML and paste it here — or only its address, https://www.google.com/maps/embed?pb=…',
     ],
     'table' => [
         'label' => 'Table',
@@ -183,6 +199,17 @@ return [
         'drop_file' => 'or drop a file here',
         'drop_files' => 'or drop files here',
     ],
+    // A day and a time (FORM_STEPS §6.4, §12.2): month and day names are the browser's Intl and Carbon.
+    'datetime' => [
+        'date' => 'Date',
+        'time' => 'Time',
+        'previous' => 'Previous month',
+        'next' => 'Next month',
+        'zone' => 'Times are in :zone',
+        'none' => 'No times left today',
+        'unavailable' => 'unavailable',
+        'times' => 'Times on :date',
+    ],
     'captcha' => [
         'missing' => 'Please confirm you are not a robot and send the form again.',
         'script' => 'This form checks that you are not a robot with JavaScript. Please turn it on and send the form again.',
@@ -192,6 +219,17 @@ return [
         'failed' => 'The form could not be sent. Check the connection and try again.',
         'expired' => 'The page has been open too long. Reload it and send the form again.',
         'again' => 'Send another',
+        // A form of several steps (FORM_STEPS §3, §12.2): `:current`/`:total` without plural forms.
+        'steps' => [
+            'label' => 'Steps',
+            'step' => 'Step :current of :total',
+            'next' => 'Next',
+            'back' => 'Back',
+            'return' => 'Back to step :number: :title',
+            'fix' => 'Please check step :number: :message',
+            'edit' => 'Edit',
+            'edit-field' => 'Edit: :field',
+        ],
     ],
     'suggest' => [
         'label' => 'Search',

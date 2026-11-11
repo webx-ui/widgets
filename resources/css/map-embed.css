@@ -1,0 +1,17 @@
+/*
+ * Google Maps' "Embed a map" (spec §11.2): the frame, the place and the notice are the map's own —
+ * imported here, so a page with Google's frame loads one stylesheet and no Leaflet.
+ */
+
+@import './map.css';
+
+/* Google's <iframe>, filling the frame the server reserved: nothing below moves when it comes in. */
+.webx-map__frame {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}

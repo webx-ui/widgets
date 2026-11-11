@@ -9,4 +9,6 @@
     'data-webx-lightbox' => $group,
     'data-width' => $pictureWidth,
     'data-height' => $pictureHeight,
+    'data-webx-lightbox-ratio' => $frame,
+    'data-webx-lightbox-opacity' => $backdrop,
 ], static fn ($value): bool => $value !== null)) }}>@if ($slot->isEmpty())<img class="webx-lightbox-link__image" src="{{ $preview }}" alt="{{ $text }}" loading="lazy">@else{{ $slot }}@endif</a>

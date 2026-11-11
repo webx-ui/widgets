@@ -10,6 +10,7 @@ use Illuminate\Routing\Route as LaravelRoute;
 use Illuminate\Support\Facades\Blade;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Testing\MigratesOnce;
+use WebxUi\Localization\Contracts\PageInLanguage;
 use WebxUi\Localization\LocalizationServiceProvider;
 use WebxUi\NestedSet\NestedSetServiceProvider;
 use WebxUi\Routing\Formatters\Slug;
@@ -19,6 +20,7 @@ use WebxUi\Routing\RouteType;
 use WebxUi\Routing\RouteTypes;
 use WebxUi\Routing\RoutingServiceProvider;
 use WebxUi\Themes\ThemeServiceProvider;
+use WebxUi\Widgets\Languages\LanguagePageInLanguage;
 use WebxUi\Widgets\Tests\Fixtures\Doc;
 use WebxUi\Widgets\Widgets;
 use WebxUi\Widgets\WidgetsServiceProvider;
@@ -214,6 +216,59 @@ final class LanguageSwitcherTest extends TestCase
         $this->serve('/about-us', 'en');
 
         $this->assertSame('', trim(Blade::render('<x-webx-language-switcher />')));
+    }
+
+    #[Test]
+    public function the_first_visit_is_sent_where_the_switcher_leads(): void
+    {
+        $doc = $this->doc(['en' => 'about-us', 'de' => 'ueber-uns']);
+        $this->serve('/about-us', 'en', $doc);
+        $pages = app(PageInLanguage::class);
+
+        $this->assertInstanceOf(LanguagePageInLanguage::class, $pages);
+        $this->assertSame('https://example.test/de/ueber-uns', $pages->url(app('request'), 'de'));
+        // Nothing but the home page of the language: no page of this one (ROUTING §18.1, 5).
+        $this->assertNull($pages->url(app('request'), 'pl'));
+        // The language the page is already in.
+        $this->assertNull($pages->url(app('request'), 'en'));
+        $this->assertNull($pages->url(app('request'), 'fr'));
+    }
+
+    #[Test]
+    public function the_first_visit_goes_to_an_untranslated_page_of_a_type_that_shows_it(): void
+    {
+        $this->showUntranslated();
+        $doc = $this->doc(['en' => 'about-us', 'de' => 'ueber-uns']);
+        $this->serve('/about-us', 'en', $doc);
+
+        $this->assertSame('https://example.test/pl/about-us', app(PageInLanguage::class)->url(app('request'), 'pl'));
+    }
+
+    #[Test]
+    public function the_first_visit_of_a_route_outside_the_registry_keeps_its_path(): void
+    {
+        $this->serve('/blog/feed', 'en');
+
+        $this->assertSame('https://example.test/de/blog/feed', app(PageInLanguage::class)->url(app('request'), 'de'));
+    }
+
+    #[Test]
+    public function the_first_visit_leaves_the_switcher_s_markup_as_it_was(): void
+    {
+        $doc = $this->doc(['en' => 'about-us', 'de' => 'ueber-uns']);
+        $this->serve('/about-us', 'en', $doc);
+
+        $off = Blade::render('<x-webx-language-switcher layout="list" />');
+
+        config()->set('webx-localization.first_visit.locale', 'de');
+        config()->set('webx-localization.first_visit.offer.enabled', true);
+        $on = Blade::render('<x-webx-language-switcher layout="list" />');
+
+        // Plain links on and off (decision 2 of ROUTING §18): no parameter, no `rel`, no script.
+        $this->assertSame($off, $on);
+        $this->assertStringContainsString('<a class="webx-language-switcher__link" href="https://example.test/de/ueber-uns" hreflang="de" lang="de">', $on);
+        $this->assertStringNotContainsString('webx_lang', $on);
+        $this->assertStringNotContainsString('rel=', $on);
     }
 
     #[Test]

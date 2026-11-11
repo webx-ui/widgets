@@ -22,6 +22,8 @@ Route::group(['webx_service' => true], static function (): void {
             Route::get('csrf', CsrfController::class)->name('csrf');
             Route::post('showcase', ShowcaseController::class)->name('showcase');
             Route::post('showcase/validation', [ShowcaseController::class, 'validation'])->name('showcase.validation');
+            Route::post('showcase/steps', [ShowcaseController::class, 'steps'])->name('showcase.steps');
+            Route::post('showcase/steps/check', [ShowcaseController::class, 'stepCheck'])->name('showcase.steps.check');
             Route::get('showcase/suggest', [ShowcaseController::class, 'suggest'])->name('showcase.suggest');
         });
 });

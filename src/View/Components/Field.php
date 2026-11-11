@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace WebxUi\Widgets\View\Components;
 
+use DateTimeZone;
 use Illuminate\Contracts\Support\MessageBag;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\ViewErrorBag;
 use Illuminate\View\Component;
 use Illuminate\View\ComponentAttributeBag;
@@ -29,7 +31,7 @@ use WebxUi\Widgets\Forms\FormRules;
  */
 final class Field extends Component
 {
-    public const array TYPES = ['text', 'email', 'tel', 'url', 'password', 'number', 'textarea', 'select', 'radio', 'checkbox', 'consent', 'date', 'file', 'hidden'];
+    public const array TYPES = ['text', 'email', 'tel', 'url', 'password', 'number', 'textarea', 'select', 'radio', 'checkbox', 'consent', 'date', 'datetime', 'file', 'hidden'];
 
     /**
      * What a password manager, an address book and a phone's keyboard go by. Only the type is
@@ -52,7 +54,12 @@ final class Field extends Component
 
     public ?string $message;
 
-    /** @var list<array{value: string, label: string, disabled: bool}> */
+    /** How a group of radios or ticks is drawn (FORM_STEPS §5): a list, or cards with words and a picture. */
+    public const array VIEWS = ['list', 'cards'];
+
+    /**
+     * @var list<array{value: string, label: string, disabled: bool, description: ?string, image: ?array{src: string, srcset: ?string, width: ?int, height: ?int}}>
+     */
     public array $options = [];
 
     /**
@@ -64,7 +71,13 @@ final class Field extends Component
     /** The page came back from another of its forms: what is in the session is not this field's. */
     private bool $foreign = false;
 
-    /** @param  array<array-key, mixed>  $choices  `value => label`, or a list of `['value', 'label', 'disabled']` */
+    /**
+     * @param  array<array-key, mixed>  $choices  `value => label`, or a list of `['value', 'label', 'disabled', 'description', 'image']`
+     *                                            — the last two drawn by `view="cards"` only; `image` an address or `['src', 'srcset', 'width', 'height']`
+     * @param  array<string, list<string>>|null  $when
+     * @param  array<string, list<string>>|null  $unless
+     * @param  list<int|string>|null  $weekdays
+     */
     public function __construct(
         public string $name,
         public string $type = 'text',
@@ -105,6 +118,33 @@ final class Field extends Component
         public ?string $dropLabel = null,
         mixed $rules = null,
         public bool $mask = false,
+        // When the field is shown (FORM_STEPS §4): `{ "<name of a field>": ["<value>", …] }` by the
+        // validator's names of the form's fields; form.js hides it, and the server ignores its answer.
+        public ?array $when = null,
+        public ?array $unless = null,
+        // The line a page without JavaScript shows under it: "If chosen: …".
+        public ?string $condition = null,
+        // A group of radios or ticks as cards (FORM_STEPS §5.2): the same inputs inside, a choice's
+        // description and picture beside its label. `columns` (1–4) is how many to a row where the
+        // form has the room; on a narrow one they stand one under another anyway.
+        public string $view = 'list',
+        public ?int $columns = null,
+        // A day and a time (FORM_STEPS §6.4), `type="datetime"`: `step` is minutes of the list of
+        // times, `from`–`to` the day's hours (the last time a step before `to`), `weekdays` the ISO
+        // days offered (none — all), `timezone` the one the times are in — the site's, never the
+        // visitor's. Two parts are sent: `<name>[date]` and `<name>[time]`.
+        public ?string $from = null,
+        public ?string $to = null,
+        public ?array $weekdays = null,
+        public ?string $timezone = null,
+        public ?string $timezoneLabel = null,
+        public ?string $dateLabel = null,
+        public ?string $timeLabel = null,
+        public ?string $previousMonthLabel = null,
+        public ?string $nextMonthLabel = null,
+        public ?string $noTimesLabel = null,
+        public ?string $unavailableLabel = null,
+        public ?string $timesLabel = null,
     ) {
         if (! in_array($type, self::TYPES, true)) {
             throw new InvalidArgumentException("<x-webx-field type=\"{$type}\">: one of ".implode(', ', self::TYPES).'.');
@@ -116,11 +156,23 @@ final class Field extends Component
             throw new InvalidArgumentException('<x-webx-field>: a name is required — it is what the value and the error are found by.');
         }
 
+        if (! in_array($view, self::VIEWS, true)) {
+            throw new InvalidArgumentException("<x-webx-field view=\"{$view}\">: one of ".implode(', ', self::VIEWS).'.');
+        }
+
         foreach ($choices as $choice => $text) {
             $this->options[] = is_array($text)
-                ? ['value' => (string) ($text['value'] ?? ''), 'label' => (string) ($text['label'] ?? $text['value'] ?? ''), 'disabled' => (bool) ($text['disabled'] ?? false)]
-                : ['value' => (string) $choice, 'label' => (string) $text, 'disabled' => false];
+                ? [
+                    'value' => (string) ($text['value'] ?? ''),
+                    'label' => (string) ($text['label'] ?? $text['value'] ?? ''),
+                    'disabled' => (bool) ($text['disabled'] ?? false),
+                    'description' => is_scalar($text['description'] ?? null) && trim((string) $text['description']) !== '' ? (string) $text['description'] : null,
+                    'image' => self::imageOf($text['image'] ?? null),
+                ]
+                : ['value' => (string) $choice, 'label' => (string) $text, 'disabled' => false, 'description' => null, 'image' => null];
         }
+
+        $this->columns = $columns === null ? null : max(1, min(4, $columns));
 
         if (in_array($type, ['select', 'radio'], true) && $this->options === []) {
             throw new InvalidArgumentException("<x-webx-field type=\"{$type}\" name=\"{$name}\">: :choices — there is nothing to choose from.");
@@ -210,10 +262,119 @@ final class Field extends Component
         return array_shift($parts).implode('', array_map(static fn (string $part): string => "[{$part}]", $parts));
     }
 
-    /** A group of radios or ticks: a `<fieldset>`, its label the `<legend>`. */
+    /** A group of radios or ticks, a day and a time: a `<fieldset>`, its label the `<legend>`. */
     public function grouped(): bool
     {
-        return $this->type === 'radio' || ($this->type === 'checkbox' && $this->options !== []);
+        return $this->type === 'radio' || $this->type === 'datetime' || ($this->type === 'checkbox' && $this->options !== []);
+    }
+
+    /**
+     * What `type="datetime"` draws and its script reads (FORM_STEPS §6.4): the grid of a day as
+     * minutes, the days of the week, the zone, the times as the list shows them, what was chosen,
+     * and «today» in the zone as the page was printed — the `min` of the date without the script.
+     * The script counts «today» again: a page cached whole would keep yesterday's.
+     *
+     * @return array{step: int, from: int, to: int, weekdays: list<int>, zone: string, zoneLabel: string, times: list<array{value: string, label: string}>, date: string, time: string, today: string}
+     */
+    public function moment(): array
+    {
+        $clock = static function (?string $value, string $default): int {
+            $value = is_string($value) && preg_match('/^(\d{1,2}):(\d{2})$/', trim($value), $match) === 1 ? $match : null;
+
+            return $value === null ? (int) substr($default, 0, 2) * 60 + (int) substr($default, 3) : (int) $value[1] * 60 + (int) $value[2];
+        };
+        $step = is_numeric($this->step) && (int) $this->step > 0 ? (int) $this->step : 30;
+        $from = $clock($this->from, '09:00');
+        $to = $clock($this->to, '17:00');
+        $weekdays = array_values(array_unique(array_filter(array_map('intval', $this->weekdays ?? []), static fn (int $day): bool => $day >= 1 && $day <= 7)));
+        sort($weekdays);
+        $zone = $this->zone();
+        $times = [];
+
+        for ($at = $from; $at + $step <= $to; $at += $step) {
+            $value = sprintf('%02d:%02d', intdiv($at, 60), $at % 60);
+            $times[] = ['value' => $value, 'label' => Carbon::createFromTime(intdiv($at, 60), $at % 60)->locale(app()->getLocale())->isoFormat('LT')];
+        }
+
+        $chosen = $this->returned() ? $this->old(null) : $this->value;
+        // A page's own value may be one line, `2027-03-15 10:30`, as well as the two parts the form sends.
+        if (is_string($chosen) && preg_match('/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})/', $chosen, $parts) === 1) {
+            $chosen = ['date' => $parts[1], 'time' => $parts[2]];
+        }
+
+        $chosen = is_array($chosen) ? $chosen : [];
+        $now = Carbon::now($zone);
+        $offset = preg_replace('/^([+-])0?(\d+):00$/', '$1$2', $now->format('P')) ?? $now->format('P');
+
+        return [
+            'step' => $step,
+            'from' => $from,
+            'to' => $to,
+            'weekdays' => $weekdays === [] ? [1, 2, 3, 4, 5, 6, 7] : $weekdays,
+            'zone' => $zone,
+            'zoneLabel' => $this->timezoneLabel !== null && trim($this->timezoneLabel) !== ''
+                ? trim($this->timezoneLabel)
+                : (string) __('webx-widgets::widgets.datetime.zone', ['zone' => $zone === 'UTC' ? 'UTC' : $zone.' (UTC'.($offset === '+0' ? '' : $offset).')']),
+            'times' => $times,
+            'date' => is_string($chosen['date'] ?? null) ? $chosen['date'] : '',
+            'time' => is_string($chosen['time'] ?? null) ? $chosen['time'] : '',
+            'today' => $now->format('Y-m-d'),
+        ];
+    }
+
+    /** The zone a day and a time are in: the page's word for it, else the application's. */
+    private function zone(): string
+    {
+        foreach ([$this->timezone, config('app.timezone')] as $zone) {
+            if (is_string($zone) && ($zone === 'UTC' || in_array($zone, DateTimeZone::listIdentifiers(), true))) {
+                return $zone;
+            }
+        }
+
+        return 'UTC';
+    }
+
+    /** Drawn as cards: `view="cards"` on a group of radios or ticks; anything else keeps its own look. */
+    public function cards(): bool
+    {
+        return $this->view === 'cards' && $this->grouped();
+    }
+
+    /** The view of the control: components/field/<type>, or <type>-cards for a group drawn as cards. */
+    public function controlView(): string
+    {
+        return 'webx-widgets::components.field.'.$this->type.($this->cards() ? '-cards' : '');
+    }
+
+    /**
+     * A choice's picture as a page prints it: an address alone, or what the media library tells
+     * about the file. Anything else — a key nobody resolved, a file gone from the library — is no
+     * picture rather than a broken one.
+     *
+     * @return array{src: string, srcset: ?string, width: ?int, height: ?int}|null
+     */
+    private static function imageOf(mixed $image): ?array
+    {
+        if (is_string($image)) {
+            $image = ['src' => $image];
+        }
+
+        if (! is_array($image)) {
+            return null;
+        }
+
+        $src = $image['src'] ?? $image['url'] ?? null;
+
+        if (! is_string($src) || trim($src) === '') {
+            return null;
+        }
+
+        return [
+            'src' => trim($src),
+            'srcset' => is_string($image['srcset'] ?? null) && $image['srcset'] !== '' ? $image['srcset'] : null,
+            'width' => is_int($image['width'] ?? null) && $image['width'] > 0 ? $image['width'] : null,
+            'height' => is_int($image['height'] ?? null) && $image['height'] > 0 ? $image['height'] : null,
+        ];
     }
 
     /** One tick whose words stand beside it rather than above. */
@@ -246,6 +407,11 @@ final class Field extends Component
             Widgets::need('mask');
         }
 
+        if ($this->type === 'datetime') {
+            // The calendar and the times; without it, the date and the list it writes into.
+            Widgets::need('datetime');
+        }
+
         return view('webx-widgets::components.field', [
             'invalid' => $this->message !== null && $this->message !== '',
             'hintId' => $this->fieldId.'-hint',
@@ -263,6 +429,13 @@ final class Field extends Component
                 'files' => $this->filesLabel ?? __('webx-widgets::widgets.field.files'),
                 'remove' => $this->removeLabel ?? __('webx-widgets::widgets.field.remove'),
                 'drop' => $this->dropLabel ?? __($this->multiple ? 'webx-widgets::widgets.field.drop_files' : 'webx-widgets::widgets.field.drop_file'),
+                'date' => $this->dateLabel ?? __('webx-widgets::widgets.datetime.date'),
+                'time' => $this->timeLabel ?? __('webx-widgets::widgets.datetime.time'),
+                'previous_month' => $this->previousMonthLabel ?? __('webx-widgets::widgets.datetime.previous'),
+                'next_month' => $this->nextMonthLabel ?? __('webx-widgets::widgets.datetime.next'),
+                'no_times' => $this->noTimesLabel ?? __('webx-widgets::widgets.datetime.none'),
+                'unavailable' => $this->unavailableLabel ?? __('webx-widgets::widgets.datetime.unavailable'),
+                'times' => $this->timesLabel ?? __('webx-widgets::widgets.datetime.times'),
             ],
             'control' => fn (ComponentAttributeBag $attributes): ComponentAttributeBag => $this->control($attributes),
         ]);
@@ -281,7 +454,10 @@ final class Field extends Component
         $literal = in_array($this->type, self::LITERAL, true);
 
         $own = [
-            'required' => $this->required && ! ($this->type === 'checkbox' && $this->options !== []),
+            // A field shown only for some answers is not `required` to the browser: without the
+            // script it would stop a form that does not need it. form.js puts it back on show.
+            'required' => $this->required && ! $this->conditional() && ! ($this->type === 'checkbox' && $this->options !== []),
+            'data-webx-required' => $this->required && $this->conditional() && ! ($this->type === 'checkbox' && $this->options !== []) ? 'true' : null,
             'disabled' => $this->disabled,
             'readonly' => $this->readonly && $typed,
             'multiple' => $this->multiple && in_array($this->type, ['select', 'file'], true),
@@ -307,6 +483,27 @@ final class Field extends Component
 
         // The page's own attributes after the field's, and over them where both name one.
         return $this->grouped() ? new ComponentAttributeBag($own) : $attributes->except('class')->merge($own);
+    }
+
+    /** Shown only for some answers of the fields above it — its own condition, or its step's. */
+    public function conditional(): bool
+    {
+        return ($this->when !== null && $this->when !== []) || ($this->unless !== null && $this->unless !== [])
+            || app('view')->getConsumableComponentData(FormStep::CONDITIONAL) === true;
+    }
+
+    /** `data-webx-when` / `data-webx-unless` of the field, as JSON; nothing for a field always shown. */
+    public function conditionAttributes(): string
+    {
+        $printed = '';
+
+        foreach (['when' => $this->when, 'unless' => $this->unless] as $key => $condition) {
+            if ($condition !== null && $condition !== []) {
+                $printed .= ' data-webx-'.$key.'="'.e(json_encode($condition, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR)).'"';
+            }
+        }
+
+        return $printed;
     }
 
     /** The hint, then the error: read in the order they stand. */

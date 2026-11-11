@@ -1,0 +1,78 @@
+[
+  {
+    "op": "add",
+    "target": "tabs",
+    "node": {
+      "id": "map",
+      "type": "wx-tab",
+      "label": "trans::webx-widgets::panel.map.tab",
+      "children": [
+        {
+          "id": "map-card",
+          "type": "wx-card",
+          "children": [
+            {
+              "id": "map-provider",
+              "type": "wx-segmented",
+              "name": "map.provider",
+              "label": "trans::webx-widgets::panel.map.provider",
+              "help": "trans::webx-widgets::panel.map.provider-help",
+              "props": {
+                "options": [
+                  {
+                    "value": "tiles",
+                    "label": "trans::webx-widgets::panel.map.tiles"
+                  },
+                  {
+                    "value": "google",
+                    "label": "trans::webx-widgets::panel.map.google"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "map-google-no-key",
+              "type": "wx-alert",
+              "label": "trans::webx-widgets::panel.map.no-key",
+              "visible": {
+                "all": [
+                  { "when": "map.provider", "is": "google" },
+                  { "when": "map.google-key", "in": [null, ""] }
+                ]
+              },
+              "props": {
+                "type": "warning",
+                "variant": "soft"
+              }
+            },
+            {
+              "id": "map-google-key",
+              "type": "wx-input",
+              "name": "map.google-key",
+              "label": "trans::webx-widgets::panel.map.key",
+              "help": "trans::webx-widgets::panel.map.key-help",
+              "default": "",
+              "visible": { "when": "map.provider", "is": "google" },
+              "props": {
+                "maxlength": 200,
+                "autocomplete": "off"
+              }
+            },
+            {
+              "id": "map-google-map-id",
+              "type": "wx-input",
+              "name": "map.google-map-id",
+              "label": "trans::webx-widgets::panel.map.map-id",
+              "help": "trans::webx-widgets::panel.map.map-id-help",
+              "visible": { "when": "map.provider", "is": "google" },
+              "props": {
+                "maxlength": 100,
+                "autocomplete": "off"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

@@ -94,7 +94,7 @@ final class NoticeBannersTest extends TestCase
         $this->banner($place->getKey(), ['title' => ['en' => 'Second, never shown']]);
 
         $html = Blade::render($slot);
-        $card = ['title' => 'Open on Saturdays', 'text' => "From November\non", 'buttons' => [['label' => 'Hours', 'url' => 'http://localhost/hours', 'new_tab' => true, 'rel' => 'noopener noreferrer', 'variant' => 'link']]];
+        $card = ['title' => 'Open on Saturdays', 'text' => "From November\non", 'buttons' => [['label' => 'Hours', 'url' => 'http://localhost/hours', 'new_tab' => true, 'rel' => 'noopener noreferrer', 'download' => null, 'variant' => 'link']]];
 
         $this->assertStringNotContainsString('From the template', $html);
         $this->assertStringNotContainsString('Second', $html);

@@ -15,9 +15,9 @@
  *   the map, the panels of the widgets, and `[data-webx-scroll-native]` written by the theme.
  *
  * A link to an anchor of the same page glides to it, over the sticky header (`scroll-margin-top`,
- * `scroll-padding-top` — the header keeps the latter), and puts the anchor into the address as
- * a click would, so Back returns. A link activated from the keyboard keeps the browser's jump:
- * the focus has to go where the link points.
+ * `scroll-padding-top` — the header keeps the latter), puts the anchor into the address as
+ * a click would, so Back returns, and takes the focus there, as the browser's own jump does: Tab
+ * goes on from the anchor. A link activated from the keyboard keeps the browser's jump.
  *
  * Settings, each an attribute beside the switch or the widget's token on :root, the attribute
  * winning: `data-webx-smooth-scroll-duration` / `--webx-smooth-scroll-duration` (1.1s),
@@ -106,6 +106,19 @@ function anchorOf(link) {
   return target && !(target instanceof HTMLDialogElement) ? target : null
 }
 
+/**
+ * The focus onto the anchor without moving the page, as the browser's jump leaves it: an element
+ * that takes no focus of its own takes it for the while, `tabindex="-1"` gone again on blur.
+ */
+function focusOn(target) {
+  if (!(target instanceof HTMLElement)) return
+  if (target.tabIndex < 0 && !target.hasAttribute('tabindex')) {
+    target.setAttribute('tabindex', '-1')
+    target.addEventListener('blur', () => target.removeAttribute('tabindex'), { once: true })
+  }
+  target.focus({ preventScroll: true })
+}
+
 export function smoothScroll(el) {
   if (active || !wanted()) return
   active = true
@@ -147,6 +160,7 @@ export function smoothScroll(el) {
     // from the old place, and the anchor missed by that much.
     lenis.reset()
     lenis.scrollTo(target, { duration: options.anchorDuration, easing: ANCHOR_EASING })
+    focusOn(target)
   }
 
   // Back and Forward: the browser has put the page where it was; the glide starts from there.

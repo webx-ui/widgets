@@ -101,3 +101,23 @@ form cleaner, and the check starts only when the visitor sends it, so sending ta
 This key is half of the pair. The other half is set on the server by whoever looks after the site,
 and without it the check is drawn on the page, yet every form that uses it refuses everything sent.
 This tab gives no warning about that, so send a form yourself after saving.
+
+## map-provider
+
+Every map of the site is drawn by the service chosen here, the blocks «Map» and the contacts page
+included. OpenStreetMap works at once and needs no account. Google Maps needs a key below: until
+it has one, visitors see the address with a link to Google Maps where the map would be. Either
+service waits for the visitor to agree to «Embedded media», unless maps are set to load without
+asking on the «Cookie» tab.
+
+## map-google-key
+
+Create a key in the Google Cloud console with the Maps JavaScript API turned on and billing set up.
+The key is a browser key: every visitor can see it in the page, so restrict it there to the site's
+domains (HTTP referrers, such as `example.com/*`) and to the Maps JavaScript API alone. A key Google
+refuses shows visitors the address with the words «The map could not be loaded».
+
+## map-google-map-id
+
+Leave it empty unless you made a Map ID in the Google Cloud console. With one, the pin is drawn as
+an advanced marker and the map takes the style you gave that ID there, its dark variant included.

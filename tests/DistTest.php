@@ -45,10 +45,16 @@ final class DistTest extends PlainTestCase
     /** The map, Leaflet built in: 50 KB gzip without the tiles (§4), only where a map stands. */
     private const int MAP_BUDGET = 50 * 1024;
 
+    /** The map on Google Maps (§11.1): the shell and a loader, Google's API is Google's — 4 KB gzip. */
+    private const int MAP_GOOGLE_BUDGET = 4 * 1024;
+
+    /** Google's "Embed a map" (§11.2): the shell and an <iframe> — 3 KB gzip; the map is Google's, in its frame. */
+    private const int MAP_EMBED_BUDGET = 3 * 1024;
+
     /** Each of the small widgets of §14 with a file of its own: a table's shadows, back to top, share, counter, countdown, the notice bar. */
     private const int PAGE_TOOL_BUDGET = 2 * 1024;
 
-    /** Before and after, the table of contents, show more, the zoom and the fields of a form: 3 KB gzip each — a layout of their own as well as a few lines of script. */
+    /** Before and after, the table of contents, show more, the zoom, the fields of a form and the photos of a card: 3 KB gzip each — a layout of their own as well as a few lines of script. */
     private const int CONTENT_WIDGET_BUDGET = 3 * 1024;
 
     /** The shell of a form and, from W6.3, its checks in the browser: 8 KB gzip (§17.6), only where a form stands. */
@@ -60,6 +66,28 @@ final class DistTest extends PlainTestCase
     /** The list with a search (decision 36 of the delivery spec): 4 KB gzip, the script and its look, as the suggestions. */
     private const int SELECT_BUDGET = 4 * 1024;
 
+    /** Where the visitor came from (FORM_STEPS §8): a listener on the form's submit, loaded with a form that asks. */
+    private const int ATTRIBUTION_BUDGET = 1024;
+
+    /** A form of several steps (FORM_STEPS §3.2): 3 KB gzip of script, loaded only by <x-webx-form steps>; its look 2 KB. */
+    private const int STEPS_BUDGET = 3 * 1024;
+
+    private const int STEPS_STYLE_BUDGET = 2 * 1024;
+
+    /** The summary of a form (FORM_STEPS §7): a list built from the form, «Edit» on each row. */
+    private const int SUMMARY_BUDGET = 2 * 1024;
+
+    /** A day and a time (FORM_STEPS §6.4): the calendar and the times, 3 KB gzip of script, loaded only with such a field; its look 2 KB. */
+    private const int DATETIME_BUDGET = 3 * 1024;
+
+    private const int DATETIME_STYLE_BUDGET = 2 * 1024;
+
+    /**
+     * The offer of the first visit's language (ROUTING §18.6): a card and a cookie, loaded only where it is made.
+     * 2 KB with its stylesheet: the copies of a header printed twice and a folded menu need an observer of size.
+     */
+    private const int LANGUAGE_OFFER_BUDGET = 2048;
+
     private const array LOCALES = ['en', 'ru', 'uk', 'de', 'pl', 'fr', 'es', 'it', 'pt', 'tr'];
 
     #[Test]
@@ -69,6 +97,50 @@ final class DistTest extends PlainTestCase
         $this->assertIsArray($built);
 
         $this->assertSame(self::sources(), $built['files'] ?? null, 'resources/ changed since dist/ was built: run `npx vite build` in php/packages/widgets and commit dist/.');
+    }
+
+    #[Test]
+    public function the_language_offer_is_its_own_file_inside_its_budget(): void
+    {
+        $size = self::gzipped('language-offer.js') + self::gzipped('language-offer.css');
+
+        $this->assertLessThanOrEqual(self::LANGUAGE_OFFER_BUDGET, $size, sprintf('language-offer is %.1f KB gzip.', $size / 1024));
+    }
+
+    #[Test]
+    public function the_attribution_is_its_own_file_inside_its_budget(): void
+    {
+        $size = self::gzipped('attribution.js');
+
+        $this->assertLessThanOrEqual(self::ATTRIBUTION_BUDGET, $size, sprintf('attribution.js is %.1f KB gzip.', $size / 1024));
+    }
+
+    #[Test]
+    public function the_steps_are_their_own_file_inside_their_budget(): void
+    {
+        $script = self::gzipped('steps.js');
+        $style = self::gzipped('steps.css');
+
+        $this->assertLessThanOrEqual(self::STEPS_BUDGET, $script, sprintf('steps.js is %.1f KB gzip.', $script / 1024));
+        $this->assertLessThanOrEqual(self::STEPS_STYLE_BUDGET, $style, sprintf('steps.css is %.1f KB gzip.', $style / 1024));
+    }
+
+    #[Test]
+    public function the_summary_is_its_own_file_inside_its_budget(): void
+    {
+        $size = self::gzipped('summary.js') + self::gzipped('summary.css');
+
+        $this->assertLessThanOrEqual(self::SUMMARY_BUDGET, $size, sprintf('summary is %.1f KB gzip.', $size / 1024));
+    }
+
+    #[Test]
+    public function the_datetime_is_its_own_file_inside_its_budget(): void
+    {
+        $script = self::gzipped('datetime.js');
+        $style = self::gzipped('datetime.css');
+
+        $this->assertLessThanOrEqual(self::DATETIME_BUDGET, $script, sprintf('datetime.js is %.1f KB gzip.', $script / 1024));
+        $this->assertLessThanOrEqual(self::DATETIME_STYLE_BUDGET, $style, sprintf('datetime.css is %.1f KB gzip.', $style / 1024));
     }
 
     #[Test]
@@ -98,7 +170,7 @@ final class DistTest extends PlainTestCase
         ));
         sort($built);
 
-        $this->assertSame(['back-to-top.css', 'back-to-top.js', 'captcha.js', 'compare.css', 'compare.js', 'consent.css', 'consent.js', 'contacts.css', 'contacts.js', 'countdown.css', 'countdown.js', 'counter.css', 'counter.js', 'field.css', 'field.js', 'files.css', 'files.js', 'form.css', 'form.js', 'language-switcher.css', 'lightbox.css', 'lightbox.js', 'load-more.css', 'load-more.js', 'map.css', 'map.js', 'mask.js', 'notice-bar.css', 'notice-bar.js', 'pagination.css', 'runtime.css', 'runtime.js', 'select.css', 'select.js', 'share.css', 'share.js', 'slider.css', 'slider.js', 'smooth-scroll.css', 'smooth-scroll.js', 'sources.json', 'suggest.css', 'suggest.js', 'table.css', 'table.js', 'toc.css', 'toc.js', 'video.css', 'video.js', 'zoom.css', 'zoom.js'], $built);
+        $this->assertSame(['attribution.js', 'back-to-top.css', 'back-to-top.js', 'captcha.js', 'compare.css', 'compare.js', 'consent.css', 'consent.js', 'contacts.css', 'contacts.js', 'countdown.css', 'countdown.js', 'counter.css', 'counter.js', 'datetime.css', 'datetime.js', 'field.css', 'field.js', 'files.css', 'files.js', 'form.css', 'form.js', 'language-offer.css', 'language-offer.js', 'language-switcher.css', 'lightbox.css', 'lightbox.js', 'load-more.css', 'load-more.js', 'map-embed.css', 'map-embed.js', 'map-google.css', 'map-google.js', 'map.css', 'map.js', 'mask.js', 'notice-bar.css', 'notice-bar.js', 'pagination.css', 'photos.css', 'photos.js', 'runtime.css', 'runtime.js', 'select.css', 'select.js', 'share.css', 'share.js', 'slider.css', 'slider.js', 'smooth-scroll.css', 'smooth-scroll.js', 'sources.json', 'steps.css', 'steps.js', 'suggest.css', 'suggest.js', 'summary.css', 'summary.js', 'table.css', 'table.js', 'toc.css', 'toc.js', 'video.css', 'video.js', 'zoom.css', 'zoom.js'], $built);
     }
 
     /**
@@ -118,7 +190,7 @@ final class DistTest extends PlainTestCase
     #[Test]
     public function the_content_widgets_stay_inside_their_budgets(): void
     {
-        foreach (['compare', 'toc', 'load-more', 'zoom', 'field'] as $widget) {
+        foreach (['compare', 'toc', 'load-more', 'zoom', 'field', 'photos'] as $widget) {
             $size = self::gzipped("{$widget}.js") + self::gzipped("{$widget}.css");
 
             $this->assertLessThanOrEqual(self::CONTENT_WIDGET_BUDGET, $size, sprintf('%s is %.1f KB gzip.', $widget, $size / 1024));
@@ -258,6 +330,33 @@ final class DistTest extends PlainTestCase
         }
     }
 
+    #[Test]
+    public function the_map_on_google_is_its_own_small_file_without_leaflet(): void
+    {
+        $size = self::gzipped('map-google.js') + self::gzipped('map-google.css');
+
+        $this->assertLessThanOrEqual(self::MAP_GOOGLE_BUDGET, $size, sprintf('The map on Google is %.1f KB gzip.', $size / 1024));
+
+        // Google's API is asked for by the script, after consent; nothing of Leaflet comes with it.
+        $this->assertStringNotContainsString('leaflet', (string) file_get_contents(Widgets::path().'/dist/map-google.js'));
+        $this->assertStringNotContainsString('.leaflet-', (string) file_get_contents(Widgets::path().'/dist/map-google.css'));
+        $this->assertStringContainsString('https://maps.googleapis.com/maps/api/js', (string) file_get_contents(Widgets::path().'/dist/map-google.js'));
+    }
+
+    #[Test]
+    public function googles_embedded_map_is_its_own_small_file_without_a_library(): void
+    {
+        $size = self::gzipped('map-embed.js') + self::gzipped('map-embed.css');
+
+        $this->assertLessThanOrEqual(self::MAP_EMBED_BUDGET, $size, sprintf('The embedded map is %.1f KB gzip.', $size / 1024));
+
+        // No key, no API: Google's frame is all it asks for, and nothing of Leaflet comes with it.
+        $script = (string) file_get_contents(Widgets::path().'/dist/map-embed.js');
+        $this->assertStringNotContainsString('leaflet', $script);
+        $this->assertStringNotContainsString('maps.googleapis.com', $script);
+        $this->assertStringNotContainsString('.leaflet-', (string) file_get_contents(Widgets::path().'/dist/map-embed.css'));
+    }
+
     private static function gzipped(string $file): int
     {
         return strlen((string) gzencode((string) file_get_contents(Widgets::path().'/dist/'.$file), 9));
@@ -306,12 +405,18 @@ final class DistTest extends PlainTestCase
 
             preg_match_all('/(?:^|[;{}])\s*([^;{}@]+?)\s*\{/', $css, $rules);
 
-            // One flat class (a state or a modifier on it at most): enough to win over the prose of the theme, which is
+            // One flat class (a state or a modifier on it at most, or the state of an input inside it read
+            // by :has(), as a card does): enough to win over the prose of the theme, which is
             // all :where(), and no more than a theme matches by writing the same class later.
             foreach ($rules[1] as $selectors) {
                 foreach (array_map('trim', explode(',', $selectors)) as $selector) {
+                    // The steps of a widget's own @keyframes (the parallax's) are not rules of the page.
+                    if (preg_match('/^(?:\d+%|from|to)$/', $selector) === 1) {
+                        continue;
+                    }
+
                     $this->assertMatchesRegularExpression(
-                        '/^(?::where\(:root\)|(?:html:not\(\.webx-js\) )?\.webx-[a-z0-9_-]+(?:\.(?:is-[a-z-]+|webx-[a-z0-9_-]+--[a-z0-9-]+))?(?:\[[^\]]+\]|::?[a-z-]+)*)$/',
+                        '/^(?::where\(:root\)|(?:html:not\(\.webx-js\) )?\.webx-[a-z0-9_-]+(?:\.(?:is-[a-z-]+|webx-[a-z0-9_-]+--[a-z0-9-]+))?(?:\[[^\]]+\]|::?[a-z-]+|:has\((?::[a-z-]+|\[[^\]]+\])\))*)$/',
                         $selector,
                         "{$relative}: \"{$selector}\" — a widget's rule is one .webx-* class, with a state or a modifier at most.",
                     );

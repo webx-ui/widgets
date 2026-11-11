@@ -210,6 +210,27 @@ describe('smooth scrolling', () => {
     expect(instances[0].calls.at(-1)).toEqual(['reset'])
   })
 
+  it('takes the focus to the anchor, as the browser jump does, without moving the page', async () => {
+    await start(
+      '<a href="#prices">Prices</a><a href="#name">Name</a><h2 id="prices">Prices</h2><input id="name">',
+      { 'data-webx-smooth-scroll': '' },
+    )
+    const [prices, name] = document.querySelectorAll('a')
+    const heading = document.getElementById('prices')
+    const focus = vi.spyOn(heading, 'focus')
+
+    click(prices)
+    expect(document.activeElement).toBe(heading)
+    expect(focus).toHaveBeenCalledWith({ preventScroll: true })
+    // A heading takes no focus of its own: only for the while.
+    expect(heading.getAttribute('tabindex')).toBe('-1')
+
+    click(name)
+    expect(document.activeElement).toBe(document.getElementById('name'))
+    expect(heading.hasAttribute('tabindex')).toBe(false)
+    expect(document.getElementById('name').hasAttribute('tabindex')).toBe(false)
+  })
+
   it('leaves the browser its own way with other links and with the keyboard', async () => {
     await start(
       '<a href="#a" id="key">Key</a><a href="#a" target="_blank">New</a><a href="/other#a">Other</a>' +

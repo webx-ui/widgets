@@ -126,6 +126,15 @@ return [
         // The Cookie tab's "Maps without asking" does the same; either of the two lifts the wait.
         'consent' => true,
 
+        // Google Maps instead of Leaflet (§11.1): 'provider' => 'google' above and the browser key here —
+        // or the "Map" tab of the settings, which wins. Not a tile provider: Google's terms keep its
+        // tiles in its own script. Restrict the key to the site's domains in Google's console; the
+        // Map ID is optional and gives the pin as an advanced marker and the map's cloud style.
+        'google' => [
+            'key' => null,
+            'map_id' => null,
+        ],
+
         // "Open in maps": where the link under the address leads when the address has no link of its own.
         'open' => 'https://www.openstreetmap.org/?mlat={lat}&mlon={lng}#map={zoom}/{lat}/{lng}',
     ],

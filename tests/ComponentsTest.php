@@ -86,6 +86,18 @@ class ComponentsTest extends TestCase
         $this->assertStringContainsString('<h3 class="webx-tabs__title">Delivery</h3>', $html);
         $this->assertStringContainsString('<section data-webx-tab="" data-webx-tab-selected="" class="webx-tabs__panel">', $html);
         $this->assertStringContainsString('<h4 class="webx-tabs__title">Returns</h4>', $html);
+        $this->assertStringNotContainsString('data-webx-tabs-transition', $html, 'switching at once is the default');
+    }
+
+    #[Test]
+    public function tabs_cross_fade_only_when_asked_to(): void
+    {
+        $fade = Blade::render('<x-webx-tabs transition="fade"><x-webx-tabs.panel title="A">a</x-webx-tabs.panel></x-webx-tabs>');
+        $this->assertStringContainsString('<div data-webx-tabs="" data-webx-tabs-transition="fade" class="webx-tabs">', $fade);
+
+        // An unknown value is the default, not a class nobody styles.
+        $other = Blade::render('<x-webx-tabs transition="slide"><x-webx-tabs.panel title="A">a</x-webx-tabs.panel></x-webx-tabs>');
+        $this->assertStringNotContainsString('data-webx-tabs-transition', $other);
     }
 
     #[Test]

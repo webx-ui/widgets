@@ -15,6 +15,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use WebxUi\Admin\Help\HelpRegistry;
+use WebxUi\Admin\Screens\Embeds;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Audit\Checks\AuditChecks;
 use WebxUi\Audit\Crawl\PageReaders;
@@ -23,7 +24,9 @@ use WebxUi\Blocks\BlockOffers;
 use WebxUi\Blocks\Events\BlockDrawn;
 use WebxUi\Compositions\Compositions;
 use WebxUi\Compositions\CompositionsServiceProvider;
+use WebxUi\Localization\Contracts\PageInLanguage;
 use WebxUi\Media\MediaServiceProvider;
+use WebxUi\Routing\SiteUrl;
 use WebxUi\Themes\BottomLayers;
 use WebxUi\Themes\Contracts\HeadPart;
 use WebxUi\Widgets\Audit\BannerOff;
@@ -41,6 +44,9 @@ use WebxUi\Widgets\Audit\VideoPause;
 use WebxUi\Widgets\Audit\WaitForConsent;
 use WebxUi\Widgets\Audit\WidgetsPageReader;
 use WebxUi\Widgets\Audit\ZoomLink;
+use WebxUi\Widgets\Languages\LanguagePageInLanguage;
+use WebxUi\Widgets\Map\GoogleMapsEmbed;
+use WebxUi\Widgets\Map\GoogleMapsEmbedSource;
 use WebxUi\Widgets\Video\Posters;
 use WebxUi\Widgets\Video\VideoProviders;
 use WebxUi\Widgets\View\Components\BackToTop;
@@ -56,7 +62,9 @@ use WebxUi\Widgets\View\Components\Dialog;
 use WebxUi\Widgets\View\Components\Dropdown;
 use WebxUi\Widgets\View\Components\Field;
 use WebxUi\Widgets\View\Components\Form;
+use WebxUi\Widgets\View\Components\FormStep;
 use WebxUi\Widgets\View\Components\FormSubmit;
+use WebxUi\Widgets\View\Components\FormSummary;
 use WebxUi\Widgets\View\Components\Header;
 use WebxUi\Widgets\View\Components\HeaderNav;
 use WebxUi\Widgets\View\Components\Icon;
@@ -70,6 +78,7 @@ use WebxUi\Widgets\View\Components\NoticeBar;
 use WebxUi\Widgets\View\Components\OpeningHours;
 use WebxUi\Widgets\View\Components\Pagination;
 use WebxUi\Widgets\View\Components\Phones;
+use WebxUi\Widgets\View\Components\Photos;
 use WebxUi\Widgets\View\Components\Select;
 use WebxUi\Widgets\View\Components\Share;
 use WebxUi\Widgets\View\Components\Slide;
@@ -125,6 +134,12 @@ class WidgetsServiceProvider extends ServiceProvider
         $this->app->singleton(VideoProviders::class);
         $this->app->tag([Widgets::class], HeadPart::TAG);
 
+        // The language of the first visit sends somebody where the switcher would (ROUTING §18):
+        // over the default of `webx-ui/localization`, which knows no addresses.
+        if (interface_exists(PageInLanguage::class) && class_exists(SiteUrl::class)) {
+            $this->app->bind(PageInLanguage::class, LanguagePageInLanguage::class);
+        }
+
         $this->mergeConfigFrom(Widgets::path().'/config/webx-widgets.php', 'webx-widgets');
     }
 
@@ -144,6 +159,7 @@ class WidgetsServiceProvider extends ServiceProvider
         EncryptCookies::except(Consent::COOKIE);
 
         $this->registerConsentSettings();
+        $this->registerEmbeds();
         $this->offerBlocks();
         $this->registerAudit();
 
@@ -152,6 +168,10 @@ class WidgetsServiceProvider extends ServiceProvider
         // The scripts of the widgets for a layout without `@webxTheme` — a site without a theme
         // whose forms should still send in place. Under a theme it adds nothing.
         Blade::directive('webxWidgets', static fn (): string => Widgets::SCRIPTS);
+
+        // A section that slides over the one above it (§14.1): the attribute on its root, the edge picture inside.
+        Blade::directive('webxOverlap', static fn (string $arguments = ''): string => sprintf('<?php echo \\%s::attributes(%s); ?>', Overlap::class, trim($arguments) !== '' ? trim($arguments) : 'false'));
+        Blade::directive('webxOverlapEdge', static fn (string $arguments = ''): string => sprintf('<?php echo \\%s::edge(%s); ?>', Overlap::class, trim($arguments) !== '' ? trim($arguments) : 'false'));
 
         Blade::component('webx-dialog', Dialog::class);
         Blade::component('webx-tabs', Tabs::class);
@@ -172,6 +192,7 @@ class WidgetsServiceProvider extends ServiceProvider
         Blade::component('webx-language-switcher', LanguageSwitcher::class);
         Blade::component('webx-slider', Slider::class);
         Blade::component('webx-slide', Slide::class);
+        Blade::component('webx-photos', Photos::class);
         Blade::component('webx-lightbox', Lightbox::class);
         Blade::component('webx-video', Video::class);
         Blade::component('webx-map', Map::class);
@@ -190,6 +211,8 @@ class WidgetsServiceProvider extends ServiceProvider
         Blade::component('webx-field', Field::class);
         Blade::component('webx-form', Form::class);
         Blade::component('webx-form.submit', FormSubmit::class);
+        Blade::component('webx-form.step', FormStep::class);
+        Blade::component('webx-form.summary', FormSummary::class);
         Blade::component('webx-captcha', CaptchaField::class);
 
         // The token a cached page's form asks for again (§17.3), and the door of the showcase.
@@ -251,6 +274,8 @@ class WidgetsServiceProvider extends ServiceProvider
         $this->app->make(ScreenRegistry::class)->extend('settings.index', Widgets::path().'/resources/screens/settings.consent.json');
         // The site's captcha (`Captcha`): the provider and the site key; the secret stays in the environment.
         $this->app->make(ScreenRegistry::class)->extend('settings.index', Widgets::path().'/resources/screens/settings.captcha.json');
+        // The map's provider (§11.1): OpenStreetMap, or Google Maps with the site's browser key.
+        $this->app->make(ScreenRegistry::class)->extend('settings.index', Widgets::path().'/resources/screens/settings.map.json');
 
         // "Ask everyone again" is a switch saved with the tab: the save raises the version of
         // the policy — every answer given so far is to an older one — and turns the switch off.
@@ -272,8 +297,23 @@ class WidgetsServiceProvider extends ServiceProvider
     }
 
     /**
+     * The frames a `wx-embed` field takes, given to the panel when the site has it: Google Maps'
+     * "Embed a map" for the Map block (§11.2). Without `module-admin` there is no field to give them to.
+     */
+    private function registerEmbeds(): void
+    {
+        if (! class_exists(Embeds::class)) {
+            return;
+        }
+
+        $this->callAfterResolving(Embeds::class, static function (Embeds $embeds): void {
+            $embeds->register(GoogleMapsEmbed::SOURCE, new GoogleMapsEmbedSource);
+        });
+    }
+
+    /**
      * The blocks of §15.1 and §14 — `gallery`, `logos`, `video`, `map`, `counters`, `countdown`,
-     * `compare`, `toc` — offered to `module-blocks` when the site
+     * `compare`, `toc`, `tabs` — offered to `module-blocks` when the site
      * has it: the slider, the lightbox and the video are what they are made of, and a site would
      * otherwise put them together again in a block of its own. Offered, not installed —
      * `webx:blocks:offered --install --module=widgets` (which `webx:setup` prints) puts them on the site

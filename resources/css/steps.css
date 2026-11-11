@@ -1,0 +1,284 @@
+/*
+ * A form of several steps (FORM_STEPS §3, §12.3). Without the script the steps are fieldsets one
+ * under another, a title each, and their buttons, the count and the indicator are hidden; with it
+ * one step at a time, the indicator over it. The look is the site's tokens; the indicator's labels
+ * give way to the numbers alone where the form is narrow (its own width, not the window's).
+ */
+
+:where(:root) {
+  --webx-form-steps-size: 2rem;
+  --webx-form-steps-line: 2px;
+}
+
+.webx-form--steps {
+  container-type: inline-size;
+  scroll-margin-top: calc(var(--webx-header-height) + var(--site-space-4));
+}
+
+/* The indicator. */
+.webx-form-steps {
+  display: flex;
+  align-items: center;
+  gap: var(--site-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: none;
+}
+
+.webx-form-steps[hidden] {
+  display: none;
+}
+
+/* A step after the first carries the line before it, and the line takes the room there is. */
+.webx-form-steps__step {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: var(--site-space-2);
+  min-width: 0;
+  color: var(--site-color-text-muted);
+}
+
+/* The line before a step: up to the current one — the accent, ahead — the border. */
+.webx-form-steps__step:first-child {
+  flex: 0 1 auto;
+}
+
+.webx-form-steps__step::before {
+  content: '';
+  flex: 1 1 var(--site-space-6);
+  min-width: var(--site-space-3);
+  height: var(--webx-form-steps-line);
+  border-radius: var(--site-radius-full);
+  background: var(--site-color-border);
+}
+
+.webx-form-steps__step:first-child::before {
+  display: none;
+}
+
+.webx-form-steps__step.is-reached::before {
+  background: var(--site-color-accent);
+}
+
+.webx-form-steps__button {
+  display: flex;
+  align-items: center;
+  gap: var(--site-space-2);
+  min-width: 0;
+  min-height: 44px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.webx-form-steps__button:focus-visible {
+  border-radius: var(--site-radius-sm);
+  outline: 2px solid var(--site-color-accent);
+  outline-offset: 2px;
+}
+
+.webx-form-steps__number {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: var(--webx-form-steps-size);
+  height: var(--webx-form-steps-size);
+  border: var(--webx-form-steps-line) solid var(--site-color-border);
+  border-radius: var(--site-radius-full);
+  background: var(--site-color-bg);
+  color: var(--site-color-text-muted);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.webx-form-steps__number.is-done {
+  border-color: var(--site-color-accent);
+  color: var(--site-color-accent);
+}
+
+.webx-form-steps__number.is-current {
+  border-color: var(--site-color-accent);
+  background: var(--site-color-accent);
+  color: var(--site-color-accent-contrast);
+}
+
+.webx-form-steps__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.webx-form-steps__step.is-current {
+  color: var(--site-color-text);
+  font-weight: 600;
+}
+
+/* A step behind is a way back to it. */
+.webx-form-steps__label.is-done {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+/* Narrow: the numbers, and the label of the current step only — the count over the title says it. */
+@container (max-width: 34rem) {
+  .webx-form-steps__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .webx-form-steps__label.is-current {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: hidden;
+    clip-path: none;
+  }
+}
+
+/* A step. */
+.webx-form-step {
+  display: grid;
+  gap: var(--webx-form-gap);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.webx-form-step[hidden] {
+  display: none;
+}
+
+/* Without the script the steps stand one under another: a rule between them. */
+.webx-form-step {
+  padding-block-start: var(--webx-form-gap);
+  border-block-start: 1px solid var(--site-color-border);
+}
+
+.webx-form-step:first-of-type,
+.webx-form-step.is-current {
+  padding-block-start: 0;
+  border-block-start: 0;
+}
+
+.webx-form-step__legend {
+  display: grid;
+  gap: var(--site-space-1);
+  width: 100%;
+  margin: 0 0 var(--webx-form-gap);
+  padding: 0;
+}
+
+.webx-form-step__count {
+  color: var(--site-color-text-muted);
+  font-size: var(--site-font-size-base);
+}
+
+.webx-form-step__count[hidden] {
+  display: none;
+}
+
+.webx-form-step__title {
+  display: block;
+  margin: 0;
+  color: var(--site-color-text);
+  font-family: var(--site-font-heading);
+  font-size: var(--site-font-size-4);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.webx-form-step__title:focus {
+  outline: none;
+}
+
+.webx-form-step__title:focus-visible {
+  border-radius: var(--site-radius-sm);
+  outline: 2px solid var(--site-color-accent);
+  outline-offset: 2px;
+}
+
+.webx-form-step__hint,
+.webx-form-step__condition {
+  margin: 0;
+  color: var(--site-color-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.webx-form-step__condition[hidden] {
+  display: none;
+}
+
+.webx-form-step__fields {
+  display: grid;
+  gap: var(--webx-form-gap);
+  min-width: 0;
+}
+
+/* «Back» at the start, «Next» or the form's buttons at the end. */
+.webx-form-step__nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--site-space-3);
+}
+
+.webx-form-step__nav[hidden] {
+  display: none;
+}
+
+.webx-form-step__back {
+  min-height: var(--webx-form-button-height);
+  margin: 0 auto 0 0;
+  padding: var(--site-space-2) var(--site-space-4);
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-bg);
+  color: var(--site-color-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.webx-form-step__next {
+  min-height: var(--webx-form-button-height);
+  margin: 0;
+  padding: var(--site-space-2) var(--site-space-5);
+  border: 0;
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-accent);
+  color: var(--site-color-accent-contrast);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.webx-form-step__back[hidden],
+.webx-form-step__next[hidden],
+.webx-form__submit[hidden] {
+  display: none;
+}
+
+.webx-form-step__back:focus-visible,
+.webx-form-step__next:focus-visible {
+  outline: 2px solid var(--site-color-accent);
+  outline-offset: 2px;
+}
+
+/* Asking the server about the step: the same size, so nothing moves. */
+.webx-form-step__next[aria-disabled='true'] {
+  cursor: progress;
+  opacity: 0.7;
+}

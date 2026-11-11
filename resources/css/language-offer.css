@@ -1,0 +1,129 @@
+/*
+ * The offer of the first visit's language (ROUTING §18.6): a card over the page, under the
+ * switcher it belongs to — out of the flow, so showing it moves nothing (no layout shift). Loaded
+ * only on a page that carries one. One flat class per rule (THEMES §8).
+ */
+
+:where(:root) {
+  --webx-language-offer-bg: var(--site-color-surface);
+  --webx-language-offer-color: var(--site-color-text);
+  --webx-language-offer-border: var(--site-color-border);
+  --webx-language-offer-shadow: var(--site-shadow-md);
+  --webx-language-offer-radius: var(--site-radius-md);
+  --webx-language-offer-padding: var(--site-space-3);
+  --webx-language-offer-gap: var(--site-space-2);
+  --webx-language-offer-offset: var(--site-space-2);
+  --webx-language-offer-width: 18rem;
+  /* Under an open dropdown (20): the switcher's own list comes first. */
+  --webx-language-offer-z: 10;
+}
+
+/* The switcher becomes the card's anchor only where it carries one. */
+.webx-language-switcher--offer {
+  position: relative;
+}
+
+.webx-language-offer {
+  position: absolute;
+  inset-block-start: calc(100% + var(--webx-language-offer-offset));
+  inset-inline-end: 0;
+  z-index: var(--webx-language-offer-z);
+  box-sizing: border-box;
+  width: max-content;
+  max-width: min(var(--webx-language-offer-width), calc(100vw - 2 * var(--site-gutter)));
+  padding: var(--webx-language-offer-padding);
+  padding-inline-end: calc(var(--webx-language-offer-padding) + 32px);
+  border: 1px solid var(--webx-language-offer-border);
+  border-radius: var(--webx-language-offer-radius);
+  background: var(--webx-language-offer-bg);
+  box-shadow: var(--webx-language-offer-shadow);
+  color: var(--webx-language-offer-color);
+  font-size: var(--site-font-size-6);
+  line-height: var(--site-line-height-base);
+  white-space: normal;
+}
+
+/* No room below the switcher — the bottom of a folded menu: the card stands above it. */
+.webx-language-offer.is-above {
+  inset-block-start: auto;
+  inset-block-end: calc(100% + var(--webx-language-offer-offset));
+}
+
+.webx-language-offer[hidden] {
+  display: none;
+}
+
+.webx-language-offer__question {
+  margin: 0 0 var(--webx-language-offer-gap);
+  font-weight: 600;
+}
+
+.webx-language-offer__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--webx-language-offer-gap);
+}
+
+.webx-language-offer__accept,
+.webx-language-offer__stay {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-height: 40px;
+  padding-inline: var(--site-space-3);
+  border: 1px solid transparent;
+  border-radius: var(--site-radius-sm);
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.webx-language-offer__accept {
+  background: var(--site-color-accent);
+  color: var(--site-color-accent-contrast);
+}
+
+.webx-language-offer__stay {
+  border-color: var(--webx-language-offer-border);
+  background: transparent;
+  color: inherit;
+}
+
+.webx-language-offer__stay:hover {
+  background: var(--site-color-surface-muted);
+}
+
+.webx-language-offer__close {
+  position: absolute;
+  inset-block-start: var(--site-space-1);
+  inset-inline-end: var(--site-space-1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--site-radius-sm);
+  background: transparent;
+  color: var(--site-color-text-muted);
+  cursor: pointer;
+}
+
+.webx-language-offer__close:hover {
+  background: var(--site-color-surface-muted);
+  color: inherit;
+}
+
+.webx-language-offer__accept:focus-visible,
+.webx-language-offer__stay:focus-visible,
+.webx-language-offer__close:focus-visible {
+  outline: 2px solid var(--site-color-accent);
+  outline-offset: 2px;
+}
+
+.webx-language-offer__icon {
+  width: 16px;
+  height: 16px;
+}

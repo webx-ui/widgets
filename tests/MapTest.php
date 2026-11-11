@@ -80,7 +80,7 @@ final class MapTest extends TestCase
     {
         $html = Blade::render(self::LONDON);
 
-        $this->assertStringContainsString('style="--webx-map-height: 24rem" class="webx-map is-blocked" role="region" aria-label="Map: 1 Example Street, Sample City"', $html);
+        $this->assertStringContainsString('style="--webx-map-height: 24rem; --webx-map-height-narrow: 24rem" class="webx-map is-blocked" role="region" aria-label="Map: 1 Example Street, Sample City"', $html);
         $this->assertStringContainsString('data-webx-consent="media"', $html, 'the banner offers media wherever a map waits for it');
         $this->assertStringContainsString('data-webx-map="{&quot;lat&quot;:12.34,&quot;lng&quot;:-34.56,&quot;zoom&quot;:15,&quot;tiles&quot;:&quot;https://tile.openstreetmap.org/{z}/{x}/{y}.png&quot;,&quot;maxZoom&quot;:19,&quot;marker&quot;:&quot;1 Example Street, Sample City&quot;', $html);
         // Without JavaScript: the address and a link to the map.

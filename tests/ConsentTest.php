@@ -61,6 +61,44 @@ final class ConsentTest extends TestCase
     }
 
     #[Test]
+    public function the_dialog_buttons_have_words_of_their_own_which_a_site_translates_apart_from_the_banner(): void
+    {
+        $banner = fn (string $html): string => (string) preg_replace('/<dialog.*<\\/dialog>/s', '', $html);
+        $dialog = fn (string $html): string => preg_match('/<dialog.*<\\/dialog>/s', $html, $m) === 1 ? $m[0] : '';
+
+        // Nothing overridden: the same words as before, in the banner and in the dialog.
+        $html = (string) $this->get('/plain')->getContent();
+        foreach ([$banner($html), $dialog($html)] as $part) {
+            $this->assertStringContainsString('data-webx-consent-reject>Reject all</button>', $part);
+            $this->assertStringContainsString('data-webx-consent-accept>Accept all</button>', $part);
+        }
+        $this->assertStringContainsString('data-webx-consent-save>Save choices</button>', $dialog($html));
+
+        // The banner's words, as a site's lang/vendor/webx-widgets gives them: the dialog keeps its own.
+        $translator = app('translator');
+        __('webx-widgets::widgets.consent.accept');
+        $translator->addLines(['widgets.consent.reject' => 'Decline', 'widgets.consent.accept' => 'Accept'], 'en', 'webx-widgets');
+        $html = (string) $this->get('/plain')->getContent();
+        $this->assertStringContainsString('data-webx-consent-reject>Decline</button>', $banner($html));
+        $this->assertStringContainsString('data-webx-consent-accept>Accept</button>', $banner($html));
+        $this->assertStringContainsString('data-webx-consent-reject>Reject all</button>', $dialog($html));
+        $this->assertStringContainsString('data-webx-consent-accept>Accept all</button>', $dialog($html));
+
+        // And the dialog's: the banner keeps the words it has.
+        $translator->addLines([
+            'widgets.consent.dialog_reject' => 'Reject optional',
+            'widgets.consent.dialog_accept' => 'Accept everything',
+            'widgets.consent.save' => 'Save my choices',
+        ], 'en', 'webx-widgets');
+        $html = (string) $this->get('/plain')->getContent();
+        $this->assertStringContainsString('data-webx-consent-reject>Decline</button>', $banner($html));
+        $this->assertStringContainsString('data-webx-consent-accept>Accept</button>', $banner($html));
+        $this->assertStringContainsString('data-webx-consent-reject>Reject optional</button>', $dialog($html));
+        $this->assertStringContainsString('data-webx-consent-accept>Accept everything</button>', $dialog($html));
+        $this->assertStringContainsString('data-webx-consent-save>Save my choices</button>', $dialog($html));
+    }
+
+    #[Test]
     public function a_category_nothing_on_the_site_uses_is_not_offered_and_one_seen_once_stays_offered(): void
     {
         $plain = (string) $this->get('/plain')->getContent();

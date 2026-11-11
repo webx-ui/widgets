@@ -271,13 +271,18 @@ https://webx-ui.github.io/webx-ui/guide/forms#suggestions-while-typing.
 
 ## Blocks
 
-On a site with `webx-ui/module-blocks` and `webx-ui/module-media` the package offers eight block
+On a site with `webx-ui/module-blocks` and `webx-ui/module-media` the package offers nine block
 types — `php artisan webx:blocks:offered --install --module=widgets` installs them (`webx:setup` only
 prints the line for a dev copy; on staging and live a person runs it):
 
 - **Gallery** — pictures of the media library as a grid (as many columns as the column has room
   for, up to the number set) or as the slider's gallery with thumbnails; a click opens the picture
-  in the lightbox and pages through that block's pictures; a picture's title is its caption.
+  in the lightbox and pages through that block's pictures; a picture's title is its caption. The
+  slider has its settings: 1, 2 or 3 slides at a time (fewer in a narrow column; with more than one,
+  no thumbnails and pictures in 4:3 cells), slide or fade, arrows, dots, thumbnails, starting over
+  after the last, and turning on its own every N seconds (5 by default, never for a visitor who
+  asked for less motion). A block saved before them is the slider it was: one picture, arrows,
+  thumbnails.
 - **Logos** — a name, a logo and a link each, in the slider's running strip with its pause button.
 - **Video** — an address of YouTube or Vimeo or a video of the library (a switch says which), a
   poster (empty: the video's own preview), a caption under it and a shape — 16:9, 4:3, 1:1 or
@@ -294,6 +299,9 @@ prints the line for a dev copy; on staging and live a person runs it):
   the page's language), where the divider starts and a caption; one picture alone prints nothing.
 - **Table of contents** — of the whole page, where the block stands, or of a text of its own that
   the list stands beside (a switch says which); the side, and whether the third level is listed.
+- **Tabs** — a title, a picture and a text each, on `<x-webx-tabs>`: one tab open, a click or the
+  arrow keys open another; the picture above the text or beside it where the column has room, the
+  tabs at the start or in the middle. Without JavaScript every tab stands under its title.
 
 Installed once, they belong to the site: change them in the panel, an update never overwrites them.
 
