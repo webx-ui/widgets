@@ -176,8 +176,10 @@ final class WidgetsPageReader implements AuditPageReader
         foreach ($document->querySelectorAll('[data-webx-slider]') as $slider) {
             $config = json_decode((string) $slider->getAttribute('data-webx-slider'), true);
             $moves = is_array($config) && ((int) ($config['autoplay'] ?? 0) > 0 || ($config['continuous'] ?? false) === true);
+            // `:pause="false"` is the page's own choice, not a lost button: it still stops under the pointer and the focus.
+            $chosen = is_array($config) && ($config['pause'] ?? true) === false;
 
-            if (! $moves || $slider->querySelectorAll('.webx-slider__slide')->length < 2 || $slider->querySelector('.webx-slider__pause') !== null) {
+            if (! $moves || $chosen || $slider->querySelectorAll('.webx-slider__slide')->length < 2 || $slider->querySelector('.webx-slider__pause') !== null) {
                 continue;
             }
 

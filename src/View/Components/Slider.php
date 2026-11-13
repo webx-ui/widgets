@@ -59,6 +59,9 @@ final class Slider extends Component
 
     public bool $hasPause;
 
+    /** `pagination-in`: the dots go into this element of the overlay, not into the controls. */
+    public bool $hasOutsideDots;
+
     /** @var array<string, mixed> What the script is told, `data-webx-slider`. */
     public array $config;
 
@@ -66,6 +69,8 @@ final class Slider extends Component
      * @param  float|int|string|array<int|string, float|int|string>|null  $perView  one number, or by breakpoint: a name of {@see BREAKPOINTS} or a width in pixels
      * @param  bool|string|null  $pagination  true or `bullets` — dots, `fraction` — a counter "2/6", false — none
      * @param  bool|int|string|null  $autoplay  milliseconds between slides; true — the variant's, or 5000; false or 0 — off
+     * @param  bool|null  $pause  false — no pause button for what moves on its own: the slider still stops under the pointer and the focus
+     * @param  string|null  $paginationIn  a selector of an element inside the slider — in its `overlay` slot — that takes the dots instead of the controls
      * @param  array<string, mixed>  $options  Swiper's own settings, over everything
      */
     public function __construct(
@@ -79,6 +84,8 @@ final class Slider extends Component
         ?string $effect = null,
         ?bool $thumbs = null,
         ?int $speed = null,
+        ?bool $pause = null,
+        public ?string $paginationIn = null,
         array $options = [],
         public ?string $label = null,
         public ?string $id = null,
@@ -105,8 +112,11 @@ final class Slider extends Component
         $paging = self::pagination($pagination, $preset['pagination']);
         $this->hasPagination = $paging === 'bullets';
         $this->hasCount = $paging === 'fraction';
-        // Anything that moves on its own can be stopped (WCAG 2.2.2).
-        $this->hasPause = $delay > 0 || $continuous;
+        // Anything that moves on its own can be stopped (WCAG 2.2.2): a button, unless the one who
+        // opens the slider says no — then the pointer and the focus inside are what stop it.
+        $this->hasPause = ($delay > 0 || $continuous) && $pause !== false;
+        $this->paginationIn = $this->hasPagination && $paginationIn !== null && trim($paginationIn) !== '' ? trim($paginationIn) : null;
+        $this->hasOutsideDots = $this->paginationIn !== null;
 
         $this->config = [
             'variant' => $variant,
@@ -118,6 +128,15 @@ final class Slider extends Component
             'speed' => $speed ?? $preset['speed'],
             'options' => $options === [] ? new stdClass : $options,
         ];
+
+        // Only when set: every slider printed before keeps its settings as they were.
+        if ($pause === false) {
+            $this->config['pause'] = false;
+        }
+
+        if ($this->paginationIn !== null) {
+            $this->config['paginationIn'] = $this->paginationIn;
+        }
     }
 
     public function render(): View
@@ -141,7 +160,7 @@ final class Slider extends Component
     {
         $words = [];
 
-        foreach (['slide', 'prev', 'next', 'first', 'last', 'go_to', 'position', 'pause', 'play', 'thumbs', 'thumb'] as $key) {
+        foreach (['slide', 'prev', 'next', 'first', 'last', 'go_to', 'show', 'position', 'pause', 'play', 'thumbs', 'thumb'] as $key) {
             $words[$key] = (string) __("webx-widgets::widgets.slider.{$key}");
         }
 

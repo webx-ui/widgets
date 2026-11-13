@@ -73,7 +73,7 @@
   width: 100%;
   max-width: var(--site-container-width);
   margin-inline: auto;
-  padding: var(--site-space-1) var(--site-gutter);
+  padding: var(--site-space-1) var(--site-frame-gutter, var(--site-gutter));
   font-size: var(--site-font-size-6);
 }
 
@@ -95,7 +95,7 @@
   max-width: var(--site-container-width);
   min-height: 64px;
   margin-inline: auto;
-  padding: var(--site-space-2) var(--site-gutter);
+  padding: var(--site-space-2) var(--site-frame-gutter, var(--site-gutter));
 }
 
 .webx-header__brand {

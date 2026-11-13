@@ -118,6 +118,46 @@ final class SliderTest extends TestCase
     }
 
     #[Test]
+    public function pause_false_leaves_the_button_out_and_says_so_to_the_script(): void
+    {
+        $html = Blade::render('<x-webx-slider variant="hero" :pause="false"><x-webx-slide>1</x-webx-slide><x-webx-slide>2</x-webx-slide></x-webx-slider>');
+
+        $this->assertStringNotContainsString('webx-slider__pause', $html);
+        $this->assertStringContainsString('webx-slider__pagination', $html);
+        $this->assertFalse($this->config('<x-webx-slider variant="hero" :pause="false"><x-webx-slide>1</x-webx-slide></x-webx-slider>')['pause']);
+        // Not told, not written: the sliders printed before keep their settings.
+        $this->assertArrayNotHasKey('pause', $this->config('<x-webx-slider variant="hero"><x-webx-slide>1</x-webx-slide></x-webx-slider>'));
+    }
+
+    #[Test]
+    public function the_overlay_stands_over_the_slides_and_may_take_the_dots(): void
+    {
+        $html = Blade::render(<<<'BLADE'
+            <x-webx-slider id="o" :arrows="false" pagination-in=".bars">
+                <x-webx-slide>One</x-webx-slide>
+                <x-webx-slide>Two</x-webx-slide>
+                <x-slot:overlay>
+                    <div class="webx-slider__captions"><div class="webx-slider__caption is-current">A</div><div class="webx-slider__caption" inert aria-hidden="true">B</div></div>
+                    <div class="bars"></div>
+                </x-slot:overlay>
+            </x-webx-slider>
+            BLADE);
+
+        $this->assertStringContainsString('class="webx-slider webx-slider--cards webx-slider--overlaid"', $html);
+        $this->assertMatchesRegularExpression('~</div>\s*</div>\s*<div class="webx-slider__overlay" hidden>\s*<div class="webx-slider__captions">~', $html);
+        // The dots went to the overlay: nothing is left for the controls.
+        $this->assertStringNotContainsString('webx-slider__pagination', $html);
+        $this->assertStringNotContainsString('webx-slider__controls', $html);
+        $this->assertSame('.bars', $this->config('<x-webx-slider pagination-in=".bars"><x-webx-slide>1</x-webx-slide></x-webx-slider>')['paginationIn']);
+        $this->assertSame('Slide :index of :count', $this->config('<x-webx-slider><x-webx-slide>1</x-webx-slide></x-webx-slider>')['words']['show']);
+
+        // No dots, nothing to put anywhere; no overlay, no modifier.
+        $this->assertArrayNotHasKey('paginationIn', $this->config('<x-webx-slider :pagination="false" pagination-in=".bars"><x-webx-slide>1</x-webx-slide></x-webx-slider>'));
+        $this->assertStringNotContainsString('webx-slider--overlaid', Blade::render('<x-webx-slider><x-webx-slide>1</x-webx-slide></x-webx-slider>'));
+        $this->assertStringNotContainsString('webx-slider__overlay', Blade::render('<x-webx-slider><x-webx-slide>1</x-webx-slide></x-webx-slider>'));
+    }
+
+    #[Test]
     public function one_slide_has_nothing_to_move_and_gets_no_controls(): void
     {
         $this->assertStringNotContainsString('webx-slider__controls', Blade::render('<x-webx-slider variant="hero"><x-webx-slide>Only</x-webx-slide></x-webx-slider>'));

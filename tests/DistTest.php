@@ -400,7 +400,10 @@ final class DistTest extends PlainTestCase
 
                 // Stricter than the engine, which lets a block's own variable keep a default: a
                 // widget declares every one of its own, so a fallback here has nothing to fall to.
-                $this->assertSame(')', $after, "{$relative}: var(--{$variable}, …) has a fallback.");
+                // The optional tokens (THEMES §7.2) are the one exception: unset, they fall back.
+                if (! Vocabulary::base()->optional(substr($variable, 5))) {
+                    $this->assertSame(')', $after, "{$relative}: var(--{$variable}, …) has a fallback.");
+                }
             }
 
             preg_match_all('/(?:^|[;{}])\s*([^;{}@]+?)\s*\{/', $css, $rules);

@@ -127,6 +127,34 @@ final class FormDialogTest extends TestCase
     }
 
     #[Test]
+    public function a_closed_dialogs_form_does_not_hold_the_first_paint(): void
+    {
+        $this->artisan('webx:theme:sync')->assertSuccessful();
+        $later = '~<link rel="stylesheet" href="[^"]+/form\.css" media="print" onload="this\.media=\'all\'"><noscript><link rel="stylesheet" href="[^"]+/form\.css"></noscript>~';
+        $plain = '~<link rel="stylesheet" href="[^"]+/form\.css">~';
+
+        // The form only in its dialog: its stylesheet comes after the first paint.
+        $html = (string) $this->get('/claimed')->assertOk()->getContent();
+        $this->assertMatchesRegularExpression($later, $html);
+        $this->assertStringContainsString('/field.css" media="print"', $html);
+        $this->assertMatchesRegularExpression('~<link rel="stylesheet" href="[^"]+/runtime\.css">~', $html);
+
+        // The same form on the page as well: painted at once, so blocking as ever.
+        $html = (string) $this->get('/page')->assertOk()->getContent();
+        $this->assertMatchesRegularExpression($plain, $html);
+        $this->assertStringNotContainsString('media="print"', $html);
+
+        // Back from a form sent without JavaScript, the dialog is printed open: painted at once too.
+        $html = (string) $this->withSession([
+            'webx-form' => ['form' => 'webx-inbox-callback', 'heading' => 'We will call you', 'message' => null, 'html' => null],
+            '_flash' => ['old' => ['webx-form'], 'new' => []],
+        ])->get('/claimed')->getContent();
+        $this->assertMatchesRegularExpression('~<dialog id="webx-form-callback"[^>]* open>~', $html);
+        $this->assertMatchesRegularExpression($plain, $html);
+        $this->assertStringNotContainsString('media="print"', $html);
+    }
+
+    #[Test]
     public function a_form_claimed_in_code_gets_its_dialog_without_an_opener_on_the_page(): void
     {
         $this->assertStringContainsString('<dialog id="webx-form-callback"', (string) $this->get('/claimed')->getContent());

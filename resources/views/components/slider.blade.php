@@ -12,18 +12,27 @@
 
     `pagination="fraction"` prints the counter "1/6" where the dots would be. It is hidden from a
     screen reader: the slides are named "2 / 6" already, and Swiper's live region says the move.
+
+    The `overlay` slot stands over the slides, in the same cell, out of the track: a pane that does
+    not move while the slides do. It is printed `hidden` and shown by the script. Its
+    `.webx-slider__caption` elements, one per slide in order, follow the slide in view: the current
+    one `is-current`, the others `inert` and hidden from a screen reader. `pagination-in` names an
+    element of it that takes the dots. Classes: webx-slider--overlaid, __overlay, __captions,
+    __caption.
 --}}
 @php
     $sliders = app(\WebxUi\Widgets\View\Sliders::class);
     $count = $sliders->close();
     $id ??= $sliders->id((string) $slot.json_encode($config));
+    $overlay ??= null;
+    $overlaid = $overlay !== null && trim((string) $overlay) !== '';
     $rules = '';
     foreach ($views as [$from, $perView]) {
         $rule = "#{$id}-track { --webx-slider-per-view: {$perView}; }";
         $rules .= $from === 0 ? $rule : " @container webx-slider (min-width: {$from}px) { {$rule} }";
     }
 @endphp
-<section {{ $attributes->class(['webx-slider', 'webx-slider--'.$variant])->merge(array_filter([
+<section {{ $attributes->class(['webx-slider', 'webx-slider--'.$variant, 'webx-slider--overlaid' => $overlaid])->merge(array_filter([
     'id' => $id,
     'data-webx-slider' => json_encode($config + ['words' => $words], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
     'aria-roledescription' => __('webx-widgets::widgets.slider.carousel'),
@@ -35,7 +44,11 @@
         <div class="webx-slider__track" id="{{ $id }}-track">{{ $slot }}</div>
     </div>
 
-    @if ($count > 1 && ($hasArrows || $hasPagination || $hasCount || $hasPause))
+    @if ($overlaid)
+        <div class="webx-slider__overlay" hidden>{{ $overlay }}</div>
+    @endif
+
+    @if ($count > 1 && ($hasArrows || ($hasPagination && ! $hasOutsideDots) || $hasCount || $hasPause))
         <div class="webx-slider__controls" hidden>
             @if ($hasPause)
                 <button type="button" class="webx-slider__button webx-slider__pause" aria-label="{{ $words['pause'] }}">
@@ -46,7 +59,7 @@
             @if ($hasArrows)
                 <button type="button" class="webx-slider__button webx-slider__prev" aria-label="{{ $words['prev'] }}" aria-controls="{{ $id }}-track"><x-webx-icon name="chevron-left" /></button>
             @endif
-            @if ($hasPagination)
+            @if ($hasPagination && ! $hasOutsideDots)
                 <div class="webx-slider__pagination"></div>
             @endif
             @if ($hasCount)

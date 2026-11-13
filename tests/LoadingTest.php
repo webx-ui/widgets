@@ -47,6 +47,17 @@ class LoadingTest extends TestCase
 
         // A layout that kept `@webxWidgets` from before it had a theme.
         $router->get('/both', static fn (): string => Blade::render('<html><head>@webxTheme</head><body><p>Hello</p>@webxWidgets</body></html>'));
+
+        // What a visitor does not see before they act: claimed inside `@webxLater`.
+        $router->get('/later', static fn (): string => Blade::render(
+            "<html><head>@webxTheme</head><body>@webxLater<div hidden>@php(WebxUi\\Widgets\\Facades\\Widgets::need('".self::HEAVY."'))</div>@endwebxLater</body></html>",
+        ));
+        $router->get('/later-off', static fn (): string => Blade::render(
+            "<html><head>@webxTheme</head><body>@webxLater(1 > 2)<div>@php(WebxUi\\Widgets\\Facades\\Widgets::need('".self::HEAVY."'))</div>@endwebxLater</body></html>",
+        ));
+        $router->get('/later-and-now', static fn (): string => Blade::render(
+            "<html><head>@webxTheme</head><body>@webxLater<div hidden>@php(WebxUi\\Widgets\\Facades\\Widgets::need('".self::HEAVY."'))</div>@endwebxLater<p>@php(WebxUi\\Widgets\\Facades\\Widgets::need('".self::HEAVY."'))</p></body></html>",
+        ));
     }
 
     #[Test]
@@ -130,6 +141,65 @@ class LoadingTest extends TestCase
 
         $this->expectException(InvalidArgumentException::class);
         WidgetsFacade::need('slidr');
+    }
+
+    #[Test]
+    public function a_widget_claimed_only_for_later_does_not_hold_the_first_paint(): void
+    {
+        $this->heavyWidget();
+        $this->sync();
+        $base = $this->published();
+        $plain = "<link rel=\"stylesheet\" href=\"{$base}/".self::HEAVY.'.css">';
+
+        $html = (string) $this->get('/later')->assertOk()->getContent();
+
+        // Switched on once loaded, and as it was for a browser without JavaScript; the script as ever.
+        $this->assertStringContainsString("<link rel=\"stylesheet\" href=\"{$base}/".self::HEAVY.".css\" media=\"print\" onload=\"this.media='all'\"><noscript>{$plain}</noscript>", $html);
+        $this->assertStringContainsString("<script type=\"module\" src=\"{$base}/".self::HEAVY.'.js"></script>', $html);
+        $this->assertLessThan(strpos($html, '</head>'), (int) strpos($html, self::HEAVY.'.css'));
+        // The runtime is never later.
+        $this->assertStringContainsString("<link rel=\"stylesheet\" href=\"{$base}/runtime.css\">", $html);
+
+        // Shown at once as well, or `@webxLater(false)`: blocking, as any other.
+        foreach (['/later-and-now', '/later-off'] as $url) {
+            $html = (string) $this->get($url)->assertOk()->getContent();
+            $this->assertStringContainsString($plain, $html, $url);
+            $this->assertStringNotContainsString('media="print"', $html, $url);
+        }
+    }
+
+    #[Test]
+    public function later_hands_back_what_it_rendered_and_lets_go_when_it_throws(): void
+    {
+        $widgets = app(Widgets::class);
+
+        $this->assertSame('drawn', $widgets->later(static fn (): string => 'drawn'));
+
+        try {
+            $widgets->later(static fn () => throw new InvalidArgumentException('broken'));
+        } catch (InvalidArgumentException) {
+        }
+
+        // Nothing held: a claim after it is for the first paint.
+        $this->heavyWidget();
+        $this->sync();
+        $widgets->need(self::HEAVY);
+        $html = $widgets->finish('<head>'.Widgets::MARKER.'</head><body></body>');
+
+        $this->assertStringNotContainsString('media="print"', $html);
+    }
+
+    #[Test]
+    public function a_piece_drawn_into_a_painted_page_gets_plain_stylesheets(): void
+    {
+        $this->heavyWidget();
+        $this->sync();
+        $widgets = app(Widgets::class);
+        $widgets->later(static fn () => $widgets->need(self::HEAVY));
+
+        $piece = $widgets->piece('<p>Hi</p>');
+
+        $this->assertContains('<link rel="stylesheet" href="'.$this->published().'/'.self::HEAVY.'.css">', $piece['head']);
     }
 
     #[Test]

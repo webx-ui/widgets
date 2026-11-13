@@ -8,8 +8,14 @@
   gap: var(--webx-tabs-gap);
   margin-block-end: var(--site-space-4);
   overflow-x: auto;
-  scrollbar-width: thin;
+  /* A row wider than the column still scrolls, by touch, wheel or the arrow keys, without a bar
+     under the tabs. */
+  scrollbar-width: none;
   border-block-end: 1px solid var(--site-color-border);
+}
+
+.webx-tabs__list::-webkit-scrollbar {
+  display: none;
 }
 
 .webx-tabs__tab {

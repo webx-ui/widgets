@@ -43,6 +43,7 @@ const words = {
   first: 'This is the first slide',
   last: 'This is the last slide',
   go_to: 'Go to slide :index',
+  show: 'Slide :index of :count',
   position: ':index / :count',
   pause: 'Pause',
   play: 'Play',
@@ -53,7 +54,15 @@ const words = {
 // What `<x-webx-slider>` prints, with the settings it resolved.
 const slider = (
   config = {},
-  { slides = 4, perView = 1, pause = false, arrows = true, pagination = true, count = false } = {},
+  {
+    slides = 4,
+    perView = 1,
+    pause = false,
+    arrows = true,
+    pagination = true,
+    count = false,
+    overlay = '',
+  } = {},
 ) => {
   const data = {
     variant: 'cards',
@@ -73,10 +82,11 @@ const slider = (
       `<div class="webx-slider__slide" role="group"><img src="/p${i + 1}.jpg" alt=""><a href="#s${i + 1}">Slide ${i + 1}</a></div>`,
   ).join('')
 
-  return `<section class="webx-slider" data-webx-slider='${JSON.stringify(data)}'>
+  return `<section class="webx-slider${overlay ? ' webx-slider--overlaid' : ''}" data-webx-slider='${JSON.stringify(data)}'>
     <div class="webx-slider__viewport">
       <div class="webx-slider__track" style="--webx-slider-per-view: ${perView}">${items}</div>
     </div>
+    ${overlay ? `<div class="webx-slider__overlay" hidden>${overlay}</div>` : ''}
     <div class="webx-slider__controls" hidden>
       ${pause ? '<button type="button" class="webx-slider__button webx-slider__pause" aria-label="Pause"></button>' : ''}
       ${arrows ? '<button type="button" class="webx-slider__button webx-slider__prev"></button>' : ''}
@@ -307,6 +317,62 @@ describe('slider', () => {
     }
     // It did come to a copy: Swiper numbers the copies past the two slides.
     expect(Math.max(...real)).toBeGreaterThanOrEqual(2)
+  })
+
+  it('follows the slide with the captions of the overlay, the dots in it, and tells every change', async () => {
+    const captions = Array.from(
+      { length: 3 },
+      (_, i) =>
+        `<div class="webx-slider__caption${i === 0 ? ' is-current' : ''}"${i > 0 ? ' inert aria-hidden="true"' : ''}><a href="#c${i}">Card ${i + 1}</a></div>`,
+    ).join('')
+    const overlay = `<div class="plate"><div class="webx-slider__captions" aria-live="polite">${captions}</div><div class="bars"></div></div>`
+    const { root, swiper } = await start(
+      slider(
+        { loop: true, paginationIn: '.bars', pause: false, autoplay: 3000 },
+        { slides: 3, arrows: false, pagination: false, overlay },
+      ),
+    )
+    const items = root.querySelectorAll('.webx-slider__caption')
+    const told = []
+    root.addEventListener('webx:slide', (event) => told.push(event.detail))
+
+    expect(root.querySelector('.webx-slider__overlay').hidden).toBe(false)
+    // The dots are in the overlay, saying which slide of how many.
+    const bullets = root.querySelectorAll('.bars .webx-slider__bullet')
+    expect(bullets).toHaveLength(3)
+    expect(root.querySelector('.bars').classList.contains('webx-slider__pagination')).toBe(true)
+    expect(bullets[1].getAttribute('aria-label')).toBe('Slide 2 of 3')
+
+    // Autoplay moves it: told as such, and not read out.
+    swiper.slideNext()
+    expect(told.at(-1)).toEqual({ index: 1, count: 3, auto: true })
+    expect([...items].map((item) => item.classList.contains('is-current'))).toEqual([
+      false,
+      true,
+      false,
+    ])
+    expect([...items].map((item) => item.inert)).toEqual([true, false, true])
+    expect(items[1].hasAttribute('aria-hidden')).toBe(false)
+    expect(items[0].getAttribute('aria-hidden')).toBe('true')
+    expect(root.querySelector('.webx-slider__captions').getAttribute('aria-live')).toBe('off')
+
+    // A dot in the overlay, under the pointer: by hand, read out; the hold outlives Swiper's resume.
+    root.dispatchEvent(new Event('pointerenter'))
+    bullets[2].click()
+    expect(told.at(-1)).toEqual({ index: 2, count: 3, auto: false })
+    expect(items[2].classList.contains('is-current')).toBe(true)
+    expect(root.querySelector('.webx-slider__captions').getAttribute('aria-live')).toBe('polite')
+    swiper.autoplay.resume()
+    expect(swiper.autoplay.paused).toBe(true)
+
+    // A loop counts the slides, not Swiper's places in it.
+    swiper.slideNext()
+    expect(told.at(-1).index).toBe(0)
+
+    window.webx.unmount()
+    expect(root.querySelector('.webx-slider__overlay').hidden).toBe(true)
+    expect(root.querySelector('.bars').classList.contains('webx-slider__pagination')).toBe(false)
+    expect([...items].map((item) => item.inert)).toEqual([false, true, true])
   })
 
   it('lets go of Swiper and gives the strip back on unmount', async () => {

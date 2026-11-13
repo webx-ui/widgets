@@ -11,16 +11,114 @@
   "is_enabled": true,
   "schema": [
     {
+      "id": "eyebrow",
+      "type": "wx-input",
+      "label": "Above the heading",
+      "localized": true,
+      "props": {
+        "maxlength": 80
+      }
+    },
+    {
       "id": "heading",
       "type": "wx-input",
       "label": "Heading",
       "localized": true
     },
     {
+      "id": "intro",
+      "type": "wx-textarea",
+      "label": "Under the heading",
+      "localized": true,
+      "props": {
+        "rows": 2
+      }
+    },
+    {
+      "id": "align",
+      "type": "wx-segmented",
+      "label": "Heading",
+      "default": "start",
+      "props": {
+        "options": [
+          {
+            "value": "start",
+            "label": "At the start"
+          },
+          {
+            "value": "center",
+            "label": "In the middle"
+          }
+        ]
+      }
+    },
+    {
       "id": "pictures",
       "type": "wx-gallery",
       "label": "Pictures",
-      "help": "The title of a picture is printed under it."
+      "help": "The title of a picture is printed under it.",
+      "visible": {
+        "when": "view",
+        "not": "ribbon"
+      }
+    },
+    {
+      "id": "frames",
+      "type": "wx-repeater",
+      "label": "Frames",
+      "help": "Upright pictures from the column to the edge of the screen, each a link to its post; a phone swipes through them.",
+      "props": {
+        "itemLabel": "badge",
+        "addLabel": "Add a frame",
+        "max": 24,
+        "sortable": true
+      },
+      "visible": {
+        "when": "view",
+        "is": "ribbon"
+      },
+      "children": [
+        {
+          "id": "picture",
+          "type": "wx-media",
+          "label": "Picture",
+          "help": "Cut to 3:4. Its alt is what a screen reader says for the link.",
+          "props": {
+            "accept": "image"
+          }
+        },
+        {
+          "id": "link",
+          "type": "wx-link",
+          "label": "Link",
+          "help": "Opens in a new tab.",
+          "props": {
+            "allowNone": true
+          }
+        },
+        {
+          "id": "badge",
+          "type": "wx-segmented",
+          "label": "Badge",
+          "default": "none",
+          "props": {
+            "options": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "pin",
+                "label": "Pinned"
+              },
+              {
+                "value": "video",
+                "label": "Video"
+              }
+            ]
+          }
+        }
+      ]
     },
     {
       "id": "view",
@@ -40,6 +138,10 @@
           {
             "value": "mosaic",
             "label": "Mosaic"
+          },
+          {
+            "value": "ribbon",
+            "label": "Ribbon"
           }
         ]
       }
@@ -68,6 +170,28 @@
       }
     },
     {
+      "id": "narrow",
+      "type": "wx-segmented",
+      "label": "In a narrow column",
+      "default": "pair",
+      "props": {
+        "options": [
+          {
+            "value": "pair",
+            "label": "Large on top, two under it"
+          },
+          {
+            "value": "column",
+            "label": "One under another"
+          }
+        ]
+      },
+      "visible": {
+        "when": "view",
+        "is": "mosaic"
+      }
+    },
+    {
       "id": "columns",
       "type": "wx-input-number",
       "label": "Columns",
@@ -80,6 +204,64 @@
       "visible": {
         "when": "view",
         "is": "grid"
+      }
+    },
+    {
+      "id": "gap",
+      "type": "wx-segmented",
+      "label": "Space between pictures",
+      "help": "Across and down, in the steps of the site’s spacing.",
+      "default": "narrow",
+      "props": {
+        "options": [
+          {
+            "value": "narrow",
+            "label": "Narrow"
+          },
+          {
+            "value": "small",
+            "label": "S"
+          },
+          {
+            "value": "medium",
+            "label": "M"
+          },
+          {
+            "value": "large",
+            "label": "L"
+          },
+          {
+            "value": "wide",
+            "label": "XL"
+          }
+        ]
+      },
+      "visible": {
+        "when": "view",
+        "not": "slider"
+      }
+    },
+    {
+      "id": "captions",
+      "type": "wx-segmented",
+      "label": "Captions",
+      "help": "Under the picture — its title; on the picture — its alt, else its title, on glass in the lower corner.",
+      "default": "under",
+      "props": {
+        "options": [
+          {
+            "value": "under",
+            "label": "Under the picture"
+          },
+          {
+            "value": "over",
+            "label": "On the picture"
+          }
+        ]
+      },
+      "visible": {
+        "when": "view",
+        "not": "ribbon"
       }
     },
     {
@@ -161,6 +343,44 @@
                 "is": "slider"
               }
             ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "arrows_at",
+      "type": "wx-segmented",
+      "label": "Arrows",
+      "default": "below",
+      "props": {
+        "options": [
+          {
+            "value": "below",
+            "label": "Under the pictures"
+          },
+          {
+            "value": "head",
+            "label": "Under the heading"
+          }
+        ]
+      },
+      "visible": {
+        "all": [
+          {
+            "all": [
+              {
+                "when": "view",
+                "is": "mosaic"
+              },
+              {
+                "when": "mosaic",
+                "is": "slider"
+              }
+            ]
+          },
+          {
+            "when": "arrows",
+            "not": false
           }
         ]
       }
@@ -304,7 +524,11 @@
       "id": "zoom",
       "type": "wx-switch",
       "label": "Open a picture over the page on click",
-      "default": true
+      "default": true,
+      "visible": {
+        "when": "view",
+        "not": "ribbon"
+      }
     },
     {
       "id": "ratio",
@@ -365,11 +589,14 @@
       }
     }
   ],
-  "template": "@php\n    // A picture deleted from the library resolves without an address: left out, not printed broken.\n    $shown = array_values(array_filter(is_array($pictures) ? $pictures : [], static fn ($picture): bool => is_array($picture) && ! empty($picture['url'])));\n    $across = max(1, min(6, (int) ($columns ?: 3)));\n    $label = $heading ? wx_text($heading)->plain() : null;\n    // One group per block: the arrows of the lightbox page through this gallery and no other.\n    $group = 'gallery-'.$block->key;\n    // The shape a picture opens in over the page; `auto`, and a block saved before the field, open it as it is.\n    $frame = isset($ratio) && is_string($ratio) ? $ratio : null;\n    // A slide's picture magnified under the mouse and two fingers (§14): the lightbox's link carries it, so a keyboard opens the picture as before.\n    $hover = $zoom && $view === 'slider' && in_array($magnify, ['inner', 'side'], true) ? $magnify : null;\n    // The slider's settings; a block saved before them gets what the slider always was: one picture, arrows, thumbnails.\n    $at = in_array((int) ($per_view ?? 1), [1, 2, 3], true) ? (int) ($per_view ?? 1) : 1;\n    // By the width of the column, as the grid's columns: one in a phone's column, more where they fit.\n    $views = [1 => 1, 2 => ['sm' => 1, 'md' => 2], 3 => ['sm' => 1, 'md' => 2, 'lg' => 3]][$at];\n    $fade = $at === 1 && ($effect ?? 'slide') === 'fade' ? 'fade' : 'slide';\n    $turn = ! empty($autoplay) ? max(2, min(30, (int) ($interval ?? 5) ?: 5)) * 1000 : false;\n@endphp\n@if ($shown)\n<section class=\"b-gallery b-gallery--{{ $view === 'slider' ? 'slider' : ($view === 'mosaic' ? 'mosaic' : 'grid') }}{{ $view === 'slider' && $at > 1 ? ' b-gallery--row' : '' }}\" data-wx-block=\"gallery\" style=\"--gallery-columns: {{ $across }}\">\n    @if ($heading)\n        <h2 class=\"b-gallery__heading\">{{ $heading }}</h2>\n    @endif\n    @if ($view === 'slider')\n        <x-webx-slider variant=\"gallery\" :label=\"$label\" :per-view=\"$views\" :effect=\"$fade\" :arrows=\"(bool) ($arrows ?? true)\" :pagination=\"(bool) ($dots ?? false)\" :thumbs=\"$at === 1 && (bool) ($thumbs ?? true)\" :loop=\"(bool) ($endless ?? false)\" :autoplay=\"$turn\">\n            @foreach ($shown as $picture)\n                <x-webx-slide :thumb=\"$picture['thumb'] ?? null\">\n                    <figure class=\"b-gallery__figure\">\n                        @if ($zoom)\n                            <x-webx-lightbox :image=\"$picture\" :group=\"$group\" :ratio=\"$frame\" :data-webx-zoom=\"$hover ? '' : null\" :data-zoom-mode=\"$hover\"><img class=\"b-gallery__image\" src=\"{{ $picture['url'] }}\" alt=\"{{ $picture['alt'] ?? '' }}\" @if ($picture['width']) width=\"{{ $picture['width'] }}\" height=\"{{ $picture['height'] }}\" @endif></x-webx-lightbox>\n                        @else\n                            <img class=\"b-gallery__image\" src=\"{{ $picture['url'] }}\" alt=\"{{ $picture['alt'] ?? '' }}\" @if ($picture['width']) width=\"{{ $picture['width'] }}\" height=\"{{ $picture['height'] }}\" @endif>\n                        @endif\n                        @if (! empty($picture['title']))\n                            <figcaption class=\"b-gallery__caption\">{{ $picture['title'] }}</figcaption>\n                        @endif\n                    </figure>\n                </x-webx-slide>\n            @endforeach\n        </x-webx-slider>\n    @elseif ($view === 'mosaic')\n        @php\n            // Three at a time, the first large; a carousel of threes only with more than three to page through.\n            $turning = ($mosaic ?? 'still') === 'slider' && count($shown) > 3;\n            $groups = $turning ? array_chunk($shown, 3) : [array_slice($shown, 0, 3)];\n            // Still: the pictures past the third are not shown, but the lightbox pages through them all.\n            $unseen = $turning || ! $zoom ? [] : array_slice($shown, 3);\n            $tiles = [];\n        @endphp\n        @foreach ($groups as $three)\n            @php ob_start(); @endphp\n            <ul class=\"b-gallery__mosaic b-gallery__mosaic--{{ count($three) }}\">\n                @foreach ($three as $picture)\n                    <li class=\"b-gallery__tile\">\n                        <figure class=\"b-gallery__figure\">\n                            <div class=\"b-gallery__shot\">\n                                @if ($zoom)\n                                    <x-webx-lightbox :image=\"$picture\" :group=\"$group\" :ratio=\"$frame\"><img class=\"b-gallery__image\" src=\"{{ $picture['url'] }}\" alt=\"{{ $picture['alt'] ?? '' }}\" @if ($picture['width']) width=\"{{ $picture['width'] }}\" height=\"{{ $picture['height'] }}\" @endif></x-webx-lightbox>\n                                @else\n                                    <img class=\"b-gallery__image\" src=\"{{ $picture['url'] }}\" alt=\"{{ $picture['alt'] ?? '' }}\" @if ($picture['width']) width=\"{{ $picture['width'] }}\" height=\"{{ $picture['height'] }}\" @endif>\n                                @endif\n                            </div>\n                            @if (! empty($picture['title']))\n                                <figcaption class=\"b-gallery__caption\">{{ $picture['title'] }}</figcaption>\n                            @endif\n                        </figure>\n                    </li>\n                @endforeach\n            </ul>\n            @php $tiles[] = ob_get_clean(); @endphp\n        @endforeach\n        @if ($turning)\n            <x-webx-slider variant=\"gallery\" :label=\"$label\" :per-view=\"1\" :thumbs=\"false\" :arrows=\"(bool) ($arrows ?? true)\" :pagination=\"(bool) ($dots ?? false)\" :loop=\"(bool) ($endless ?? false)\" :autoplay=\"$turn\">\n                @foreach ($tiles as $tile)\n                    <x-webx-slide>{!! $tile !!}</x-webx-slide>\n                @endforeach\n            </x-webx-slider>\n        @else\n            {!! $tiles[0] !!}\n        @endif\n        @if ($unseen)\n            <div class=\"b-gallery__unseen\" hidden>\n                @foreach ($unseen as $picture)\n                    <x-webx-lightbox :image=\"$picture\" :group=\"$group\" :ratio=\"$frame\" :aria-label=\"$picture['alt'] ?? null\"><span>{{ $picture['title'] ?? '' }}</span></x-webx-lightbox>\n                @endforeach\n            </div>\n        @endif\n    @else\n        <ul class=\"b-gallery__grid\">\n            @foreach ($shown as $picture)\n                @php\n                    // The square preview of the library, and the picture itself where a cell is wider than it.\n                    $sources = $picture['thumb'] && $picture['width'] ? $picture['thumb'].' 320w, '.$picture['url'].' '.$picture['width'].'w' : null;\n                @endphp\n                <li class=\"b-gallery__cell\">\n                    <figure class=\"b-gallery__figure\">\n                        @if ($zoom)\n                            <x-webx-lightbox :image=\"$picture\" :group=\"$group\" :ratio=\"$frame\"><img class=\"b-gallery__image\" src=\"{{ $picture['thumb'] ?: $picture['url'] }}\" @if ($sources) srcset=\"{{ $sources }}\" sizes=\"(max-width: 40rem) 50vw, {{ (int) ceil(100 / $across) }}vw\" @endif alt=\"{{ $picture['alt'] ?? '' }}\" width=\"320\" height=\"320\" @if ($loop->index >= $across) loading=\"lazy\" @endif></x-webx-lightbox>\n                        @else\n                            <img class=\"b-gallery__image\" src=\"{{ $picture['thumb'] ?: $picture['url'] }}\" @if ($sources) srcset=\"{{ $sources }}\" sizes=\"(max-width: 40rem) 50vw, {{ (int) ceil(100 / $across) }}vw\" @endif alt=\"{{ $picture['alt'] ?? '' }}\" width=\"320\" height=\"320\" @if ($loop->index >= $across) loading=\"lazy\" @endif>\n                        @endif\n                        @if (! empty($picture['title']))\n                            <figcaption class=\"b-gallery__caption\">{{ $picture['title'] }}</figcaption>\n                        @endif\n                    </figure>\n                </li>\n            @endforeach\n        </ul>\n    @endif\n</section>\n@endif\n",
-  "styles": ".b-gallery {\n    container: b-gallery / inline-size;\n    --gallery-gap: 0.75em;\n}\n\n.b-gallery__heading {\n    margin: 0 0 1em;\n}\n\n/* Up to `--gallery-columns` across, fewer when a cell would be narrower than 9em: the width of the\n   column the block stands in decides, not the window. */\n.b-gallery__grid {\n    display: grid;\n    grid-template-columns: repeat(\n        auto-fill,\n        minmax(min(100%, max(9em, (100% - (var(--gallery-columns, 3) - 1) * var(--gallery-gap)) / var(--gallery-columns, 3))), 1fr)\n    );\n    gap: var(--gallery-gap);\n    margin: 0;\n    padding: 0;\n    list-style: none;\n}\n\n/* No margin of its own: a theme's prose spaces `li + li`, which in a grid lifts the first cell\n   above its row. */\n.b-gallery__cell {\n    min-width: 0;\n    margin: 0;\n}\n\n.b-gallery__figure {\n    margin: 0;\n}\n\n.b-gallery__image {\n    display: block;\n    width: 100%;\n    height: auto;\n    border-radius: 0.25em;\n}\n\n/* The library's preview is square, and so is a cell: pictures of every shape line up. */\n.b-gallery__grid .b-gallery__image {\n    aspect-ratio: 1;\n    object-fit: cover;\n}\n\n/* Several slides at a time line up as the grid's cells do, whatever the shape of each picture. */\n.b-gallery--row .b-gallery__image {\n    aspect-ratio: 4 / 3;\n    object-fit: cover;\n}\n\n.b-gallery__caption {\n    margin-top: 0.5em;\n    font-size: 0.875em;\n    opacity: 0.75;\n}\n\n/* The mosaic: the first picture of three large, the other two smaller. A narrow column puts the\n   large one on top and the two side by side under it; from 36em of the block's own width the large\n   one stands on the left and the two one above the other on its right. Every picture is cut to its\n   cell (cover); the lightbox shows it whole. */\n.b-gallery__mosaic {\n    display: grid;\n    grid-template-columns: 1fr 1fr;\n    gap: var(--gallery-gap);\n    margin: 0;\n    padding: 0;\n    list-style: none;\n}\n\n/* No margin of its own, as a cell of the grid: a theme's prose spaces `li + li`. */\n.b-gallery__tile {\n    display: flex;\n    min-width: 0;\n    margin: 0;\n}\n\n.b-gallery__mosaic .b-gallery__figure {\n    display: flex;\n    flex: 1;\n    flex-direction: column;\n    min-width: 0;\n}\n\n.b-gallery__shot {\n    position: relative;\n    flex: 1 1 auto;\n    aspect-ratio: 4 / 3;\n    overflow: hidden;\n    border-radius: 0.25em;\n}\n\n/* The picture fills the cell whatever its shape: the cell, not the picture, sets the height. */\n.b-gallery__shot > a,\n.b-gallery__shot img {\n    position: absolute;\n    inset: 0;\n    display: block;\n    width: 100%;\n    height: 100%;\n}\n\n.b-gallery__mosaic .b-gallery__image {\n    object-fit: cover;\n    border-radius: 0;\n}\n\n.b-gallery__mosaic > .b-gallery__tile:first-child,\n.b-gallery__mosaic--2 > .b-gallery__tile {\n    grid-column: 1 / -1;\n}\n\n@container b-gallery (min-width: 36em) {\n    .b-gallery__mosaic--3 {\n        grid-template-columns: 2fr 1fr;\n        grid-template-rows: 1fr 1fr;\n    }\n\n    .b-gallery__mosaic--3 > .b-gallery__tile:first-child {\n        grid-column: 1;\n        grid-row: 1 / span 2;\n    }\n\n    /* The two small ones take the height the large one gives them, half each. */\n    .b-gallery__mosaic--3 > .b-gallery__tile:not(:first-child) .b-gallery__shot {\n        aspect-ratio: auto;\n        min-height: 4em;\n    }\n\n    /* Fewer than three — the last group of a carousel, a short gallery — keep the height of three:\n       two square halves, or one picture twice as wide as high. */\n    .b-gallery__mosaic--2 > .b-gallery__tile {\n        grid-column: auto;\n    }\n\n    .b-gallery__mosaic--2 .b-gallery__shot {\n        aspect-ratio: 1;\n    }\n\n    .b-gallery__mosaic--1 .b-gallery__shot {\n        aspect-ratio: 2;\n    }\n}\n",
+  "template": "@php\n    // A picture deleted from the library resolves without an address: left out, not printed broken.\n    $shown = array_values(array_filter(is_array($pictures) ? $pictures : [], static fn ($picture): bool => is_array($picture) && ! empty($picture['url'])));\n    $across = max(1, min(6, (int) ($columns ?: 3)));\n    $label = $heading ? wx_text($heading)->plain() : null;\n    // One group per block: the arrows of the lightbox page through this gallery and no other.\n    $group = 'gallery-'.$block->key;\n    // The shape a picture opens in over the page; `auto`, and a block saved before the field, open it as it is.\n    $frame = isset($ratio) && is_string($ratio) ? $ratio : null;\n    // A slide's picture magnified under the mouse and two fingers (§14): the lightbox's link carries it, so a keyboard opens the picture as before.\n    $hover = $zoom && $view === 'slider' && in_array($magnify, ['inner', 'side'], true) ? $magnify : null;\n    // The slider's settings; a block saved before them gets what the slider always was: one picture, arrows, thumbnails.\n    $at = in_array((int) ($per_view ?? 1), [1, 2, 3], true) ? (int) ($per_view ?? 1) : 1;\n    // By the width of the column, as the grid's columns: one in a phone's column, more where they fit.\n    $views = [1 => 1, 2 => ['sm' => 1, 'md' => 2], 3 => ['sm' => 1, 'md' => 2, 'lg' => 3]][$at];\n    $fade = $at === 1 && ($effect ?? 'slide') === 'fade' ? 'fade' : 'slide';\n    $turn = ! empty($autoplay) ? max(2, min(30, (int) ($interval ?? 5) ?: 5)) * 1000 : false;\n    // The section's head and its look; a block saved before these fields prints as it did.\n    $kind = in_array($view, ['slider', 'mosaic', 'ribbon'], true) ? $view : 'grid';\n    $centred = ($align ?? null) === 'center';\n    // The caption on the picture, on glass in its lower corner: the alt, else the file's title.\n    $plates = $kind !== 'ribbon' && ($captions ?? null) === 'over';\n    // The space between the pictures, across and down: a step of the theme's spacing.\n    $spaces = ['small' => 'var(--site-space-4, 1rem)', 'medium' => 'var(--site-space-5, 1.5rem)', 'large' => 'var(--site-space-6, 2rem)', 'wide' => 'var(--site-space-7, 3rem)'];\n    $space = $kind !== 'slider' && is_string($gap ?? null) ? ($spaces[$gap] ?? null) : null;\n    $column = $kind === 'mosaic' && ($narrow ?? null) === 'column';\n    $above = $kind === 'mosaic' && ($arrows_at ?? null) === 'head';\n    // A ribbon of posts: pictures of its own, each with a link and a badge; one without a picture is left out.\n    if ($kind === 'ribbon') {\n        $shown = array_values(array_filter(is_array($frames ?? null) ? $frames : [], static fn ($frame): bool => is_array($frame) && is_array($frame['picture'] ?? null) && ! empty($frame['picture']['url'])));\n    }\n@endphp\n@if ($shown)\n<section class=\"b-gallery b-gallery--{{ $kind }}{{ $view === 'slider' && $at > 1 ? ' b-gallery--row' : '' }}{{ $kind === 'ribbon' ? ' site-bleed' : '' }}{{ $centred ? ' b-gallery--center' : '' }}{{ $plates ? ' b-gallery--plates' : '' }}{{ $column ? ' b-gallery--column' : '' }}{{ $above ? ' b-gallery--arrows-head' : '' }}\" data-wx-block=\"gallery\" style=\"--gallery-columns: {{ $across }}{{ $space ? '; --gallery-gap: '.$space : '' }}\">\n    @if (($eyebrow ?? null) || ($intro ?? null) || $kind === 'ribbon')\n        <div class=\"b-gallery__head\">\n            @if ($eyebrow ?? null)\n                <p class=\"b-gallery__eyebrow\">{{ $eyebrow }}</p>\n            @endif\n            @if ($heading)\n                <h2 class=\"b-gallery__heading\">{{ $heading }}</h2>\n            @endif\n            @if ($intro ?? null)\n                <p class=\"b-gallery__intro\">{{ $intro }}</p>\n            @endif\n        </div>\n    @elseif ($heading)\n        <h2 class=\"b-gallery__heading\">{{ $heading }}</h2>\n    @endif\n    @if ($view === 'slider')\n        <x-webx-slider variant=\"gallery\" :label=\"$label\" :per-view=\"$views\" :effect=\"$fade\" :arrows=\"(bool) ($arrows ?? true)\" :pagination=\"(bool) ($dots ?? false)\" :thumbs=\"$at === 1 && (bool) ($thumbs ?? true)\" :loop=\"(bool) ($endless ?? false)\" :autoplay=\"$turn\">\n            @foreach ($shown as $picture)\n                <x-webx-slide :thumb=\"$picture['thumb'] ?? null\">\n                    <figure class=\"b-gallery__figure\">\n                        @if ($zoom)\n                            <x-webx-lightbox :image=\"$picture\" :group=\"$group\" :ratio=\"$frame\" :data-webx-zoom=\"$hover ? '' : null\" :data-zoom-mode=\"$hover\"><img class=\"b-gallery__image\" src=\"{{ $picture['url'] }}\" alt=\"{{ $picture['alt'] ?? '' }}\" @if ($picture['width']) width=\"{{ $picture['width'] }}\" height=\"{{ $picture['height'] }}\" @endif></x-webx-lightbox>\n                        @else\n                            <img class=\"b-gallery__image\" src=\"{{ $picture['url'] }}\" alt=\"{{ $picture['alt'] ?? '' }}\" @if ($picture['width']) width=\"{{ $picture['width'] }}\" height=\"{{ $picture['height'] }}\" @endif>\n                        @endif\n                        @if (! empty($words = $plates ? (($picture['alt'] ?? null) ?: ($picture['title'] ?? null)) : ($picture['title'] ?? null)))\n                            <figcaption class=\"b-gallery__caption\"{!! $plates && $words === ($picture['alt'] ?? null) ? ' aria-hidden=\"true\"' : '' !!}>{{ $words }}</figcaption>\n                        @endif\n                    </figure>\n                </x-webx-slide>\n            @endforeach\n        </x-webx-slider>\n    @elseif ($view === 'mosaic')\n        @php\n            // Three at a time, the first large; a carousel of threes only with more than three to page through.\n            $turning = ($mosaic ?? 'still') === 'slider' && count($shown) > 3;\n            $groups = $turning ? array_chunk($shown, 3) : [array_slice($shown, 0, 3)];\n            // Still: the pictures past the third are not shown, but the lightbox pages through them all.\n            $unseen = $turning || ! $zoom ? [] : array_slice($shown, 3);\n            $tiles = [];\n        @endphp\n        @foreach ($groups as $three)\n            @php ob_start(); @endphp\n            <ul class=\"b-gallery__mosaic b-gallery__mosaic--{{ count($three) }}\">\n                @foreach ($three as $picture)\n                    <li class=\"b-gallery__tile\">\n                        <figure class=\"b-gallery__figure\">\n                            <div class=\"b-gallery__shot\">\n                                @if ($zoom)\n                                    <x-webx-lightbox :image=\"$picture\" :group=\"$group\" :ratio=\"$frame\"><img class=\"b-gallery__image\" src=\"{{ $picture['url'] }}\" alt=\"{{ $picture['alt'] ?? '' }}\" @if ($picture['width']) width=\"{{ $picture['width'] }}\" height=\"{{ $picture['height'] }}\" @endif loading=\"lazy\" decoding=\"async\"></x-webx-lightbox>\n                                @else\n                                    <img class=\"b-gallery__image\" src=\"{{ $picture['url'] }}\" alt=\"{{ $picture['alt'] ?? '' }}\" @if ($picture['width']) width=\"{{ $picture['width'] }}\" height=\"{{ $picture['height'] }}\" @endif loading=\"lazy\" decoding=\"async\">\n                                @endif\n                            </div>\n                            @if (! empty($words = $plates ? (($picture['alt'] ?? null) ?: ($picture['title'] ?? null)) : ($picture['title'] ?? null)))\n                                <figcaption class=\"b-gallery__caption\"{!! $plates && $words === ($picture['alt'] ?? null) ? ' aria-hidden=\"true\"' : '' !!}>{{ $words }}</figcaption>\n                            @endif\n                        </figure>\n                    </li>\n                @endforeach\n            </ul>\n            @php $tiles[] = ob_get_clean(); @endphp\n        @endforeach\n        @if ($turning)\n            <x-webx-slider variant=\"gallery\" :label=\"$label\" :per-view=\"1\" :thumbs=\"false\" :arrows=\"(bool) ($arrows ?? true)\" :pagination=\"(bool) ($dots ?? false)\" :loop=\"(bool) ($endless ?? false)\" :autoplay=\"$turn\">\n                @foreach ($tiles as $tile)\n                    <x-webx-slide>{!! $tile !!}</x-webx-slide>\n                @endforeach\n            </x-webx-slider>\n        @else\n            {!! $tiles[0] !!}\n        @endif\n        @if ($unseen)\n            <div class=\"b-gallery__unseen\" hidden>\n                @foreach ($unseen as $picture)\n                    <x-webx-lightbox :image=\"$picture\" :group=\"$group\" :ratio=\"$frame\" :aria-label=\"$picture['alt'] ?? null\"><span>{{ $picture['title'] ?? '' }}</span></x-webx-lightbox>\n                @endforeach\n            </div>\n        @endif\n    @elseif ($kind === 'ribbon')\n        {{-- A strip that scrolls sideways under a finger, the wheel and the keyboard, with no script: each frame a link to its post. --}}\n        <ul class=\"b-gallery__ribbon\" role=\"list\" tabindex=\"0\" @if ($label) aria-label=\"{{ $label }}\" @endif>\n            @foreach ($shown as $frame)\n                @php\n                    $picture = $frame['picture'];\n                    $link = is_array($frame['link'] ?? null) && ! empty($frame['link']['url']) && ($frame['link']['available'] ?? true) !== false ? $frame['link'] : null;\n                    $badge = in_array($frame['badge'] ?? null, ['pin', 'video'], true) ? $frame['badge'] : null;\n                    $name = ($picture['alt'] ?? null) ?: ($picture['title'] ?? null);\n                @endphp\n                <li class=\"b-gallery__frame\">\n                    @if ($link)\n                        <a class=\"b-gallery__post\" href=\"{{ $link['url'] }}\" target=\"_blank\" rel=\"{{ trim('noopener '.(is_string($link['rel'] ?? null) ? $link['rel'] : '')) }}\" @if (! ($picture['alt'] ?? null) && $name) aria-label=\"{{ $name }}\" @endif>\n                    @else\n                        <span class=\"b-gallery__post\">\n                    @endif\n                    <img class=\"b-gallery__image\" src=\"{{ $picture['url'] }}\" alt=\"{{ $picture['alt'] ?? '' }}\" @if (! empty($picture['width'])) width=\"{{ $picture['width'] }}\" height=\"{{ $picture['height'] }}\" @endif @if ($loop->index >= 4) loading=\"lazy\" @endif>\n                    @if ($badge)\n                        <span class=\"b-gallery__badge b-gallery__badge--{{ $badge }}\" aria-hidden=\"true\"><x-webx-icon :name=\"$badge\" /></span>\n                    @endif\n                    @if ($link)\n                        </a>\n                    @else\n                        </span>\n                    @endif\n                </li>\n            @endforeach\n        </ul>\n    @else\n        <ul class=\"b-gallery__grid\">\n            @foreach ($shown as $picture)\n                @php\n                    // The square preview of the library, and the picture itself where a cell is wider than it.\n                    $sources = $picture['thumb'] && $picture['width'] ? $picture['thumb'].' 320w, '.$picture['url'].' '.$picture['width'].'w' : null;\n                @endphp\n                <li class=\"b-gallery__cell\">\n                    <figure class=\"b-gallery__figure\">\n                        @if ($zoom)\n                            <x-webx-lightbox :image=\"$picture\" :group=\"$group\" :ratio=\"$frame\"><img class=\"b-gallery__image\" src=\"{{ $picture['thumb'] ?: $picture['url'] }}\" @if ($sources) srcset=\"{{ $sources }}\" sizes=\"(max-width: 40rem) 50vw, {{ (int) ceil(100 / $across) }}vw\" @endif alt=\"{{ $picture['alt'] ?? '' }}\" width=\"320\" height=\"320\" @if ($loop->index >= $across) loading=\"lazy\" @endif></x-webx-lightbox>\n                        @else\n                            <img class=\"b-gallery__image\" src=\"{{ $picture['thumb'] ?: $picture['url'] }}\" @if ($sources) srcset=\"{{ $sources }}\" sizes=\"(max-width: 40rem) 50vw, {{ (int) ceil(100 / $across) }}vw\" @endif alt=\"{{ $picture['alt'] ?? '' }}\" width=\"320\" height=\"320\" @if ($loop->index >= $across) loading=\"lazy\" @endif>\n                        @endif\n                        @if (! empty($words = $plates ? (($picture['alt'] ?? null) ?: ($picture['title'] ?? null)) : ($picture['title'] ?? null)))\n                            <figcaption class=\"b-gallery__caption\"{!! $plates && $words === ($picture['alt'] ?? null) ? ' aria-hidden=\"true\"' : '' !!}>{{ $words }}</figcaption>\n                        @endif\n                    </figure>\n                </li>\n            @endforeach\n        </ul>\n    @endif\n</section>\n@endif\n",
+  "styles": ".b-gallery {\n    container: b-gallery / inline-size;\n    --gallery-gap: 0.75em;\n}\n\n.b-gallery__heading {\n    margin: 0 0 var(--site-section-head-space, 1em);\n}\n\n/* The section's H2 type (THEMES §7.2): unset, the prose's own, and only where the prose applies\n   (in the main column and under site-prose), so that nothing changes until a site sets it. */\n.b-gallery__heading:where(.site-main *, .site-prose *) {\n    font-family: var(--site-section-title-font, var(--site-font-heading));\n    font-size: var(--site-section-title-size, var(--site-font-size-2));\n    line-height: var(--site-section-title-line-height, 1.2);\n    /* Unset, nothing: an inherited property falls back to the parent's. */\n    text-transform: var(--site-section-title-case);\n}\n\n/* The section's rhythm (THEMES §7.2): none of its own until a site sets one, and no weight. */\n:where(.b-gallery) {\n    padding-block: var(--site-section-space, 0);\n}\n\n/* Up to `--gallery-columns` across, fewer when a cell would be narrower than 9em: the width of the\n   column the block stands in decides, not the window. */\n.b-gallery__grid {\n    display: grid;\n    grid-template-columns: repeat(\n        auto-fill,\n        minmax(min(100%, max(9em, (100% - (var(--gallery-columns, 3) - 1) * var(--gallery-gap)) / var(--gallery-columns, 3))), 1fr)\n    );\n    gap: var(--gallery-gap);\n    margin: 0;\n    padding: 0;\n    list-style: none;\n}\n\n/* No margin of its own: a theme's prose spaces `li + li`, which in a grid lifts the first cell\n   above its row. */\n.b-gallery__cell {\n    min-width: 0;\n    margin: 0;\n}\n\n.b-gallery__figure {\n    margin: 0;\n}\n\n.b-gallery__image {\n    display: block;\n    width: 100%;\n    height: auto;\n    border-radius: 0.25em;\n}\n\n/* The library's preview is square, and so is a cell: pictures of every shape line up. */\n.b-gallery__grid .b-gallery__image {\n    aspect-ratio: 1;\n    object-fit: cover;\n}\n\n/* Several slides at a time line up as the grid's cells do, whatever the shape of each picture. */\n.b-gallery--row .b-gallery__image {\n    aspect-ratio: 4 / 3;\n    object-fit: cover;\n}\n\n.b-gallery__caption {\n    margin-top: 0.5em;\n    font-size: 0.875em;\n    opacity: 0.75;\n}\n\n/* The mosaic: the first picture of three large, the other two smaller. A narrow column puts the\n   large one on top and the two side by side under it; from 36em of the block's own width the large\n   one stands on the left and the two one above the other on its right. Every picture is cut to its\n   cell (cover); the lightbox shows it whole. */\n.b-gallery__mosaic {\n    display: grid;\n    grid-template-columns: 1fr 1fr;\n    gap: var(--gallery-gap);\n    margin: 0;\n    padding: 0;\n    list-style: none;\n}\n\n/* No margin of its own, as a cell of the grid: a theme's prose spaces `li + li`. */\n.b-gallery__tile {\n    display: flex;\n    min-width: 0;\n    margin: 0;\n}\n\n.b-gallery__mosaic .b-gallery__figure {\n    display: flex;\n    flex: 1;\n    flex-direction: column;\n    min-width: 0;\n}\n\n.b-gallery__shot {\n    position: relative;\n    flex: 1 1 auto;\n    aspect-ratio: 4 / 3;\n    overflow: hidden;\n    border-radius: 0.25em;\n}\n\n/* The picture fills the cell whatever its shape: the cell, not the picture, sets the height. */\n.b-gallery__shot > a,\n.b-gallery__shot img {\n    position: absolute;\n    inset: 0;\n    display: block;\n    width: 100%;\n    height: 100%;\n}\n\n.b-gallery__mosaic .b-gallery__image {\n    object-fit: cover;\n    border-radius: 0;\n}\n\n.b-gallery__mosaic > .b-gallery__tile:first-child,\n.b-gallery__mosaic--2 > .b-gallery__tile {\n    grid-column: 1 / -1;\n}\n\n@container b-gallery (min-width: 36em) {\n    .b-gallery__mosaic--3 {\n        grid-template-columns: 2fr 1fr;\n        grid-template-rows: 1fr 1fr;\n    }\n\n    .b-gallery__mosaic--3 > .b-gallery__tile:first-child {\n        grid-column: 1;\n        grid-row: 1 / span 2;\n    }\n\n    /* The two small ones take the height the large one gives them, half each. */\n    .b-gallery__mosaic--3 > .b-gallery__tile:not(:first-child) .b-gallery__shot {\n        aspect-ratio: auto;\n        min-height: 4em;\n    }\n\n    /* Fewer than three — the last group of a carousel, a short gallery — keep the height of three:\n       two square halves, or one picture twice as wide as high. */\n    .b-gallery__mosaic--2 > .b-gallery__tile {\n        grid-column: auto;\n    }\n\n    .b-gallery__mosaic--2 .b-gallery__shot {\n        aspect-ratio: 1;\n    }\n\n    .b-gallery__mosaic--1 .b-gallery__shot {\n        aspect-ratio: 2;\n    }\n}\n\n/* The section's head (`eyebrow`, `intro`): the heading between the line above it and the words\n   under it. Without them the heading stands alone, as it always did. */\n.b-gallery__head {\n    margin: 0 0 var(--gallery-head-space, var(--site-section-head-space, 1em));\n}\n\n.b-gallery__head > :last-child {\n    margin-bottom: 0;\n}\n\n.b-gallery__head .b-gallery__heading {\n    margin: 0 0 var(--site-section-title-space, 0.5em);\n}\n\n/* In the theme's smaller size where it has one; the block has no words of a theme of its own. */\n.b-gallery__eyebrow {\n    margin: 0 0 var(--site-eyebrow-space, 0.5em);\n    /* Unset, the parent's: font-family and line-height are inherited. */\n    font-family: var(--site-eyebrow-font);\n    font-size: var(--site-eyebrow-size, var(--site-font-size-6, 0.875em));\n    font-weight: var(--site-eyebrow-weight, 600);\n    line-height: var(--site-eyebrow-line-height);\n    letter-spacing: var(--site-eyebrow-letter-spacing, 0.08em);\n    text-transform: var(--site-eyebrow-case, uppercase);\n}\n\n.b-gallery__intro {\n    max-width: 42rem;\n    margin: 0;\n    opacity: 0.75;\n}\n\n.b-gallery--center .b-gallery__head,\n.b-gallery--center > .b-gallery__heading {\n    text-align: center;\n}\n\n.b-gallery--center .b-gallery__intro {\n    margin-inline: auto;\n}\n\n/* One under another in a narrow column (`narrow: column`), each as wide as the column. */\n@container b-gallery (max-width: 35.99em) {\n    .b-gallery--column .b-gallery__mosaic {\n        grid-template-columns: minmax(0, 1fr);\n    }\n}\n\n/* The carousel's arrows under the head (`arrows_at: head`): head, the arrows, then the pictures.\n   The block's own variables are the knobs a site's theme turns: the spaces, the size, the glass. */\n.b-gallery--arrows-head {\n    --gallery-head-space: var(--site-space-6, 2rem);\n    --gallery-arrows-space: calc(var(--site-space-6, 2rem) + var(--site-space-2, 0.5rem));\n    --gallery-arrow-size: 52px;\n    --gallery-glass: 64%;\n    --gallery-glass-solid: 92%;\n    --gallery-blur: 12px;\n}\n\n.b-gallery--arrows-head > .b-gallery__heading {\n    margin-bottom: var(--gallery-head-space);\n}\n\n.b-gallery--arrows-head .webx-slider {\n    gap: var(--gallery-arrows-space);\n    --webx-slider-arrow-size: var(--gallery-arrow-size);\n}\n\n/* The slider names its first cell for the slides and their overlay, so `order` alone moves\n   nothing: the rows are explicit, the arrows in the first and the slides under them. */\n.b-gallery--arrows-head .webx-slider__controls {\n    order: -1;\n    grid-row: 1;\n    justify-content: flex-start;\n}\n\n.b-gallery--arrows-head .webx-slider__viewport,\n.b-gallery--arrows-head .webx-slider__overlay {\n    grid-row: 2;\n}\n\n.b-gallery--arrows-head.b-gallery--center .webx-slider__controls {\n    justify-content: center;\n}\n\n.b-gallery--arrows-head .webx-slider__button {\n    border-color: color-mix(in srgb, currentColor 16%, transparent);\n    background: color-mix(in srgb, var(--webx-slider-control-bg) var(--gallery-glass), transparent);\n    -webkit-backdrop-filter: blur(var(--gallery-blur));\n    backdrop-filter: blur(var(--gallery-blur));\n}\n\n@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {\n    .b-gallery--arrows-head .webx-slider__button {\n        background: color-mix(in srgb, var(--webx-slider-control-bg) var(--gallery-glass-solid), transparent);\n    }\n}\n\n/* The caption on the picture (`captions: over`): glass in its lower corner, small words. It lets\n   a click through to the picture's link. */\n.b-gallery--plates {\n    --gallery-plate-inset: var(--site-space-5, 1.5rem);\n    --gallery-plate-padding: var(--site-space-2, 0.5rem) var(--site-space-3, 0.75rem);\n    --gallery-plate-radius: var(--site-radius-sm, 0.25em);\n    --gallery-plate-glass: 72%;\n    --gallery-plate-glass-solid: 92%;\n    --gallery-plate-blur: 12px;\n}\n\n.b-gallery--plates .b-gallery__figure {\n    position: relative;\n}\n\n.b-gallery--plates .b-gallery__caption {\n    position: absolute;\n    inset-inline-start: var(--gallery-plate-inset);\n    bottom: var(--gallery-plate-inset);\n    z-index: 1;\n    max-width: calc(100% - 2 * var(--gallery-plate-inset));\n    margin: 0;\n    padding: var(--gallery-plate-padding);\n    border-radius: var(--gallery-plate-radius);\n    background: color-mix(in srgb, var(--site-color-surface, Canvas) var(--gallery-plate-glass), transparent);\n    color: var(--site-color-text, CanvasText);\n    font-size: 0.875em;\n    line-height: 1.3;\n    opacity: 1;\n    pointer-events: none;\n    -webkit-backdrop-filter: blur(var(--gallery-plate-blur));\n    backdrop-filter: blur(var(--gallery-plate-blur));\n}\n\n@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {\n    .b-gallery--plates .b-gallery__caption {\n        background: color-mix(in srgb, var(--site-color-surface, Canvas) var(--gallery-plate-glass-solid), transparent);\n    }\n}\n\n/* The ribbon (`view: ribbon`): frames 3:4 from the column's start to the window's end, a strip\n   that scrolls sideways — a finger, the wheel, the keyboard; no script. The section spans the page\n   (`site-bleed`) and keeps its start to the column; anywhere but the main column it is the\n   column it stands in. */\n.b-gallery--ribbon {\n    --gallery-ribbon-start: 0px;\n    --gallery-ribbon-column: 100cqi;\n}\n\n.b-gallery--ribbon:where(.site-main > *) {\n    --gallery-ribbon-column: min(\n        100cqi - 2 * var(--site-section-gutter, var(--site-gutter)),\n        var(--site-container-width) - 2 * var(--site-section-gutter, var(--site-gutter))\n    );\n    --gallery-ribbon-start: calc((100cqi - var(--gallery-ribbon-column)) / 2);\n}\n\n.b-gallery--ribbon .b-gallery__head {\n    padding-inline: var(--gallery-ribbon-start);\n}\n\n.b-gallery__ribbon {\n    /* How many frames the column holds: a part of the last one shows, there is more to the side. */\n    --gallery-ribbon-across: 4.25;\n    display: flex;\n    gap: var(--gallery-gap);\n    margin: 0;\n    padding: 0 var(--gallery-ribbon-start);\n    padding-inline-end: 0;\n    list-style: none;\n    overflow-x: auto;\n    overscroll-behavior-x: contain;\n    scroll-padding-inline: var(--gallery-ribbon-start);\n    scroll-snap-type: x mandatory;\n    scrollbar-width: none;\n}\n\n.b-gallery__ribbon::-webkit-scrollbar {\n    display: none;\n}\n\n.b-gallery__ribbon:focus-visible {\n    outline: 2px solid currentColor;\n    outline-offset: 2px;\n}\n\n.b-gallery__frame {\n    position: relative;\n    flex: 0 0 calc((var(--gallery-ribbon-column) - (var(--gallery-ribbon-across) - 1) * var(--gallery-gap)) / var(--gallery-ribbon-across));\n    min-width: 0;\n    margin: 0;\n    scroll-snap-align: start;\n}\n\n/* The end of the strip keeps a gutter after its last frame. */\n.b-gallery__frame:last-child {\n    margin-inline-end: var(--gallery-ribbon-start);\n}\n\n/* The section is the container: what a query sets stands on the strip inside it. */\n@container b-gallery (max-width: 39.99em) {\n    .b-gallery__ribbon {\n        --gallery-ribbon-across: 1.5;\n    }\n}\n\n@container b-gallery (min-width: 40em) and (max-width: 63.99em) {\n    .b-gallery__ribbon {\n        --gallery-ribbon-across: 2.5;\n    }\n}\n\n.b-gallery__post {\n    display: block;\n    position: relative;\n    overflow: hidden;\n    border-radius: 0.25em;\n    color: inherit;\n}\n\n.b-gallery__post:focus-visible {\n    outline: 2px solid currentColor;\n    outline-offset: 2px;\n}\n\n.b-gallery__ribbon .b-gallery__image {\n    aspect-ratio: 3 / 4;\n    object-fit: cover;\n    border-radius: 0;\n}\n\n/* What the post is — pinned, a video — in its upper corner, on the same glass as a caption. */\n.b-gallery__badge {\n    position: absolute;\n    top: var(--site-space-3, 0.75rem);\n    inset-inline-end: var(--site-space-3, 0.75rem);\n    display: inline-flex;\n    padding: var(--site-space-1, 0.25rem);\n    border-radius: var(--site-radius-full, 9999px);\n    background: color-mix(in srgb, var(--site-color-surface, Canvas) 72%, transparent);\n    color: var(--site-color-text, CanvasText);\n    pointer-events: none;\n    -webkit-backdrop-filter: blur(12px);\n    backdrop-filter: blur(12px);\n}\n\n.b-gallery__badge svg {\n    width: 1.25em;\n    height: 1.25em;\n}\n",
   "script": null,
   "sample": {
+    "eyebrow": "",
     "heading": "Gallery",
+    "intro": "",
+    "align": "start",
     "pictures": [],
     "view": "grid",
     "columns": 3,
@@ -384,6 +611,11 @@
     "endless": false,
     "autoplay": false,
     "interval": 5,
-    "mosaic": "still"
+    "mosaic": "still",
+    "frames": [],
+    "gap": "narrow",
+    "captions": "under",
+    "narrow": "pair",
+    "arrows_at": "below"
   }
 }

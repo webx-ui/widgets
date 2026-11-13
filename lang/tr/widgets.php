@@ -101,6 +101,7 @@ return [
         'first' => 'Bu ilk slayt',
         'last' => 'Bu son slayt',
         'go_to' => ':index. slayta git',
+        'show' => 'Slayt :index / :count',
         'position' => ':index / :count',
         'pause' => 'Duraklat',
         'play' => 'Oynat',

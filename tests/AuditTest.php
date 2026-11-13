@@ -129,6 +129,7 @@ final class AuditTest extends TestCase
         $this->assertSame(['count' => 2], $unsized->details['summary']['params'], 'No size, and a size of zero; the sized link is fine.');
         $this->assertCount(2, $unsized->details['table']['rows']);
 
+        $this->assertSame(['/slider'], array_keys($this->keys('widgets.slider_pause')), 'A slider told :pause="false" is no lost button.');
         $slider = AuditIssue::query()->where('check', 'widgets.slider_pause')->firstOrFail();
         $this->assertSame(['count' => 1], $slider->details['summary']['params']);
         $this->assertStringStartsWith('<section class="webx-slider webx-slider--hero" id="lost"', (string) $slider->details['table']['rows'][0]['markup']);
@@ -353,6 +354,8 @@ final class AuditTest extends TestCase
                 .'<a href="/a.jpg" data-webx-lightbox="g" data-width="1800" data-height="1200">A</a>'
                 .'<section class="webx-slider webx-slider--logos" data-webx-slider=\'{"autoplay":0,"continuous":true}\'>'.$slide.$pause.'</section>'
                 .'<section class="webx-slider webx-slider--cards" data-webx-slider=\'{"autoplay":0,"continuous":false}\'>'.$slide.'</section>'
+                // No button by the page's own choice (`:pause="false"`): the pointer and the focus stop it.
+                .'<section class="webx-slider webx-slider--cards" data-webx-slider=\'{"autoplay":5000,"continuous":false,"pause":false}\'>'.$slide.'</section>'
                 .'<div class="webx-contact-button"></div>'
                 // A background video with its pause button; counters that hold their numbers, however the language writes them.
                 .'<div class="webx-video webx-video--background" data-webx-video-background><video class="webx-video__background" muted loop></video><button type="button" class="webx-video__pause">Pause</button></div>'

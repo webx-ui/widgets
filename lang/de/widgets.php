@@ -101,6 +101,7 @@ return [
         'first' => 'Das ist die erste Folie',
         'last' => 'Das ist die letzte Folie',
         'go_to' => 'Zu Folie :index',
+        'show' => 'Folie :index von :count',
         'position' => ':index / :count',
         'pause' => 'Pause',
         'play' => 'Abspielen',

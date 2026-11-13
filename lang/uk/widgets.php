@@ -101,6 +101,7 @@ return [
         'first' => 'Це перший слайд',
         'last' => 'Це останній слайд',
         'go_to' => 'Перейти до слайда :index',
+        'show' => 'Слайд :index з :count',
         'position' => ':index / :count',
         'pause' => 'Пауза',
         'play' => 'Відтворити',

@@ -101,6 +101,7 @@ return [
         'first' => 'To pierwszy slajd',
         'last' => 'To ostatni slajd',
         'go_to' => 'Przejdź do slajdu :index',
+        'show' => 'Slajd :index z :count',
         'position' => ':index / :count',
         'pause' => 'Wstrzymaj',
         'play' => 'Odtwórz',

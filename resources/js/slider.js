@@ -15,6 +15,12 @@
  *
  * Everything else is settled on the server: the variant's settings with the props over them come
  * in `data-webx-slider`, the words with them.
+ *
+ * The `overlay` slot is a pane over the slides that does not move: its `.webx-slider__caption`s,
+ * one per slide, follow the slide in view, and `paginationIn` may put the dots in it. Every change
+ * of the slide is told on the root as `webx:slide` — `detail.index` (the slide's own number from 0,
+ * a loop's copies not counted), `detail.count` and `detail.auto` (autoplay moved it) — for what a
+ * theme draws around the slider.
  */
 
 import '../css/slider.css'
@@ -90,7 +96,23 @@ export function slider(root) {
   const controls = root.querySelector('.webx-slider__controls')
   const prev = root.querySelector('.webx-slider__prev')
   const next = root.querySelector('.webx-slider__next')
-  const bullets = root.querySelector('.webx-slider__pagination')
+  const overlay = Array.from(root.children).find((el) =>
+    el.classList.contains('webx-slider__overlay'),
+  )
+  const captions = overlay ? Array.from(overlay.querySelectorAll('.webx-slider__caption')) : []
+  const captionBox = overlay?.querySelector('.webx-slider__captions') ?? null
+  let outside = null
+  if (config.paginationIn) {
+    try {
+      outside = root.querySelector(config.paginationIn)
+    } catch {
+      outside = null
+    }
+  }
+  // The element named for the dots takes the class of the slider's own, and its frame with it.
+  const lent = Boolean(outside) && !outside.classList.contains('webx-slider__pagination')
+  if (lent) outside.classList.add('webx-slider__pagination')
+  const bullets = outside ?? root.querySelector('.webx-slider__pagination')
   const counter = root.querySelector('.webx-slider__count')
   const pause = root.querySelector('.webx-slider__pause')
   const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
@@ -201,7 +223,11 @@ export function slider(root) {
       nextSlideMessage: text.next,
       firstSlideMessage: text.first,
       lastSlideMessage: text.last,
-      paginationBulletMessage: words(text.go_to, { ':index': '{{index}}' }),
+      // Dots away from the slides say which slide they are of how many: "Slide 2 of 4".
+      paginationBulletMessage:
+        outside && text.show
+          ? words(text.show, { ':index': '{{index}}', ':count': String(slides.length) })
+          : words(text.go_to, { ':index': '{{index}}' }),
       slideLabelMessage: words(text.position, {
         ':index': '{{index}}',
         ':count': '{{slidesLength}}',
@@ -217,6 +243,7 @@ export function slider(root) {
   root.classList.add('is-ready')
   track.classList.add('is-ready')
   if (controls) controls.hidden = false
+  if (overlay) overlay.hidden = false
 
   // The current thumbnail says so to a screen reader, not only by its frame.
   const current = () => {
@@ -251,6 +278,39 @@ export function slider(root) {
   let hovered = false
   let focused = false
 
+  // The captions of the overlay: the current one in view, the others out of reach and unheard.
+  // An announcement only when the reader moved it — autoplay does not talk over the page.
+  const caption = (index, auto) => {
+    if (captionBox) captionBox.setAttribute('aria-live', auto ? 'off' : 'polite')
+    captions.forEach((item, at) => {
+      const now = at === index
+      item.classList.toggle('is-current', now)
+      item.inert = !now
+      if (now) item.removeAttribute('aria-hidden')
+      else item.setAttribute('aria-hidden', 'true')
+    })
+  }
+  let shown = -1
+  const told = () => {
+    if (slides.length === 0) return
+    const index = swiper.realIndex % slides.length
+    if (index === shown) return
+    const first = shown === -1
+    shown = index
+    const auto = autoplay && !reduced && !stopped && !hovered && !focused
+    caption(index, first || auto)
+    if (first) return
+    root.dispatchEvent(
+      new CustomEvent('webx:slide', {
+        bubbles: true,
+        detail: { index, count: slides.length, auto },
+      }),
+    )
+  }
+  swiper.on('realIndexChange', told)
+  swiper.on('slideChange', told)
+  told()
+
   const label = () => {
     if (!pause) return
     pause.classList.toggle('is-paused', stopped)
@@ -261,6 +321,12 @@ export function slider(root) {
     if (hovered || focused) swiper.autoplay.pause()
     else swiper.autoplay.resume()
   }
+
+  // Swiper resumes on its own at the end of a move by hand — a dot clicked, a key pressed — even
+  // with the pointer or the focus still inside: the hold is put back.
+  swiper.on('autoplayResume', () => {
+    if (autoplay && !stopped && (hovered || focused)) swiper.autoplay.pause()
+  })
 
   const on = []
   const listen = (target, type, listener) => {
@@ -337,6 +403,12 @@ export function slider(root) {
     root.classList.remove('is-ready')
     track.classList.remove('is-ready')
     if (controls) controls.hidden = true
+    if (overlay) overlay.hidden = true
+    if (lent) outside.classList.remove('webx-slider__pagination')
+    captions.forEach((item, at) => {
+      item.classList.toggle('is-current', at === 0)
+      item.inert = at !== 0
+    })
     counter?.classList.remove('is-locked')
   }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Widgets;
 
+use Closure;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Contracts\Routing\UrlGenerator;
 use InvalidArgumentException;
@@ -31,6 +32,11 @@ use WebxUi\Widgets\View\Components\Zoom;
  * the spot. So the head holds a marker, and the response is finished once the whole page has
  * rendered — every claim known — by `finish()`: the marker becomes the stylesheets, the scripts
  * go before `</body>`. A page rendered outside a request keeps the marker, an HTML comment.
+ *
+ * What nobody sees before they act — a form in a closed dialog, the banner a script shows later —
+ * is claimed inside `later()` (`@webxLater` in Blade): its stylesheet then does not hold the first
+ * paint, it comes with `media="print"` switched on when loaded, and in `<noscript>` as it always
+ * was. A widget the page also shows at once is claimed outside as well and stays in the head as is.
  *
  * A site without a theme has no `@webxTheme` to print, and stylesheets made of a theme's tokens
  * would be of no use to it — but `<x-webx-form>` needs its scripts to send in place and to check
@@ -62,8 +68,11 @@ final class Widgets implements HeadPart
     /** A form's slug, the shape `module-inbox` gives it. */
     private const string SLUG = '/^[a-z0-9][a-z0-9_-]*$/i';
 
-    /** @var array<string, true> */
+    /** @var array<string, bool> widget => whether the first paint needs it */
     private array $claimed = [];
+
+    /** @var list<bool> the open `later()` and `@webxLater` around what renders now */
+    private array $holds = [];
 
     /** @var array<string, bool> slug => as a sheet */
     private array $forms = [];
@@ -99,7 +108,40 @@ final class Widgets implements HeadPart
             throw new InvalidArgumentException("There is no widget \"{$widget}\" in ".self::NAME.'.');
         }
 
-        $this->claimed[$widget] = true;
+        $this->claimed[$widget] = ($this->claimed[$widget] ?? false) || ! in_array(true, $this->holds, true);
+    }
+
+    /**
+     * Render what a visitor does not see before they act — a closed dialog, a banner a script
+     * shows — so that the widgets it claims do not hold the first paint (spec §4). A widget the
+     * page shows at once as well is claimed outside and keeps its stylesheet blocking.
+     *
+     * @template T
+     *
+     * @param  Closure(): T  $render
+     * @return T
+     */
+    public function later(Closure $render): mixed
+    {
+        $this->hold();
+
+        try {
+            return $render();
+        } finally {
+            $this->release();
+        }
+    }
+
+    /** The opening of `@webxLater($when)`: with `$when` false what follows is claimed as usual. */
+    public function hold(bool $when = true): void
+    {
+        $this->holds[] = $when;
+    }
+
+    /** The end of `@webxLater`. */
+    public function release(): void
+    {
+        array_pop($this->holds);
     }
 
     /**
@@ -148,6 +190,12 @@ final class Widgets implements HeadPart
     public function claimed(): array
     {
         return array_keys($this->claimed);
+    }
+
+    /** @return list<string> What this page claimed only inside `later()`: no stylesheet of these holds the first paint. */
+    public function claimedLater(): array
+    {
+        return array_keys(array_filter($this->claimed, static fn (bool $first): bool => ! $first));
     }
 
     public function head(): string
@@ -284,7 +332,8 @@ final class Widgets implements HeadPart
             $body[] = $lightbox;
         }
 
-        [$links, $scripts] = $this->tags();
+        // A piece goes into a page already painted: nothing there to wait for.
+        [$links, $scripts] = $this->tags(later: false);
         $styled = ! $this->chain->isEmpty();
 
         return [
@@ -309,10 +358,17 @@ final class Widgets implements HeadPart
         }
 
         $this->dialogsDone = true;
-        $dialogs = $this->dialogs->render([...$this->forms(), ...FormDialogs::openers($html)], [...array_keys(array_filter($this->forms)), ...FormDialogs::sheets($html)]);
+        // A closed dialog is nothing to paint: its form's stylesheets come after the first paint.
+        $dialogs = $this->later(fn (): string => $this->dialogs->render([...$this->forms(), ...FormDialogs::openers($html)], [...array_keys(array_filter($this->forms)), ...FormDialogs::sheets($html)]));
 
         if ($dialogs === '') {
             return $html;
+        }
+
+        // The page back from a form sent without JavaScript prints its dialog open: painted at
+        // once, everything claimed so far holds the first paint again.
+        if (preg_match('~<dialog\b[^>]*\sopen[\s>]~i', $dialogs) === 1) {
+            $this->claimed = array_map(static fn (): bool => true, $this->claimed);
         }
 
         $this->need('form-dialog');
@@ -325,6 +381,7 @@ final class Widgets implements HeadPart
     public function flush(): void
     {
         $this->claimed = [];
+        $this->holds = [];
         $this->forms = [];
         $this->dialogsDone = false;
         $this->sequences = [];
@@ -394,17 +451,23 @@ final class Widgets implements HeadPart
 
     /**
      * The tags of the runtime and of every widget claimed so far: the stylesheets and the scripts.
+     * With `$later`, a widget only claimed inside `later()` gets a stylesheet that does not hold
+     * the first paint: `media="print"` until loaded, and in `<noscript>` for a browser without
+     * JavaScript, which shows that dialog's form as a page of its own.
      *
      * @return array{list<string>, list<string>}
      */
-    private function tags(): array
+    private function tags(bool $later = true): array
     {
         $styles = [];
         $scripts = [];
 
         foreach (['runtime', ...array_diff($this->claimed(), self::RUNTIME)] as $widget) {
             if (($url = $this->url($widget, 'css')) !== null) {
-                $styles[] = '<link rel="stylesheet" href="'.e($url).'">';
+                $link = '<link rel="stylesheet" href="'.e($url).'">';
+                $styles[] = $later && $widget !== 'runtime' && ! $this->claimed[$widget]
+                    ? '<link rel="stylesheet" href="'.e($url).'" media="print" onload="this.media=\'all\'"><noscript>'.$link.'</noscript>'
+                    : $link;
             }
 
             if (($url = $this->url($widget, 'js')) !== null) {

@@ -326,7 +326,7 @@ final class BlocksTest extends TestCase
         /** @var array{schema: list<array<string, mixed>>, sample: array<string, mixed>} $type */
         $type = json_decode((string) file_get_contents(__DIR__.'/../resources/blocks/gallery.json'), true);
         $nodes = array_column($type['schema'], null, 'id');
-        $this->assertSame(['grid', 'slider', 'mosaic'], array_column($nodes['view']['props']['options'], 'value'));
+        $this->assertSame(['grid', 'slider', 'mosaic', 'ribbon'], array_column($nodes['view']['props']['options'], 'value'));
         $this->assertSame('grid', $nodes['view']['default']);
         $this->assertSame('still', $nodes['mosaic']['default']);
         $this->assertSame(['still', 'slider'], array_column($nodes['mosaic']['props']['options'], 'value'));
@@ -742,12 +742,115 @@ final class BlocksTest extends TestCase
     }
 
     #[Test]
+    public function the_tabs_slide_over_the_section_above_and_carry_a_line_above_the_heading(): void
+    {
+        $photo = $this->picture('plan');
+        $fog = $this->picture('fog');
+        $phone = $this->picture('fog-phone');
+        $tabs = [['title' => 'Phase 1', 'picture' => ['path' => $photo->path], 'text' => ''], ['title' => 'Phase 2', 'picture' => ['path' => $photo->path], 'text' => '']];
+
+        $html = $this->render('tabs', [
+            'eyebrow' => 'Project introduction', 'heading' => 'The plan', 'tabs' => $tabs, 'transition' => 'fade',
+            'overlap' => true, 'overlap_edge' => ['path' => $fog->path], 'overlap_edge_narrow' => ['path' => $phone->path],
+        ]);
+
+        $this->assertMatchesRegularExpression(
+            '~<section class="b-tabs b-tabs--top" data-wx-block="tabs" data-webx-overlap>\s*<picture class="webx-overlap__edge" aria-hidden="true"><source media="\(max-width: 40rem\)" srcset="[^"]*fog-phone\.webp[^"]*"[^>]*>\s*<img class="webx-overlap__image" src="[^"]*fog\.webp~',
+            $html,
+            'the root marked, its edge first inside it',
+        );
+        $this->assertMatchesRegularExpression(
+            '~</picture>\s*(<!--.*?-->\s*)?<div class="b-tabs__inner" data-webx-overlap-fade>\s*<p class="b-tabs__eyebrow">Project introduction</p>\s*<h2 class="b-tabs__heading">The plan</h2>\s*<div data-webx-tabs=""[^>]* data-webx-tabs-transition="fade"~s',
+            $html,
+            'the words and the tabs fade under a section that slides over this one, the edge does not',
+        );
+        $this->assertSame(1, substr_count($html, 'data-webx-overlap>'));
+
+        // On, with no picture yet: the section slides on its own top.
+        $bare = $this->render('tabs', ['tabs' => $tabs, 'overlap' => true]);
+        $this->assertStringContainsString('data-wx-block="tabs" data-webx-overlap>', $bare);
+        $this->assertStringNotContainsString('webx-overlap__edge', $bare);
+
+        // Off, or saved before the fields: neither the mark, nor an edge, nor an empty line above the heading.
+        foreach ([['tabs' => $tabs, 'heading' => 'The plan'], ['tabs' => $tabs, 'heading' => 'The plan', 'eyebrow' => '', 'overlap' => false, 'overlap_edge' => ['path' => $fog->path]]] as $case => $values) {
+            $old = $this->render('tabs', $values);
+            $this->assertStringContainsString('<section class="b-tabs b-tabs--top" data-wx-block="tabs">', $old, "case {$case}");
+            $this->assertStringNotContainsString('webx-overlap__edge', $old, "case {$case}");
+            $this->assertStringNotContainsString('b-tabs__eyebrow', $old, "case {$case}");
+        }
+
+        $styles = (string) json_decode((string) file_get_contents(__DIR__.'/../resources/blocks/tabs.json'), true)['styles'];
+        $this->assertStringContainsString(".b-tabs[data-webx-overlap] {\n    position: relative;\n}", $styles, 'its edge placed from the section in any theme');
+        $this->assertStringContainsString('font-size: var(--site-eyebrow-size, var(--site-font-size-6, 0.875em));', $styles, 'a size of its own where the theme has none');
+    }
+
+    #[Test]
+    public function the_tabs_stand_in_rows_on_a_narrow_column_only_when_asked_and_never_show_a_scrollbar(): void
+    {
+        $photo = $this->picture('plan');
+        $tabs = [['title' => 'Phase 1', 'picture' => ['path' => $photo->path], 'text' => ''], ['title' => 'Phase 2', 'picture' => ['path' => $photo->path], 'text' => '']];
+
+        $this->assertStringContainsString('<section class="b-tabs b-tabs--top b-tabs--center b-tabs--wrap" data-wx-block="tabs">', $this->render('tabs', ['tabs' => $tabs, 'align' => 'center', 'wrap' => true]));
+        // Saved before the option, or with it off: the one scrolling row as before.
+        foreach ([['tabs' => $tabs], ['tabs' => $tabs, 'wrap' => false], ['tabs' => $tabs, 'wrap' => null]] as $case => $values) {
+            $this->assertStringContainsString('<section class="b-tabs b-tabs--top" data-wx-block="tabs">', $this->render('tabs', $values), "case {$case}");
+        }
+
+        $type = json_decode((string) file_get_contents(__DIR__.'/../resources/blocks/tabs.json'), true);
+        $this->assertSame(['id' => 'wrap', 'type' => 'wx-switch', 'label' => 'Tabs in rows on a narrow screen', 'default' => false], array_intersect_key(array_column($type['schema'], null, 'id')['wrap'], array_flip(['id', 'type', 'label', 'default'])));
+        $this->assertStringContainsString("@container (max-width: 39.99em) {\n    .b-tabs--wrap .webx-tabs__list {\n        flex-wrap: wrap;", (string) $type['styles']);
+
+        // The row still scrolls where it is wider than the column, without a bar under the tabs.
+        $css = (string) file_get_contents(__DIR__.'/../resources/css/tabs.css');
+        $this->assertStringContainsString('overflow-x: auto;', $css);
+        $this->assertStringContainsString('scrollbar-width: none;', $css);
+        $this->assertStringContainsString(".webx-tabs__list::-webkit-scrollbar {\n  display: none;\n}", $css);
+        $this->assertStringContainsString('scrollbar-width:none', (string) file_get_contents(__DIR__.'/../dist/runtime.css'), 'the built runtime carries it');
+    }
+
+    #[Test]
+    public function the_picture_of_a_tab_runs_to_the_edges_of_a_narrow_screen_only_when_asked(): void
+    {
+        $photo = $this->picture('plan');
+        $tabs = [['title' => 'Phase 1', 'picture' => ['path' => $photo->path], 'text' => ''], ['title' => 'Phase 2', 'picture' => ['path' => $photo->path], 'text' => '']];
+
+        // The section spans the page, its inner part keeps to the column; with the slide and the fade too.
+        $this->assertStringContainsString('<section class="b-tabs b-tabs--top b-tabs--bleed site-bleed" data-wx-block="tabs">', $this->render('tabs', ['tabs' => $tabs, 'media_bleed' => true]));
+        $this->assertMatchesRegularExpression(
+            '~<section class="b-tabs b-tabs--top b-tabs--wrap b-tabs--bleed site-bleed" data-wx-block="tabs" data-webx-overlap>.*<div data-webx-tabs=""[^>]* data-webx-tabs-transition="fade"~s',
+            $this->render('tabs', ['tabs' => $tabs, 'media_bleed' => true, 'wrap' => true, 'overlap' => true, 'transition' => 'fade']),
+        );
+        // Saved before the option, or with it off: in the column as before.
+        foreach ([['tabs' => $tabs], ['tabs' => $tabs, 'media_bleed' => false], ['tabs' => $tabs, 'media_bleed' => null]] as $case => $values) {
+            $this->assertStringContainsString('<section class="b-tabs b-tabs--top" data-wx-block="tabs">', $this->render('tabs', $values), "case {$case}");
+        }
+
+        $type = json_decode((string) file_get_contents(__DIR__.'/../resources/blocks/tabs.json'), true);
+        $field = array_column($type['schema'], null, 'id')['media_bleed'];
+        $this->assertSame(['wx-switch', 'Picture to the edges of the screen on a narrow screen', false], [$field['type'], $field['label'], $field['default']]);
+        $this->assertFalse($type['sample']['media_bleed']);
+        $styles = (string) $type['styles'];
+        // A direct child of the main column only, and the inner part measured as the column.
+        $this->assertStringContainsString(":where(.site-main) > .b-tabs--bleed > .b-tabs__inner {\n    container-type: inline-size;", $styles);
+        $this->assertStringContainsString("@container (max-width: 39.99em) {\n    :where(.site-main) > .b-tabs--bleed .b-tabs__picture {", $styles);
+        $this->assertStringContainsString('border-radius: 0;', $styles);
+    }
+
+    #[Test]
     public function the_tabs_type_reads_the_fields_its_template_uses(): void
     {
         $type = json_decode((string) file_get_contents(__DIR__.'/../resources/blocks/tabs.json'), true);
         $fields = array_column($type['schema'], null, 'id');
 
-        $this->assertSame(['heading', 'tabs', 'picture_side', 'align', 'transition'], array_keys($fields));
+        $this->assertSame(['eyebrow', 'heading', 'tabs', 'picture_side', 'align', 'wrap', 'media_bleed', 'transition', 'overlap', 'overlap_edge', 'overlap_edge_narrow'], array_keys($fields));
+        $this->assertSame(['id' => 'eyebrow', 'type' => 'wx-input', 'label' => 'Above the heading', 'localized' => true, 'props' => ['maxlength' => 80]], $fields['eyebrow']);
+        $this->assertSame('wx-switch', $fields['overlap']['type']);
+        $this->assertFalse($fields['overlap']['default'], 'a new block stands after the one above, as an old one does');
+        $this->assertFalse($type['sample']['overlap']);
+        foreach (['overlap_edge', 'overlap_edge_narrow'] as $id) {
+            $this->assertSame('wx-media', $fields[$id]['type'], $id);
+            $this->assertSame(['when' => 'overlap', 'is' => true], $fields[$id]['visible'], $id);
+        }
         $this->assertSame(['title', 'picture', 'text'], array_column($fields['tabs']['children'], 'id'));
         $this->assertSame('wx-rich-text', $fields['tabs']['children'][2]['type']);
         $this->assertTrue($fields['tabs']['children'][0]['localized'] && $fields['tabs']['children'][2]['localized']);

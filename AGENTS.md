@@ -8,7 +8,7 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
 
 - **Loading** — `dist/runtime.js|css` (behaviours, header, mobile menu) on every page with a theme;
   a widget's own `dist/<name>.js|css` only where a component claims it (`Widgets::need('<name>')`,
-  facade `WebxUi\Widgets\Facades\Widgets`): CSS at `@webxTheme`, JS before `</body>`. A site
+  facade `WebxUi\Widgets\Facades\Widgets`): CSS at `@webxTheme` — claimed only inside `later()` / `@webxLater(<when>)…@endwebxLater` (a closed dialog's form, a hidden banner) it does not block the first paint — JS before `</body>`. A site
   without a theme writes `@webxWidgets` before `</body>` (scripts only, no styles, no consent
   banner); `webx:setup --no-theme` adds it, `webx:theme:sync` publishes the files either way.
   `webx.mount(root)` starts what is new in `root`, `webx.unmount(root)` lets it go,
@@ -41,9 +41,9 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
   `contact_button => false`), `<x-webx-contact-bar form breakpoint>`, `<x-webx-socials>`, `<x-webx-icon name>`.
 - **Language switcher** — `<x-webx-language-switcher layout="dropdown|list" codes>`: the same page
   in each language (`routing`), else its home page with `is-fallback`; `LanguageLinks::current()`.
-- **Slider** — `<x-webx-slider variant="cards|hero|gallery|logos" :per-view="['sm' => 1.2, 'lg' => 3]">`
-  with `<x-webx-slide thumb>`; per view by its own width (`sm` 0, `md` 640, `lg` 960, `xl` 1280);
-  `pagination` true|false|`fraction` (counter "1/6", aria-hidden); `options` — Swiper. No JS: a snapping strip.
+- **Slider** — `<x-webx-slider variant="cards|hero|gallery|logos" :per-view="['sm' => 1.2, 'lg' => 3]">` with `<x-webx-slide thumb>`; per view by its own width (`sm` 0, `md` 640, `lg` 960, `xl` 1280);
+  `pagination` true|false|`fraction` (counter "1/6", aria-hidden); `options` — Swiper. No JS: a snapping strip. `<x-slot:overlay>` — a still pane over the slides (hidden until ready): its `.webx-slider__caption`s follow the slide (`is-current`, the rest `inert`), `pagination-in=".sel"` puts the dots in it ("Slide 2 of 4");
+  `:pause="false"` — no pause button (hover/focus still hold; the audit leaves it). Event `webx:slide` on the root, `detail: { index, count, auto }` — index from 0, a loop's copies not counted.
 - **Lightbox** — any `<a data-webx-lightbox="<group>" data-width data-height>` on the page, or
   `<x-webx-lightbox :image="$picture" group ratio="4:3" opacity>`: `ratio` a frame the picture fits into whole (`data-webx-lightbox-ratio`),
   the backdrop opaque unless `--webx-lightbox-backdrop-opacity` says less; closing keeps the page's scroll. **Zoom** — `<x-webx-zoom :image mode frame>` (`inner|side`,
@@ -56,7 +56,7 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
   without asking", `webx-widgets.map.consent` false; the audit notes it); tiles `map.provider`, or Google
   Maps on the settings tab "Map" (`map.provider` google, `map.google-key`; no key — the place alone, `dist/map-google.js`). `embed` — Google's "Embed a map" code or address, no key (`Map\GoogleMapsEmbed`; the block's `wx-embed` field refuses any other), its `<iframe>` printed by the server when the map does not wait (block switch `at_once`, `:consent="false"`); `height-narrow` under 36em.
 - **Page tools** — a `<table>` without a class gets a scrolling `.webx-table` frame (server-side);
-  `data-webx-reveal="up|fade|scale|stagger"`; `data-webx-parallax="soft|medium|strong"` on a picture that fills its frame (`--webx-parallax-shift`); `data-webx-overlap` on a section (`@webxOverlap($on)` on the root, `@webxOverlapEdge($on, $edge, $narrow)` first inside: the section above is pinned and its `data-webx-overlap-fade` fades, §14.1; root positioned, not cropping); `<x-webx-back-to-top>`; `<x-webx-share>`;
+  `data-webx-reveal="up|fade|scale|stagger"`; `data-webx-parallax="soft|medium|strong"` on a picture that fills its frame (`--webx-parallax-shift`); `data-webx-overlap` on a section (`@webxOverlap($on)` on the root, `@webxOverlapEdge($on, $edge, $narrow)` first inside: the section above is pinned and its `data-webx-overlap-fade` fades, §14.1; root positioned, not cropping; the edge peeks `--webx-overlap-peek` of the screen at rest, never taller than `--webx-overlap-edge-max`, and climbs faster than the page, running ahead of its section — furthest halfway, `--webx-overlap-edge-peak` (0.33 of the screen), then back to `--webx-overlap-edge-rest` (0.03) ahead of it; 0 and 0 keep them together); `<x-webx-back-to-top>`; `<x-webx-share>`;
   `<x-webx-counter :value>`; `<x-webx-countdown to ended>`; `<x-webx-compare :before :after>`; `<x-webx-photos :images autoplay ratio>` (a card's photos turning every 5 s, bars, swipe, pause; one photo — a plain `<img>`; `data-webx-photos-surface` on a linked card);
   `<x-webx-toc for depth side>`; `<x-webx-pagination :paginator>`; `<x-webx-load-more :paginator pages="covered|shown">`;
   `<x-webx-notice-bar place="notice">` (a `module-banners` place, closed versions remembered).
@@ -92,7 +92,7 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
   group. Events `webx:suggest:select` (cancelable), `webx:suggest:results`; the catalogue's `/catalog/suggest`.
 - **A list with a search** — `<x-webx-select name :options :value searchable :source>`: a `<select>` without
   JavaScript, with it the loaded options filtered and `source` asked (JSON `{options, more}`); `change` on the select. `:strict="false"` — text with suggestions.
-- **Blocks** — with `module-media`: `gallery` (grid; slider: `per_view` 1–3, `effect`, `arrows`, `dots`, `thumbs`, `endless`, `autoplay` + `interval` s; mosaic 1 large + 2: `mosaic` still / slider in threes, the rest hidden lightbox links) `logos` `video` `map` `counters` `countdown` `compare` `toc` `tabs` (`transition` instant / fade) (`webx:blocks:offered --install --module=widgets`).
+- **Blocks** — with `module-media`: `gallery` (grid; slider: `per_view` 1–3, `effect`, `arrows`, `dots`, `thumbs`, `endless`, `autoplay` + `interval` s; mosaic 1 large + 2: `mosaic` still / slider in threes, the rest hidden lightbox links, `narrow` pair|column, `arrows_at` below|head; head `eyebrow` `intro` `align`; `gap` narrow or a site space step; `captions` under|over — alt on glass; ribbon: `frames` picture, link in a new tab, `badge` none|pin|video, column to the screen edge) `logos` `video` `map` `counters` `countdown` `compare` `toc` `tabs` (`eyebrow`; `wrap` — rows under 40em, `--b-tabs-per-row`; `media_bleed` — the section `site-bleed`, `__inner` keeps the column and is the container, the picture to the page's sides under 40em, a direct child of `.site-main` only; no scrollbar on the row; `transition` instant / fade; `overlap` + `overlap_edge`/`overlap_edge_narrow` as in theme-default, `__inner` is `data-webx-overlap-fade`) (`webx:blocks:offered --install --module=widgets`).
 - **Audit** (with `module-audit`) — `widgets.before_consent` (fix `widgets.wait-for-consent`),
   `widgets.banner_off` (fix `widgets.banner-on`), `lightbox_size`, `slider_pause`, `video_pause`,
   `counter_number`, `compare_range`, `toc_target`, `load_more_link`, `zoom_link`, `form_script`,

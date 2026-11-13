@@ -101,6 +101,7 @@ return [
         'first' => 'Este é o primeiro slide',
         'last' => 'Este é o último slide',
         'go_to' => 'Ir para o slide :index',
+        'show' => 'Slide :index de :count',
         'position' => ':index / :count',
         'pause' => 'Pausar',
         'play' => 'Reproduzir',

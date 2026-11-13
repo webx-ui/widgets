@@ -11,6 +11,15 @@
   "is_enabled": true,
   "schema": [
     {
+      "id": "eyebrow",
+      "type": "wx-input",
+      "label": "Above the heading",
+      "localized": true,
+      "props": {
+        "maxlength": 80
+      }
+    },
+    {
       "id": "heading",
       "type": "wx-input",
       "label": "Heading",
@@ -96,6 +105,20 @@
       }
     },
     {
+      "id": "wrap",
+      "type": "wx-switch",
+      "label": "Tabs in rows on a narrow screen",
+      "default": false,
+      "help": "Where the tabs do not fit in one row they stand in two or more, sharing each row, instead of scrolling sideways."
+    },
+    {
+      "id": "media_bleed",
+      "type": "wx-switch",
+      "label": "Picture to the edges of the screen on a narrow screen",
+      "default": false,
+      "help": "Where the column is narrow the picture of a tab runs from one side of the screen to the other, without the margins and the rounded corners; the heading, the tabs and the text keep to the column. Wider, nothing changes."
+    },
+    {
       "id": "transition",
       "type": "wx-segmented",
       "label": "Change of tab",
@@ -113,12 +136,46 @@
           }
         ]
       }
+    },
+    {
+      "id": "overlap",
+      "type": "wx-switch",
+      "label": "Slide over the section above",
+      "default": false,
+      "help": "The section above stays in place while this one comes up over it, and its words fade. The edge pictures stand over this section's top. Visitors who ask for less motion see the sections one after another."
+    },
+    {
+      "id": "overlap_edge",
+      "type": "wx-media",
+      "label": "Edge picture",
+      "props": {
+        "accept": "image"
+      },
+      "help": "Over the top of this section, as wide as the page: fog or clouds in a PNG or WebP with transparency, its bottom row in the colour of this section.",
+      "visible": {
+        "when": "overlap",
+        "is": true
+      }
+    },
+    {
+      "id": "overlap_edge_narrow",
+      "type": "wx-media",
+      "label": "Edge picture on a phone",
+      "props": {
+        "accept": "image"
+      },
+      "help": "The same edge for a narrow screen. Without it the edge picture above is used there too.",
+      "visible": {
+        "when": "overlap",
+        "is": true
+      }
     }
   ],
-  "template": "@php\n    // A tab needs its title — it is the tab — and something to show under it; a picture deleted\n    // from the library resolves without an address and is left out, not printed broken.\n    $shown = [];\n    foreach (is_array($tabs) ? $tabs : [] as $item) {\n        if (! is_array($item)) {\n            continue;\n        }\n        $title = wx_text($item['title'] ?? null)->plain();\n        $image = is_array($item['picture'] ?? null) && ! empty($item['picture']['url']) ? $item['picture'] : null;\n        $body = is_string($item['text'] ?? null) ? trim($item['text']) : '';\n        if ($title === '' || ($image === null && $body === '')) {\n            continue;\n        }\n        $shown[] = ['title' => $title, 'picture' => $image, 'text' => $body];\n    }\n    $label = $heading ? wx_text($heading)->plain() : null;\n    // A block saved before a field had a value looks as a new one does.\n    $place = in_array($picture_side ?? null, ['top', 'start', 'end'], true) ? $picture_side : 'top';\n    $centred = ($align ?? null) === 'center';\n    $fade = ($transition ?? null) === 'fade';\n@endphp\n@if ($shown)\n<section @class(['b-tabs', 'b-tabs--'.$place, 'b-tabs--center' => $centred]) data-wx-block=\"tabs\">\n    @if ($heading)\n        <h2 class=\"b-tabs__heading\">{{ $heading }}</h2>\n    @endif\n    <x-webx-tabs class=\"b-tabs__tabs\" :label=\"$label\" :transition=\"$fade ? 'fade' : null\">\n        @foreach ($shown as $item)\n            {{-- Without JavaScript every panel stands under its title; the runtime makes the titles tabs. --}}\n            <x-webx-tabs.panel :title=\"$item['title']\" :level=\"$heading ? 3 : 2\">\n                <div @class(['b-tabs__body', 'b-tabs__body--picture' => $item['picture'] && $item['text'] !== ''])>\n                    @if ($item['picture'])\n                        <img class=\"b-tabs__picture\" src=\"{{ $item['picture']['url'] }}\" alt=\"{{ $item['picture']['alt'] ?? '' }}\" @if ($item['picture']['width']) width=\"{{ $item['picture']['width'] }}\" height=\"{{ $item['picture']['height'] }}\" @endif @unless ($loop->first) loading=\"lazy\" @endunless>\n                    @endif\n                    @if ($item['text'] !== '')\n                        <div class=\"b-tabs__text\">{!! $item['text'] !!}</div>\n                    @endif\n                </div>\n            </x-webx-tabs.panel>\n        @endforeach\n    </x-webx-tabs>\n</section>\n@endif\n",
-  "styles": ".b-tabs {\n    container-type: inline-size;\n}\n\n.b-tabs__heading {\n    margin: 0 0 1em;\n}\n\n.b-tabs--center .b-tabs__heading {\n    text-align: center;\n}\n\n/* Centred by the margins of the end tabs, not by justify-content: a row wider than the column\n   then still scrolls from its first tab instead of cutting it off on the left. */\n.b-tabs--center .webx-tabs__tab:first-child {\n    margin-inline-start: auto;\n}\n\n.b-tabs--center .webx-tabs__tab:last-child {\n    margin-inline-end: auto;\n}\n\n.b-tabs__body {\n    display: grid;\n    gap: 1em;\n    align-items: start;\n}\n\n.b-tabs__picture {\n    display: block;\n    width: 100%;\n    height: auto;\n    border-radius: 0.25em;\n}\n\n.b-tabs__text {\n    min-width: 0;\n}\n\n.b-tabs__text > :first-child {\n    margin-top: 0;\n}\n\n.b-tabs__text > :last-child {\n    margin-bottom: 0;\n}\n\n/* Beside the text where the column has room for both, above it where it has not: the width of\n   the column the block stands in decides, not the window. */\n@container (min-width: 40em) {\n    .b-tabs--start .b-tabs__body--picture,\n    .b-tabs--end .b-tabs__body--picture {\n        grid-template-columns: repeat(2, minmax(0, 1fr));\n        gap: 2em;\n    }\n\n    .b-tabs--end .b-tabs__body--picture .b-tabs__picture {\n        order: 1;\n    }\n}\n",
+  "template": "@php\n    // A tab needs its title — it is the tab — and something to show under it; a picture deleted\n    // from the library resolves without an address and is left out, not printed broken.\n    $shown = [];\n    foreach (is_array($tabs) ? $tabs : [] as $item) {\n        if (! is_array($item)) {\n            continue;\n        }\n        $title = wx_text($item['title'] ?? null)->plain();\n        $image = is_array($item['picture'] ?? null) && ! empty($item['picture']['url']) ? $item['picture'] : null;\n        $body = is_string($item['text'] ?? null) ? trim($item['text']) : '';\n        if ($title === '' || ($image === null && $body === '')) {\n            continue;\n        }\n        $shown[] = ['title' => $title, 'picture' => $image, 'text' => $body];\n    }\n    $label = $heading ? wx_text($heading)->plain() : null;\n    // A block saved before a field had a value looks as a new one does.\n    $place = in_array($picture_side ?? null, ['top', 'start', 'end'], true) ? $picture_side : 'top';\n    $centred = ($align ?? null) === 'center';\n    $fade = ($transition ?? null) === 'fade';\n    $rows = (bool) ($wrap ?? false);\n    $bleed = (bool) ($media_bleed ?? false);\n@endphp\n@if ($shown)\n<section @class(['b-tabs', 'b-tabs--'.$place, 'b-tabs--center' => $centred, 'b-tabs--wrap' => $rows, 'b-tabs--bleed site-bleed' => $bleed]) data-wx-block=\"tabs\"@webxOverlap($overlap ?? false)>\n    @webxOverlapEdge($overlap ?? false, $overlap_edge ?? null, $overlap_edge_narrow ?? null)\n    {{-- What fades when the next section slides over this one; the edge above stays whole. --}}\n    <div class=\"b-tabs__inner\" data-webx-overlap-fade>\n    @if ($eyebrow ?? null)\n        <p class=\"b-tabs__eyebrow\">{{ $eyebrow }}</p>\n    @endif\n    @if ($heading)\n        <h2 class=\"b-tabs__heading\">{{ $heading }}</h2>\n    @endif\n    <x-webx-tabs class=\"b-tabs__tabs\" :label=\"$label\" :transition=\"$fade ? 'fade' : null\">\n        @foreach ($shown as $item)\n            {{-- Without JavaScript every panel stands under its title; the runtime makes the titles tabs. --}}\n            <x-webx-tabs.panel :title=\"$item['title']\" :level=\"$heading ? 3 : 2\">\n                <div @class(['b-tabs__body', 'b-tabs__body--picture' => $item['picture'] && $item['text'] !== ''])>\n                    @if ($item['picture'])\n                        <img class=\"b-tabs__picture\" src=\"{{ $item['picture']['url'] }}\" alt=\"{{ $item['picture']['alt'] ?? '' }}\" @if ($item['picture']['width']) width=\"{{ $item['picture']['width'] }}\" height=\"{{ $item['picture']['height'] }}\" @endif @unless ($loop->first) loading=\"lazy\" @endunless>\n                    @endif\n                    @if ($item['text'] !== '')\n                        <div class=\"b-tabs__text\">{!! $item['text'] !!}</div>\n                    @endif\n                </div>\n            </x-webx-tabs.panel>\n        @endforeach\n    </x-webx-tabs>\n    </div>\n</section>\n@endif\n",
+  "styles": ".b-tabs {\n    container-type: inline-size;\n}\n\n\n/* The section's rhythm (THEMES §7.2): none of its own until a site sets one, and no weight. */\n:where(.b-tabs) {\n    padding-block: var(--site-section-space, 0);\n}\n\n/* Its edge picture stands over its top, placed from the section — in a theme that does not\n   position such sections itself too. */\n.b-tabs[data-webx-overlap] {\n    position: relative;\n}\n\n/* In the theme's smaller size where it has one; the block has no words of a theme of its own. */\n.b-tabs__eyebrow {\n    margin: 0 0 var(--site-eyebrow-space, 0.5em);\n    /* Unset, the parent's: font-family and line-height are inherited. */\n    font-family: var(--site-eyebrow-font);\n    font-size: var(--site-eyebrow-size, var(--site-font-size-6, 0.875em));\n    font-weight: var(--site-eyebrow-weight, 600);\n    line-height: var(--site-eyebrow-line-height);\n    letter-spacing: var(--site-eyebrow-letter-spacing, 0.08em);\n    text-transform: var(--site-eyebrow-case, uppercase);\n}\n\n.b-tabs__heading {\n    margin: 0 0 var(--site-section-head-space, 1em);\n}\n\n/* The section's H2 type (THEMES §7.2): unset, the prose's own, and only where the prose applies\n   (in the main column and under site-prose), so that nothing changes until a site sets it. */\n.b-tabs__heading:where(.site-main *, .site-prose *) {\n    font-family: var(--site-section-title-font, var(--site-font-heading));\n    font-size: var(--site-section-title-size, var(--site-font-size-2));\n    line-height: var(--site-section-title-line-height, 1.2);\n    /* Unset, nothing: an inherited property falls back to the parent's. */\n    text-transform: var(--site-section-title-case);\n}\n\n.b-tabs--center .b-tabs__eyebrow,\n.b-tabs--center .b-tabs__heading {\n    text-align: center;\n}\n\n/* Centred by the margins of the end tabs, not by justify-content: a row wider than the column\n   then still scrolls from its first tab instead of cutting it off on the left. */\n.b-tabs--center .webx-tabs__tab:first-child {\n    margin-inline-start: auto;\n}\n\n.b-tabs--center .webx-tabs__tab:last-child {\n    margin-inline-end: auto;\n}\n\n/* In rows (`wrap`) where the column is narrow: the tabs share each row instead of scrolling. A\n   site's theme may set how many stand in a row, `--b-tabs-per-row`; unset, as many as fit. */\n@container (max-width: 39.99em) {\n    .b-tabs--wrap .webx-tabs__list {\n        flex-wrap: wrap;\n        overflow-x: visible;\n    }\n\n    .b-tabs--wrap .webx-tabs__tab {\n        flex-grow: 1;\n        /* Unset, the length is invalid and the basis stays auto. */\n        flex-basis: calc((100% - (var(--b-tabs-per-row) - 1) * var(--webx-tabs-gap)) / var(--b-tabs-per-row));\n        margin-inline: 0;\n    }\n}\n\n.b-tabs__body {\n    display: grid;\n    gap: 1em;\n    align-items: start;\n}\n\n.b-tabs__picture {\n    display: block;\n    width: 100%;\n    height: auto;\n    border-radius: 0.25em;\n}\n\n.b-tabs__text {\n    min-width: 0;\n}\n\n.b-tabs__text > :first-child {\n    margin-top: 0;\n}\n\n.b-tabs__text > :last-child {\n    margin-bottom: 0;\n}\n\n/* Picture to the edges (`media_bleed`): the section spans the page (`site-bleed`) and its inner part\n   keeps to the column with padding — as wide as the column a section without the option has, so\n   on a wide screen nothing moves. The inner part is the container then, so the queries above and\n   below measure the column, not the page. Only a direct child of the main column bleeds; anywhere\n   else the option changes nothing. */\n:where(.site-main) > .b-tabs--bleed > .b-tabs__inner {\n    container-type: inline-size;\n    padding-inline: max(\n        var(--site-section-gutter, var(--site-gutter)),\n        (100% - var(--site-container-width)) / 2 + var(--site-section-gutter, var(--site-gutter))\n    );\n}\n\n/* Where the column is narrow the picture runs over the gutters to the page's sides, square. A\n   picture beside the text stands above it here, so this is every picture of the block. */\n@container (max-width: 39.99em) {\n    :where(.site-main) > .b-tabs--bleed .b-tabs__picture {\n        width: calc(100% + 2 * var(--site-section-gutter, var(--site-gutter)));\n        max-width: none;\n        margin-inline: calc(-1 * var(--site-section-gutter, var(--site-gutter)));\n        border-radius: 0;\n    }\n}\n\n/* Beside the text where the column has room for both, above it where it has not: the width of\n   the column the block stands in decides, not the window. */\n@container (min-width: 40em) {\n    .b-tabs--start .b-tabs__body--picture,\n    .b-tabs--end .b-tabs__body--picture {\n        grid-template-columns: repeat(2, minmax(0, 1fr));\n        gap: 2em;\n    }\n\n    .b-tabs--end .b-tabs__body--picture .b-tabs__picture {\n        order: 1;\n    }\n}\n",
   "script": null,
   "sample": {
+    "eyebrow": "",
     "heading": "About the place",
     "tabs": [
       {
@@ -139,6 +196,11 @@
     ],
     "picture_side": "top",
     "align": "start",
-    "transition": "instant"
+    "wrap": false,
+    "media_bleed": false,
+    "transition": "instant",
+    "overlap": false,
+    "overlap_edge": null,
+    "overlap_edge_narrow": null
   }
 }

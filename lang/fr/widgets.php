@@ -101,6 +101,7 @@ return [
         'first' => 'C’est la première diapositive',
         'last' => 'C’est la dernière diapositive',
         'go_to' => 'Aller à la diapositive :index',
+        'show' => 'Diapositive :index sur :count',
         'position' => ':index / :count',
         'pause' => 'Pause',
         'play' => 'Lecture',

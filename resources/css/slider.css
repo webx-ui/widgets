@@ -27,6 +27,7 @@
   --webx-slider-thumb-gap: var(--site-space-2);
   --webx-slider-pause-shown: inline-flex;
   --webx-slider-play-shown: none;
+  --webx-slider-caption-fade: var(--site-duration);
 }
 
 .webx-slider {
@@ -46,7 +47,9 @@
   --webx-slider-easing: linear;
 }
 
+/* The first cell, named: the overlay shares it, and the controls and thumbnails come after. */
 .webx-slider__viewport {
+  grid-area: 1 / 1;
   position: relative;
   overflow: hidden;
   min-width: 0;
@@ -103,6 +106,48 @@
 
 .webx-slider__slide--fade.is-active {
   pointer-events: auto;
+}
+
+/* The overlay: a pane in the slides' own cell, over them, that does not move with them. Printed
+   `hidden` and shown by the script; the slot's content says where in the cell it stands. The
+   slider says it has one with `webx-slider--overlaid`, for a theme. */
+.webx-slider__overlay {
+  grid-area: 1 / 1;
+  position: relative;
+  z-index: 2;
+  min-width: 0;
+}
+
+.webx-slider__overlay[hidden] {
+  display: none;
+}
+
+/* The captions of the overlay share one cell, so the pane is as tall as the longest and nothing
+   jumps when they change; the change is a crossfade. */
+.webx-slider__captions {
+  display: grid;
+}
+
+.webx-slider__caption {
+  grid-area: 1 / 1;
+  min-width: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--webx-slider-caption-fade) var(--site-easing),
+    visibility 0s linear var(--webx-slider-caption-fade);
+}
+
+.webx-slider__caption.is-current {
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 0s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .webx-slider__caption {
+    transition: none;
+  }
 }
 
 /* What the script announces to a screen reader when the slide changes. */
