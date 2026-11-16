@@ -7,19 +7,23 @@
  * inside, off the screen, by the button — is `animation-play-state`, so a photo paused half way
  * goes on from half way. With `prefers-reduced-motion` nothing starts; the button offers to.
  *
- * A finger swipes sideways over the frame. A card that is a link has its link stretched over the
- * frame; it names itself the surface (`data-webx-photos-surface`), the swipe is read there where
- * it lies over the frame, and the click a swipe would end in is swallowed — a tap still follows
- * the link. The press that starts a swipe goes no further: a slider of cards around the card
+ * A finger or a mouse drags the photo sideways over the frame, the next one coming in beside it;
+ * let go, it pages past 15% of the frame or by a flick (`swipe.js`, the package's settings in
+ * `swipe`), and past the first or the last photo it gives way and goes back. A touchpad's
+ * sideways scroll pages a photo a gesture. A card that is a link has its link stretched over the
+ * frame; it names itself the surface (`data-webx-photos-surface`), the drag is read there where
+ * it lies over the frame, and the click a drag would end in is swallowed — a tap still follows
+ * the link. The press that starts a drag goes no further: a slider of cards around the card
  * moves with the rest of the card, not with its photos.
  */
 
 import '../css/photos.css'
+import { flick, swipeSettings, wheelSteps } from './swipe.js'
 
 const webx = (window.webx ??= {})
 
-/** Sideways by this many pixels, and more sideways than down: the finger means the photos. */
-const SWIPE = 32
+/** Moved this many pixels, the drag is told sideways from down the page. */
+const LOCK = 6
 
 export function photos(root) {
   const frame = root.querySelector('.webx-photos__frame')
@@ -42,6 +46,7 @@ export function photos(root) {
   const autoplay = config.autoplay > 0
   const surface = root.closest('[data-webx-photos-surface]') ?? root
   const count = pictures.length
+  const swipe = swipeSettings(config.swipe)
 
   let index = 0
   // Stopped by the button, or never started: with reduced motion, until the button starts it.
@@ -132,40 +137,142 @@ export function photos(root) {
     buttons[index]?.focus()
   })
 
-  // A swipe over the frame, read where the press lands: on the frame, or on the card's link over it.
+  // A drag over the frame, read where the press lands: on the frame, or on the card's link over it.
   let start = null
   let swallow = false
-  const over = (event) => {
+  const over = ({ clientX: x, clientY: y }) => {
     const box = frame.getBoundingClientRect()
-    return (
-      event.clientX >= box.left &&
-      event.clientX <= box.right &&
-      event.clientY >= box.top &&
-      event.clientY <= box.bottom
-    )
+    return x >= box.left && x <= box.right && y >= box.top && y <= box.bottom
   }
+  const rtl = () => getComputedStyle(root).direction === 'rtl'
+  // The photo a step away, or none past the first and the last: a drag does not go round.
+  const beside = (step) => {
+    const at = index + step
+    return at >= 0 && at < count ? at : -1
+  }
+
+  // The photos under the finger, out of the crossfade, where the drag put them: the shown one,
+  // and the one coming in `side` pixels beside it.
+  let moved = []
+  let side = 0
+  const slide = (at, x, state) => {
+    pictures[at].classList.add(state)
+    pictures[at].style.transform = `translateX(${x}px)`
+  }
+  const release = (at) => {
+    const { style, classList } = pictures[at]
+    // Back in the crossfade at once: a photo that slid out does not fade out over the one in.
+    style.transition = 'none'
+    classList.remove('is-dragged', 'is-gliding')
+    style.transform = ''
+    void pictures[at].offsetWidth
+    style.transition = ''
+  }
+  const place = (dx, width) => {
+    const next = beside((dx < 0 ? 1 : -1) * (rtl() ? -1 : 1))
+    const shift = next === -1 ? dx * swipe.resistance : dx
+    const now = next === -1 ? [index] : [index, next]
+    moved.filter((at) => !now.includes(at)).forEach(release)
+    moved = now
+    side = dx < 0 ? width : -width
+    slide(index, shift, 'is-dragged')
+    if (next !== -1) slide(next, shift + side, 'is-dragged')
+  }
+  // Let go: the photos glide to where they rest — the one coming in to the middle and the shown
+  // one out, or both back — then are the crossfade's again. With reduced motion, at once.
+  const settle = (to) => {
+    const from = index
+    const done = moved
+    moved = []
+    if (to !== from) show(to)
+    if (reduced || done.length === 0) {
+      done.forEach(release)
+      return
+    }
+    done.forEach((at) => slide(at, at === to ? 0 : to === from ? side : -side, 'is-gliding'))
+    // Once there — the glide is the stylesheet's, its end the photo's `transitionend` — unless a
+    // new drag took the photo meanwhile.
+    const end = () => done.filter((at) => !moved.includes(at)).forEach(release)
+    pictures[to].addEventListener('transitionend', end, { once: true })
+    setTimeout(end, 1000)
+  }
+
   listen(surface, 'pointerdown', (event) => {
     if (event.pointerType === 'mouse' && event.button !== 0) return
     if (event.target.closest('.webx-photos__bars, .webx-photos__pause') || !over(event)) return
-    start = { id: event.pointerId, x: event.clientX, y: event.clientY }
+    start = {
+      id: event.pointerId,
+      x: event.clientX,
+      y: event.clientY,
+      t: performance.now(),
+      axis: null,
+    }
     event.stopPropagation()
   })
-  listen(surface, 'pointerup', (event) => {
+  listen(surface, 'pointermove', (event) => {
     if (!start || event.pointerId !== start.id) return
     const dx = event.clientX - start.x
     const dy = event.clientY - start.y
+    if (start.axis === null && (Math.abs(dx) > LOCK || Math.abs(dy) > LOCK)) {
+      start.axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y'
+      if (start.axis === 'x') {
+        try {
+          surface.setPointerCapture?.(event.pointerId)
+        } catch {
+          // A pointer already gone: the drag goes on without the capture.
+        }
+        root.classList.add('is-dragging')
+      }
+    }
+    if (start.axis !== 'x') return
+    event.preventDefault()
+    place(dx, frame.getBoundingClientRect().width)
+  })
+  const up = (event, cancel) => {
+    if (!start || event.pointerId !== start.id) return
+    const dx = event.clientX - start.x
+    const dy = event.clientY - start.y
+    const ms = performance.now() - start.t
+    const axis = start.axis ?? (Math.abs(dx) > LOCK && Math.abs(dx) > Math.abs(dy) ? 'x' : 'y')
     start = null
-    if (Math.abs(dx) < SWIPE || Math.abs(dx) < Math.abs(dy)) return
-    const rtl = getComputedStyle(root).direction === 'rtl'
-    show(index + (dx < 0 !== rtl ? 1 : -1))
+    root.classList.remove('is-dragging')
+    if (cancel || axis !== 'x') {
+      settle(index)
+      return
+    }
+    // A drag is no tap: the click it ends in opens nothing, whether it paged or not.
     swallow = true
     setTimeout(() => {
       swallow = false
     })
-  })
-  listen(surface, 'pointercancel', () => {
-    start = null
-  })
+    const step = flick(dx, ms, frame.getBoundingClientRect().width, swipe) * (rtl() ? -1 : 1)
+    const to = step === 0 ? -1 : beside(step)
+    settle(to === -1 ? index : to)
+  }
+  listen(surface, 'pointerup', up)
+  // Taken by the browser (a scroll after all): back where it was.
+  listen(surface, 'pointercancel', (event) => up(event, true))
+
+  // A touchpad: a step a gesture. A gesture the photos take stops here, so a slider of cards
+  // around the card does not page with it; one past the first or the last is not theirs and
+  // goes on to that slider, as it would over the card's text.
+  const steps = wheelSteps(
+    (step) => {
+      const to = beside(step * (rtl() ? -1 : 1))
+      if (to !== -1) show(to)
+    },
+    swipe,
+    undefined,
+    (step) => beside(step * (rtl() ? -1 : 1)) !== -1,
+  )
+  listen(
+    surface,
+    'wheel',
+    (event) => {
+      if (over(event) && steps(event)) event.stopPropagation()
+    },
+    { passive: false },
+  )
   // The click that ends a swipe opens nothing; a link dragged out of a card is no swipe either.
   listen(
     surface,

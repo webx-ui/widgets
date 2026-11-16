@@ -94,6 +94,36 @@ return [
     ],
 
     /*
+     * The feel of a swipe (spec §7, §14): one for every slider and the photos of every card. A drag
+     * let go pages past `threshold` of the width (0.15 — 15%) or faster than `velocity` pixels a
+     * millisecond (a flick); past the first or the last it gives way by `resistance`. A touchpad's
+     * sideways scroll pages a step once it adds up to `wheel` pixels, and the rest of the gesture is
+     * waited out for `pause` milliseconds. A theme sets them in its provider —
+     * config(['webx-widgets.swipe.threshold' => 0.2]) — or a site in its published config; a value
+     * left out is the default. Swiper's own settings of one slider are its `options` prop.
+     */
+    'swipe' => [
+        'threshold' => 0.15,
+        'velocity' => 0.4,
+        'resistance' => 0.3,
+        'wheel' => 60,
+        'pause' => 400,
+    ],
+
+    /*
+     * The window of the lightbox (spec §8): the picture fitted whole, in its own shape, into a box in
+     * the middle of the screen. Up to `narrow` pixels of the window's width it is a phone. Each box:
+     * `side` — the least margin left and right, `max` — the widest a picture gets (0: no limit),
+     * `height` — the share of the window's height, `below` — the arrows as a pair right under the
+     * picture (PhotoSwipe hides its arrows on a touch screen). Set the same way as `swipe`.
+     */
+    'lightbox' => [
+        'narrow' => 768,
+        'wide' => ['side' => 100, 'max' => 1600, 'height' => 0.84, 'below' => false],
+        'phone' => ['side' => 12, 'max' => 0, 'height' => 0.75, 'below' => true],
+    ],
+
+    /*
      * The map (spec §11): Leaflet over the tiles of the provider named here. OpenStreetMap needs
      * neither a key nor an account; any other provider of raster tiles is an entry with its
      * address — `{key}` in it is replaced with the entry's `key`. The attribution is printed

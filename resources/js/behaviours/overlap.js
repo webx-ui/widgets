@@ -149,6 +149,12 @@ export function overlap(el) {
   // Where this section is now, below its place: the script's path writes it, the focus reads it.
   let sunk = 0
 
+  // This section's top in its place: without the `translate` it comes up with.
+  function placeTop() {
+    const now = parseFloat(getComputedStyle(el).translate.split(' ')[1])
+    return el.getBoundingClientRect().top - (Number.isFinite(now) ? now : sunk)
+  }
+
   // Measures, then writes: no height here changes with a `translate` or the edge's clip.
   const measure = () => {
     const screen = document.documentElement.clientHeight || window.innerHeight
@@ -172,6 +178,9 @@ export function overlap(el) {
           )
         : 0
     const rest = Math.round(Math.min(lead, screen * part(el, '--webx-overlap-edge-rest', 0.03)))
+    // The page's scroll at which the pinned section is gone: this one has come up `start + hold`
+    // and the pinned one gone up `leave` after it. The first screen's parallax runs until then.
+    const gone = placeTop() + window.scrollY - screen + start + hold + Math.min(high, screen)
     sizes = {
       start,
       hold,
@@ -192,6 +201,8 @@ export function overlap(el) {
     el.style.setProperty('--webx-overlap-lead', `${sizes.lead}px`)
     el.style.setProperty('--webx-overlap-rest', `${sizes.rest}px`)
     el.style.setProperty('--webx-overlap-rest-share', sizes.share.toFixed(4))
+    pinned.style.setProperty('--webx-overlap-gone', `${Math.max(0, Math.round(gone))}px`)
+    pinned.dispatchEvent(new CustomEvent('webx:overlap', { bubbles: true }))
     if (!settling && typeof requestAnimationFrame === 'function')
       settling = requestAnimationFrame(settle)
   }
@@ -221,12 +232,6 @@ export function overlap(el) {
   if (colour && !/^(transparent|rgba\(.*,\s*0\))$/.test(colour))
     el.style.setProperty('--webx-overlap-fill', colour)
   fading.forEach((target) => target.classList.add('webx-overlap-fade'))
-
-  // This section's top in its place: without the `translate` it comes up with.
-  const placeTop = () => {
-    const now = parseFloat(getComputedStyle(el).translate.split(' ')[1])
-    return el.getBoundingClientRect().top - (Number.isFinite(now) ? now : sunk)
-  }
 
   // Focus that comes into the section above — Shift+Tab back up, a link to a button in it — would
   // land on words faded out under this section. The page goes back to where they were whole:
@@ -344,8 +349,18 @@ export function overlap(el) {
       'webx-overlap-pinned--held',
       'webx-overlap-pinned--script',
     )
-    for (const property of ['timeline', 'top', 'start', 'hold', 'leave', 'progress', 'lift'])
+    for (const property of [
+      'timeline',
+      'top',
+      'start',
+      'hold',
+      'leave',
+      'progress',
+      'lift',
+      'gone',
+    ])
       pinned.style.removeProperty(`--webx-overlap-${property}`)
+    pinned.dispatchEvent(new CustomEvent('webx:overlap', { bubbles: true }))
     const names = (scopes.get(scope) ?? []).filter((other) => other !== name)
     scopes.set(scope, names)
     if (names.length) scope.style.setProperty('timeline-scope', names.join(', '))

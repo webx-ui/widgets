@@ -127,6 +127,8 @@ final class PageToolsTest extends TestCase
         $this->assertContains('parallax', Package::RUNTIME);
         $this->assertStringContainsString('view-timeline:--webx-parallax block', (string) file_get_contents(Package::path().'/dist/runtime.css'));
         $this->assertStringContainsString('.webx-parallax--script', (string) file_get_contents(Package::path().'/dist/runtime.css'));
+        // The first screen on the page's own scroll, until its frame is gone.
+        $this->assertStringContainsString('animation-timeline:scroll(root block)', (string) file_get_contents(Package::path().'/dist/runtime.css'));
     }
 
     #[Test]

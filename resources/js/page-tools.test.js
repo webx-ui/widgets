@@ -583,6 +583,116 @@ describe('share', () => {
   })
 })
 
+describe('parallax of the first screen', () => {
+  // A hero of 900 on a screen of 900, its picture at k 0.3: the site's own knob, inline here.
+  const page = `<main><section id="frame"><img id="picture" style="position: absolute; --webx-parallax-screen-rate: 0.3; --webx-parallax-screen-overscan: 30" data-webx-parallax="screen" src="/a.jpg" alt=""></section><section id="next"></section></main>`
+  let frames = []
+
+  const run = () => {
+    const queued = frames
+    frames = []
+    queued.forEach((callback) => callback())
+  }
+
+  async function load(supports) {
+    frames = []
+    vi.stubGlobal('CSS', { supports: (query) => supports && query.includes('scroll()') })
+    vi.stubGlobal('requestAnimationFrame', (callback) => frames.push(callback))
+    vi.stubGlobal('cancelAnimationFrame', () => {})
+    vi.stubGlobal('innerHeight', 900)
+    vi.stubGlobal('scrollY', 0)
+    document.body.innerHTML = page
+    const frame = document.getElementById('frame')
+    at(frame, 0, 900)
+    Object.defineProperty(frame, 'offsetHeight', { configurable: true, value: 900 })
+    delete window.webx
+    vi.resetModules()
+    await import('./runtime.js')
+    return { picture: document.getElementById('picture'), frame }
+  }
+
+  const value = (el, name) => el.style.getPropertyValue(`--webx-parallax-${name}`)
+
+  it('runs k · scrollY on the page scroll until the frame is gone, the overscan never short of it', async () => {
+    const { picture, frame } = await load(true)
+
+    // Neither a view timeline nor `--grown`: the page's own scroll, its own overscan.
+    expect(picture.className).toBe('webx-parallax webx-parallax--screen')
+    expect(frame.className).toBe('')
+    // Gone at 900; 0.3 of it is 270, more than 30% of the frame — the overscan is what it goes.
+    expect(value(picture, 'end')).toBe('900px')
+    expect(value(picture, 'reach')).toBe('270.0px')
+    expect(value(picture, 'over')).toBe('270.0px')
+    expect(watched.length).toBe(0)
+    window.dispatchEvent(new Event('scroll'))
+    expect(frames.length).toBe(0)
+
+    // A slower rate leaves the overscan its own: 30% of the frame.
+    picture.style.setProperty('--webx-parallax-screen-rate', '0.15')
+    window.dispatchEvent(new Event('resize'))
+    expect(value(picture, 'reach')).toBe('135.0px')
+    expect(value(picture, 'over')).toBe('270.0px')
+
+    window.webx.unmount()
+    expect(picture.className).toBe('')
+    expect(value(picture, 'end')).toBe('')
+    expect(value(picture, 'over')).toBe('')
+  })
+
+  it('pinned by the section that slides over it, runs until the overlap says the frame is gone', async () => {
+    const { picture, frame } = await load(true)
+    // The overlap writes it on the pinned section and tells: the frame inside it measures again.
+    frame.style.setProperty('--webx-overlap-gone', '1800px')
+    frame.dispatchEvent(new CustomEvent('webx:overlap', { bubbles: true }))
+    expect(value(picture, 'end')).toBe('1800px')
+    expect(value(picture, 'reach')).toBe('540.0px')
+    expect(value(picture, 'over')).toBe('540.0px')
+
+    // Another section's measure is not this frame's.
+    frame.style.setProperty('--webx-overlap-gone', '2400px')
+    document
+      .getElementById('next')
+      .dispatchEvent(new CustomEvent('webx:overlap', { bubbles: true }))
+    expect(value(picture, 'end')).toBe('1800px')
+  })
+
+  it('without scroll timelines, writes scrollY / end — at once, then one frame per scroll', async () => {
+    const { picture } = await load(false)
+    expect(picture.className).toBe('webx-parallax webx-parallax--screen webx-parallax--script')
+    expect(value(picture, 'progress')).toBe('0.0000')
+
+    // 300 of 900: a third of the way — 90px of 270.
+    vi.stubGlobal('scrollY', 300)
+    window.dispatchEvent(new Event('scroll'))
+    window.dispatchEvent(new Event('scroll'))
+    expect(frames.length).toBe(1)
+    run()
+    expect(value(picture, 'progress')).toBe('0.3333')
+
+    // Gone: the end, and past it a scroll asks for nothing.
+    vi.stubGlobal('scrollY', 1000)
+    window.dispatchEvent(new Event('scroll'))
+    run()
+    expect(value(picture, 'progress')).toBe('1.0000')
+    vi.stubGlobal('scrollY', 1100)
+    window.dispatchEvent(new Event('scroll'))
+    expect(frames.length).toBe(0)
+
+    window.webx.unmount()
+    expect(value(picture, 'progress')).toBe('')
+    vi.stubGlobal('scrollY', 200)
+    window.dispatchEvent(new Event('scroll'))
+    expect(frames.length).toBe(0)
+  })
+
+  it('moves nothing for a visitor who asked for less motion', async () => {
+    reduced = true
+    const { picture } = await load(true)
+    expect(picture.className).toBe('')
+    expect(value(picture, 'end')).toBe('')
+  })
+})
+
 describe('overlap', () => {
   // A hero (the pinned section) of 500px with its words, then the section that slides over it.
   const page = `<main id="main"><style>.x{}</style><p id="gone" hidden>notice</p><section id="hero"><img src="/a.jpg" alt=""><div id="words" data-webx-overlap-fade><a id="button" href="#">Go</a></div></section><section id="over" data-webx-overlap><picture class="webx-overlap__edge" id="edge"><img class="webx-overlap__image" src="/fog.png" alt=""></picture><p>Words</p></section></main>`
@@ -603,6 +713,8 @@ describe('overlap', () => {
     vi.stubGlobal('requestAnimationFrame', (callback) => frames.push(callback))
     vi.stubGlobal('cancelAnimationFrame', () => {})
     vi.stubGlobal('innerHeight', 800)
+    // The page at its top: where the hero is gone is counted on the page's scroll.
+    vi.stubGlobal('scrollY', 0)
     document.body.innerHTML = page
     tall(document.getElementById('hero'), 500)
     tall(document.getElementById('over'), 600)
@@ -633,6 +745,8 @@ describe('overlap', () => {
     expect(hero.style.getPropertyValue('--webx-overlap-start')).toBe('300px')
     expect(hero.style.getPropertyValue('--webx-overlap-hold')).toBe('500px')
     expect(hero.style.getPropertyValue('--webx-overlap-leave')).toBe('500px')
+    // Its top at 0 on the page: gone at 0 - 800 + 300 + 500 + 500 — the first screen's parallax reads it.
+    expect(hero.style.getPropertyValue('--webx-overlap-gone')).toBe('500px')
     // One timeline, the section's, lifted to the parent the hero is in.
     const name = hero.style.getPropertyValue('--webx-overlap-timeline')
     expect(over.style.getPropertyValue('view-timeline')).toBe(`${name} block`)
@@ -645,6 +759,7 @@ describe('overlap', () => {
     expect(over.className).toBe('')
     expect(main.className).toBe('')
     expect(main.style.getPropertyValue('timeline-scope')).toBe('')
+    expect(hero.style.getPropertyValue('--webx-overlap-gone')).toBe('')
   })
 
   it('stops a section taller than the screen at its bottom, and covers no more than the section that comes', async () => {

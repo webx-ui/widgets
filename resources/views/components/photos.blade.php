@@ -16,7 +16,7 @@
     'role' => 'group',
     'aria-roledescription' => __('webx-widgets::widgets.slider.carousel'),
     'aria-label' => $name,
-    'data-webx-photos' => json_encode(['autoplay' => $delay, 'words' => ['pause' => $words['pause'], 'play' => $words['play']]], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+    'data-webx-photos' => json_encode(['autoplay' => $delay, 'swipe' => (array) config('webx-widgets.swipe', []), 'words' => ['pause' => $words['pause'], 'play' => $words['play']]], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
 ]) }}>
     <div class="webx-photos__frame">
         @foreach ($photos as $photo)

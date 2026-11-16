@@ -328,6 +328,73 @@ describe('lightbox', () => {
     expect((await show(plain)).options.bgOpacity).toBe(0.6)
   })
 
+  it('fits the picture into its window: up to min(100vw − 200px, 1600px) × 84vh wide, 100vw − 24px × 75vh on a phone', async () => {
+    const { padding, layout } = await start('')
+    const frames = layout()
+
+    expect(padding({ x: 1440, y: 900 }, frames)).toEqual({
+      top: 72,
+      bottom: 72,
+      left: 100,
+      right: 100,
+    })
+    // Wider than 1800: the picture stops at 1600.
+    expect(padding({ x: 2400, y: 1000 }, frames)).toEqual({
+      top: 80,
+      bottom: 80,
+      left: 400,
+      right: 400,
+    })
+    expect(padding({ x: 390, y: 844 }, frames)).toEqual({
+      top: 105.5,
+      bottom: 105.5,
+      left: 12,
+      right: 12,
+    })
+
+    // The site's own margins, from the package's config; the rest stays the default.
+    const own = layout({ wide: { side: 40, height: 1 }, narrow: 500 })
+    expect(padding({ x: 1440, y: 900 }, own)).toEqual({ top: 0, bottom: 0, left: 40, right: 40 })
+    expect(padding({ x: 600, y: 900 }, own).left).toBe(40)
+  })
+
+  it('stands the arrows as a pair under the picture on a narrow window, and leaves them be on a wide one', async () => {
+    const { show } = await start(link(1) + link(2))
+    const links = document.querySelectorAll('a')
+
+    // jsdom: a window 600 wide, 768 high — a phone. 1200×800 fitted into 576 × 576 is 576 × 384,
+    // in the middle of the 75% band: it ends at 96 + 288 + 192.
+    const pswp = await show(links[0])
+    const arrows = viewer().querySelectorAll('.pswp__button--arrow')
+    expect(arrows).toHaveLength(2)
+    arrows.forEach((arrow) => {
+      expect(arrow.classList.contains('webx-lightbox__arrow')).toBe(true)
+      expect(arrow.classList.contains('is-below')).toBe(true)
+    })
+    expect(viewer().querySelector('.webx-lightbox__arrow--prev')).not.toBeNull()
+    expect(viewer().querySelector('.webx-lightbox__arrow--next')).not.toBeNull()
+    expect(viewer().style.getPropertyValue('--webx-lightbox-arrows-top')).toBe('576px')
+    pswp.close()
+    await vi.waitFor(() => expect(viewer()).toBeNull())
+
+    const width = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientWidth')
+    Object.defineProperty(HTMLElement.prototype, 'clientWidth', {
+      configurable: true,
+      get: () => 1440,
+    })
+    try {
+      const wide = await show(links[0])
+      viewer()
+        .querySelectorAll('.pswp__button--arrow')
+        .forEach((arrow) => expect(arrow.classList.contains('is-below')).toBe(false))
+      expect(viewer().style.getPropertyValue('--webx-lightbox-arrows-top')).toBe('')
+      wide.close()
+      await vi.waitFor(() => expect(viewer()).toBeNull())
+    } finally {
+      Object.defineProperty(HTMLElement.prototype, 'clientWidth', width)
+    }
+  })
+
   it('leaves the page where it stood, whichever picture it closed on', async () => {
     const { show } = await start(link(1) + link(2) + link(3) + link(4))
     const links = document.querySelectorAll('a')

@@ -131,6 +131,8 @@ class WidgetsServiceProvider extends ServiceProvider
         $this->app->scoped(Consent::class);
         // Scoped: a request puts off the fetch of each missing poster once.
         $this->app->scoped(Posters::class);
+        // Scoped: a request puts off the cut of each missing copy of a picture once.
+        $this->app->scoped(Pictures::class);
         // Scoped: a provider's script is printed once per page.
         $this->app->scoped(Captcha::class);
         $this->app->singleton(VideoProviders::class);

@@ -14,7 +14,8 @@
  * the track's `row-gap` (a strip of one row never uses it, so it survives `is-ready`).
  *
  * Everything else is settled on the server: the variant's settings with the props over them come
- * in `data-webx-slider`, the words with them.
+ * in `data-webx-slider`, the words with them, and the package's feel of a swipe (`swipe`, see
+ * `swipe.js`): a finger, a mouse or a touchpad pages past 15% of a slide or by a flick.
  *
  * The `overlay` slot is a pane over the slides that does not move: its `.webx-slider__caption`s,
  * one per slide, follow the slide in view, and `paginationIn` may put the dots in it. Every change
@@ -26,6 +27,7 @@
 import '../css/slider.css'
 import Swiper from 'swiper'
 import { A11y, Autoplay, EffectFade, Navigation, Pagination, Thumbs } from 'swiper/modules'
+import { swipeSettings, wheelSteps } from './swipe.js'
 
 const webx = (window.webx ??= {})
 
@@ -118,6 +120,7 @@ export function slider(root) {
   const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
   const fade = config.effect === 'fade'
   const autoplay = config.autoplay > 0 || config.continuous === true
+  const swipe = swipeSettings(config.swipe)
   let { perView, gap } = measure(track)
 
   // A running strip of logos needs more slides than it shows, or the loop has nothing to bring
@@ -182,6 +185,13 @@ export function slider(root) {
     loopAddBlankSlides: false,
     watchSlidesProgress: true,
     effect: fade ? 'fade' : 'slide',
+    // A drag pages past `threshold` of a slide; a quicker one — a flick — at any length. Swiper
+    // tells a flick by time alone (`longSwipesMs`): the speed is measured as the drag ends and
+    // the choice is put there, before Swiper makes it (`touchEnd` below).
+    longSwipesRatio: swipe.threshold,
+    longSwipesMs: 0,
+    shortSwipes: true,
+    resistanceRatio: swipe.resistance,
     fadeEffect: { crossFade: true },
     navigation: {
       enabled: Boolean(prev && next),
@@ -238,6 +248,14 @@ export function slider(root) {
       slideRole: 'group',
     },
     ...config.options,
+  })
+
+  // The speed of the drag let go, in pixels a millisecond: past `velocity` it is a flick and pages
+  // whatever its length; slower, its length decides. Swiper keeps its times by `Date.now()`.
+  swiper.on('touchEnd', (instance) => {
+    const ms = Date.now() - (instance.touchEventsData.touchStartTime ?? 0)
+    const fast = Math.abs(instance.touches.diff ?? 0) / Math.max(1, ms) > swipe.velocity
+    instance.params.longSwipesMs = fast ? Number.POSITIVE_INFINITY : 0
   })
 
   root.classList.add('is-ready')
@@ -378,6 +396,21 @@ export function slider(root) {
     event.preventDefault()
     move()
   })
+
+  // A touchpad's sideways scroll pages, a step a gesture; a running strip has nothing to page.
+  if (!config.continuous) {
+    const steps = wheelSteps((step) => {
+      const rtl = swiper.rtlTranslate === true
+      if (step > 0 !== rtl) swiper.slideNext()
+      else swiper.slidePrev()
+    }, swipe)
+    // A wheel something inside already took (the photos of a card) is not this slider's.
+    const wheel = (event) => {
+      if (!event.defaultPrevented) steps(event)
+    }
+    viewport.addEventListener('wheel', wheel, { passive: false })
+    on.push(() => viewport.removeEventListener('wheel', wheel, { passive: false }))
+  }
 
   // Per view by the slider's own width: crossing a container breakpoint changes the property.
   const sizes = new ResizeObserver(() => {

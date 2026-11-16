@@ -22,12 +22,19 @@ use WebxUi\Widgets\Facades\Widgets;
  * `ratio="4:3"` opens the picture in a frame of that shape, whole inside it (nothing — the picture
  * as it is — by default); `opacity` is the backdrop's, over `--webx-lightbox-backdrop-opacity`.
  *
+ * A picture without an alt leaves the link without a name: the link is then named for what it
+ * does — "Open picture 2 of 5" when `index` and `total` say where it stands in its group, "Open
+ * the picture" when they do not. An `aria-label` given by hand, or words in the slot, win.
+ *
  * A link written by hand with the same attributes needs no component: the page finds it (§8).
  */
 final class Lightbox extends Component
 {
     /** A link that asks for the lightbox, wherever on the page it was written. */
     private const string LINK = '~<a\b[^>]*\sdata-webx-lightbox(?:\s*=|[\s>])~i';
+
+    /** A picture in the slot with an alt that says something. */
+    private const string SAID = '~\salt\s*=\s*(?:"[^"]*[^"\s][^"]*"|\'[^\']*[^\'\s][^\']*\')~i';
 
     public ?string $href;
 
@@ -44,6 +51,9 @@ final class Lightbox extends Component
 
     public ?string $backdrop;
 
+    /** What a screen reader says for the link when the picture says nothing. */
+    public string $name;
+
     public function __construct(
         mixed $image = null,
         ?string $src = null,
@@ -54,6 +64,8 @@ final class Lightbox extends Component
         public string $group = '',
         ?string $ratio = null,
         int|float|string|null $opacity = null,
+        int|string|null $index = null,
+        int|string|null $total = null,
     ) {
         $this->href = self::filled($src) ?? self::filled(self::read($image, 'url')) ?? self::filled(self::read($image, 'src'));
 
@@ -67,6 +79,12 @@ final class Lightbox extends Component
         $this->text = $alt ?? (is_string($said = self::read($image, 'alt')) ? $said : '');
         $this->frame = self::ratio($ratio);
         $this->backdrop = is_numeric($opacity) ? (string) max(0, min(1, (float) $opacity)) : null;
+
+        $at = self::size($index);
+        $of = self::size($total);
+        $this->name = $at !== null && $of !== null && $at <= $of
+            ? (string) __('webx-widgets::widgets.lightbox.open', ['index' => $at, 'count' => $of])
+            : (string) __('webx-widgets::widgets.lightbox.open_one');
     }
 
     /**
@@ -87,6 +105,20 @@ final class Lightbox extends Component
         Widgets::need('lightbox');
 
         return view('webx-widgets::components.lightbox');
+    }
+
+    /**
+     * Whether the link has no name of its own: no alt, no `aria-label`, and a slot — when there is
+     * one — with neither words nor a picture that says something.
+     */
+    public function nameless(mixed $label, string $slot): bool
+    {
+        if ($this->text !== '' || (is_string($label) && trim($label) !== '')) {
+            return false;
+        }
+
+        return preg_match(self::SAID, $slot) !== 1
+            && trim(html_entity_decode(strip_tags($slot))) === '';
     }
 
     /** Whether a link on the page asks for the lightbox — written by hand, in a block, in a module's view. */

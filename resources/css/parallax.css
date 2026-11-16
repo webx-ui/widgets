@@ -16,6 +16,12 @@
  *
  * The attribute's value is the strength: `soft`, `medium` (also empty) or `strong`, a factor on
  * the amount.
+ *
+ * The first screen (`screen` among the attribute's words, `webx-parallax--screen`): not a way across
+ * the screen but a rate of the page's scroll — the picture goes down k · scrollY and grows to 1 + z
+ * from the top of the page until its frame is gone (`--webx-parallax-end`, the script measures it,
+ * pinned by an overlap too), on the page's `scroll()` timeline. Its overscan is above the frame only:
+ * `--webx-parallax-over` taller, lifted back by `translate`, never less than how far it goes.
  */
 
 :where(:root) {
@@ -27,6 +33,17 @@
   --webx-parallax-strong: 1.5;
   /* Where the frame is on its way across the screen, 0 to 1 — the fallback script writes it. */
   --webx-parallax-progress: 0.5;
+  /* The first screen: k, the picture's way per pixel of scroll (less in a narrow container), the zoom
+     it ends at in percent, and the overscan above the frame in percent of the frame's height. */
+  --webx-parallax-screen-rate: 0.2;
+  --webx-parallax-screen-rate-narrow: 0.1;
+  --webx-parallax-screen-zoom: 3;
+  --webx-parallax-screen-overscan: 20;
+  /* What the script measures for it: the scroll at which the frame is gone, how far the picture goes
+     on the way, and the overscan above the frame. */
+  --webx-parallax-end: 100vh;
+  --webx-parallax-reach: 0px;
+  --webx-parallax-over: 0px;
 }
 
 /* The timeline the picture follows: the frame (or what crops it) crossing the page's screen. */
@@ -49,11 +66,11 @@
     animation-range: cover;
   }
 
-  .webx-parallax[data-webx-parallax='soft'] {
+  .webx-parallax[data-webx-parallax~='soft'] {
     --webx-parallax-strength: var(--webx-parallax-soft);
   }
 
-  .webx-parallax[data-webx-parallax='strong'] {
+  .webx-parallax[data-webx-parallax~='strong'] {
     --webx-parallax-strength: var(--webx-parallax-strong);
   }
 
@@ -80,12 +97,32 @@
       );
     animation: none;
   }
+
+  /* The first screen. Twice the class, as for `--grown`: over a block's own `inset` and `height`. */
+  .webx-parallax--screen.webx-parallax--screen {
+    bottom: auto;
+    height: calc(100% + var(--webx-parallax-over));
+    scale: none;
+    will-change: translate, scale;
+    animation: webx-parallax-screen linear both;
+    /* After the shorthand, which resets them: the page's own scroll, from its top to the frame gone. */
+    animation-timeline: scroll(root block);
+    animation-range: 0px var(--webx-parallax-end);
+  }
+
+  .webx-parallax--screen.webx-parallax--script {
+    translate: 0
+      calc(var(--webx-parallax-progress) * var(--webx-parallax-reach) - var(--webx-parallax-over));
+    scale: calc(1 + var(--webx-parallax-progress) * var(--webx-parallax-screen-zoom) / 100);
+    animation: none;
+  }
 }
 
 /* The nearest container decides — a block's, a banner's frame — not the window. */
 @container (max-width: 40rem) {
   .webx-parallax {
     --webx-parallax-shift: var(--webx-parallax-shift-narrow);
+    --webx-parallax-screen-rate: var(--webx-parallax-screen-rate-narrow);
   }
 }
 
@@ -99,6 +136,18 @@
   }
 }
 
+@keyframes webx-parallax-screen {
+  from {
+    translate: 0 calc(var(--webx-parallax-over) * -1);
+    scale: 1;
+  }
+
+  to {
+    translate: 0 calc(var(--webx-parallax-reach) - var(--webx-parallax-over));
+    scale: calc(1 + var(--webx-parallax-screen-zoom) / 100);
+  }
+}
+
 @media print {
   .webx-parallax {
     translate: none;
@@ -106,7 +155,11 @@
     animation: none;
   }
 
-  .webx-parallax--grown.webx-parallax--grown {
+  .webx-parallax--grown.webx-parallax--grown,
+  .webx-parallax--screen.webx-parallax--screen {
     height: 100%;
+    translate: none;
+    scale: none;
+    animation: none;
   }
 }

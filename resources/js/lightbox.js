@@ -15,6 +15,11 @@
  * The words, and the icons — the chain's, so a theme's arrow is the lightbox's arrow too — come
  * from the server in `<script type="application/json" id="webx-lightbox">`.
  *
+ * The margins of the window are the package's (`webx-widgets.lightbox`, in the same settings as
+ * `layout`): wide, the picture is fitted whole into min(100vw − 200px, 1600px) × 84vh; on a phone
+ * into 100vw − 24px × 75vh, with the two arrows side by side right under it — PhotoSwipe hides its
+ * arrows on a touch screen, and a phone is where a visitor looks for them.
+ *
  * Two more attributes of a link, both optional: `data-webx-lightbox-ratio="4:3"` — a frame of that
  * shape the picture is fitted into whole (as is without it), and `data-webx-lightbox-opacity` —
  * the backdrop's, over `--webx-lightbox-backdrop-opacity` (1 unless a theme says otherwise).
@@ -27,6 +32,66 @@ import PhotoSwipe from 'photoswipe'
 const webx = (window.webx ??= {})
 
 const LINK = 'a[data-webx-lightbox]'
+
+/**
+ * The window's margins by default: up to `narrow` pixels of the window it is a phone. `side` —
+ * the least margin on the left and on the right; `max` — the widest a picture gets (0: no
+ * limit); `height` — the share of the window's height it may take; `below` — the arrows under
+ * the picture.
+ */
+export const LAYOUT = Object.freeze({
+  narrow: 768,
+  wide: Object.freeze({ side: 100, max: 1600, height: 0.84, below: false }),
+  phone: Object.freeze({ side: 12, max: 0, height: 0.75, below: true }),
+})
+
+const number = (value, fallback) =>
+  value !== null && value !== undefined && Number.isFinite(Number(value)) && Number(value) >= 0
+    ? Number(value)
+    : fallback
+
+/** The layout the server sent, over the defaults. */
+export function layout(own = {}) {
+  const box = (name) => {
+    const given = own?.[name] ?? {}
+    const base = LAYOUT[name]
+    return {
+      side: number(given.side, base.side),
+      max: number(given.max, base.max),
+      height: Math.min(1, number(given.height, base.height)),
+      below: typeof given.below === 'boolean' ? given.below : base.below,
+    }
+  }
+  return { narrow: number(own?.narrow, LAYOUT.narrow), wide: box('wide'), phone: box('phone') }
+}
+
+/** Which of the two a window of this width is. */
+export function box(width, settings) {
+  return width <= settings.narrow ? settings.phone : settings.wide
+}
+
+/**
+ * The margins PhotoSwipe fits a picture inside (its `paddingFn`): the box of the layout in the
+ * middle of the window. The picture is fitted whole in it, in its own shape — nothing cut.
+ */
+export function padding(viewport, settings) {
+  const own = box(viewport.x, settings)
+  const width = Math.max(0, viewport.x - 2 * own.side)
+  const widest = own.max > 0 ? Math.min(width, own.max) : width
+  const x = Math.max(0, (viewport.x - widest) / 2)
+  const y = Math.max(0, (viewport.y - Math.round(viewport.y * own.height)) / 2)
+  return { top: y, bottom: y, left: x, right: x }
+}
+
+/** Where the picture of a slide ends at its fitted size: the arrows below it stand there. */
+export function bottom(slide) {
+  if (!slide?.panAreaSize || !(slide.height > 0)) return null
+  const zoom = slide.zoomLevels?.initial ?? slide.currZoomLevel ?? 1
+  const height = slide.height * zoom
+  const top = (slide.pswp?.viewportSize?.y ?? 0) - slide.panAreaSize.y
+  // PhotoSwipe centres the picture in the area left by the margins; the margins are even here.
+  return Math.round(top / 2 + (slide.panAreaSize.y + height) / 2)
+}
 
 /** The one open: its PhotoSwipe and the links of its group. */
 let open = null
@@ -174,7 +239,8 @@ export async function show(link) {
   const links = members(link)
   const items = links.map(item)
   const index = Math.max(0, links.indexOf(link))
-  const { words = {}, icons = {} } = settings()
+  const { words = {}, icons = {}, layout: own = {} } = settings()
+  const frames = layout(own)
   // Where the page stood: it stands there again after closing, whichever picture closed it.
   const scroll = { left: window.scrollX, top: window.scrollY }
 
@@ -201,13 +267,37 @@ export async function show(link) {
     arrowNextSVG: icons.next,
     closeSVG: icons.close,
     zoomSVG: icons.zoom,
+    paddingFn: (viewport) => padding(viewport, frames),
   })
+
+  // On a phone the arrows stand as a pair right under the picture, wherever its shape puts its edge.
+  const arrows = () => {
+    const root = pswp.element
+    if (!root) return
+    const below = box(pswp.viewportSize?.x ?? window.innerWidth, frames).below
+    const edge = below ? bottom(pswp.currSlide) : null
+    root.querySelectorAll('.pswp__button--arrow').forEach((button) => {
+      button.classList.add('webx-lightbox__arrow')
+      button.classList.add(
+        button.classList.contains('pswp__button--arrow--prev')
+          ? 'webx-lightbox__arrow--prev'
+          : 'webx-lightbox__arrow--next',
+      )
+      button.classList.toggle('is-below', edge !== null)
+    })
+    if (edge === null) root.style.removeProperty('--webx-lightbox-arrows-top')
+    else root.style.setProperty('--webx-lightbox-arrows-top', `${edge}px`)
+  }
+  pswp.on('change', arrows)
+  pswp.on('resize', arrows)
 
   // A picture of the group without sizes: measured when it comes up, then laid out again.
   pswp.on('change', () => {
     const at = pswp.currIndex
     measure(items[at]).then((changed) => {
-      if (changed && !pswp.isDestroying) pswp.refreshSlideContent(at)
+      if (!changed || pswp.isDestroying) return
+      pswp.refreshSlideContent(at)
+      arrows()
     })
   })
 
@@ -239,6 +329,7 @@ export async function show(link) {
 
   open = { pswp, links }
   pswp.init()
+  arrows()
 
   // PhotoSwipe's English roles and an unnamed dialog, in the page's language.
   pswp.element?.setAttribute('aria-modal', 'true')

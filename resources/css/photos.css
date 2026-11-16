@@ -21,6 +21,9 @@
   --webx-photos-control-color: var(--site-color-text);
   --webx-photos-control-bg: color-mix(in srgb, var(--site-color-surface) 85%, transparent);
   --webx-photos-fade: var(--site-duration);
+  /* A photo let go gliding to its place: in, or back. */
+  --webx-photos-glide: var(--site-duration);
+  --webx-photos-cursor: auto;
   --webx-photos-pause-shown: inline-flex;
   --webx-photos-play-shown: none;
 }
@@ -35,6 +38,10 @@
   --webx-photos-touch: pan-y pinch-zoom;
 }
 
+.webx-photos.is-dragging {
+  --webx-photos-cursor: grabbing;
+}
+
 .webx-photos.is-paused {
   --webx-photos-play: paused;
 }
@@ -44,6 +51,7 @@
   aspect-ratio: var(--webx-photos-ratio);
   overflow: hidden;
   touch-action: var(--webx-photos-touch);
+  cursor: var(--webx-photos-cursor);
 }
 
 .webx-photos__photo {
@@ -66,6 +74,17 @@
 
 .webx-photos__photo.is-active {
   opacity: 1;
+}
+
+/* Under the finger: out of the crossfade, where the drag puts it (the script's transform). */
+.webx-photos__photo.is-dragged {
+  opacity: 1;
+  transition: none;
+}
+
+.webx-photos__photo.is-gliding {
+  opacity: 1;
+  transition: transform var(--webx-photos-glide) var(--site-easing);
 }
 
 .webx-photos__bars {

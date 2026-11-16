@@ -115,6 +115,8 @@ return [
         'prev' => 'Immagine precedente',
         'next' => 'Immagine successiva',
         'error' => 'Impossibile caricare l\'immagine',
+        'open' => 'Apri l’immagine :index di :count',
+        'open_one' => 'Apri l’immagine',
     ],
     'video' => [
         'untitled' => 'Video',

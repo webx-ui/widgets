@@ -34,7 +34,7 @@
 @endphp
 <section {{ $attributes->class(['webx-slider', 'webx-slider--'.$variant, 'webx-slider--overlaid' => $overlaid])->merge(array_filter([
     'id' => $id,
-    'data-webx-slider' => json_encode($config + ['words' => $words], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+    'data-webx-slider' => json_encode($config + ['swipe' => (array) config('webx-widgets.swipe', []), 'words' => $words], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
     'aria-roledescription' => __('webx-widgets::widgets.slider.carousel'),
     'aria-label' => $label,
 ])) }}>

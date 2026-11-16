@@ -79,7 +79,7 @@ final class SliderTest extends TestCase
     public function each_variant_hands_the_script_its_settings_and_a_prop_overrides_any(): void
     {
         $hero = $this->config('<x-webx-slider variant="hero" id="h"><x-webx-slide>1</x-webx-slide><x-webx-slide>2</x-webx-slide></x-webx-slider>');
-        $this->assertSame(['variant' => 'hero', 'effect' => 'fade', 'loop' => true, 'autoplay' => 6000, 'continuous' => false, 'thumbs' => false, 'speed' => 600], array_diff_key($hero, ['options' => 0, 'words' => 0]));
+        $this->assertSame(['variant' => 'hero', 'effect' => 'fade', 'loop' => true, 'autoplay' => 6000, 'continuous' => false, 'thumbs' => false, 'speed' => 600], array_diff_key($hero, ['options' => 0, 'swipe' => 0, 'words' => 0]));
         $this->assertSame('Go to slide :index', $hero['words']['go_to']);
 
         $gallery = $this->config('<x-webx-slider variant="gallery"><x-webx-slide>1</x-webx-slide></x-webx-slider>');
@@ -298,6 +298,18 @@ final class SliderTest extends TestCase
             // Blade wraps what a component throws in a ViewException.
             throw $error->getPrevious() instanceof InvalidArgumentException ? $error->getPrevious() : $error;
         }
+    }
+
+    #[Test]
+    public function the_script_is_told_the_packages_feel_of_a_swipe(): void
+    {
+        $blade = '<x-webx-slider><x-webx-slide>1</x-webx-slide></x-webx-slider>';
+
+        $this->assertSame(['threshold' => 0.15, 'velocity' => 0.4, 'resistance' => 0.3, 'wheel' => 60, 'pause' => 400], $this->config($blade)['swipe']);
+
+        // A theme or a site says it once, for every slider.
+        config(['webx-widgets.swipe.threshold' => 0.25]);
+        $this->assertSame(0.25, $this->config($blade)['swipe']['threshold']);
     }
 
     /**

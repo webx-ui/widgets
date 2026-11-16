@@ -115,6 +115,8 @@ return [
         'prev' => 'Previous picture',
         'next' => 'Next picture',
         'error' => 'The picture cannot be loaded',
+        'open' => 'Open picture :index of :count',
+        'open_one' => 'Open the picture',
     ],
     'video' => [
         'untitled' => 'Video',

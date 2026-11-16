@@ -71,6 +71,39 @@ final class LightboxTest extends TestCase
     }
 
     #[Test]
+    public function a_link_around_a_picture_without_an_alt_is_named_for_what_it_does(): void
+    {
+        $picture = ['url' => '/media/plan.webp', 'thumb' => '/media/plan-320.webp', 'alt' => '', 'width' => 2560, 'height' => 1440];
+
+        // Its place in the group, when the template says it.
+        $html = Blade::render('<x-webx-lightbox :image="$picture" group="g" :index="2" :total="5"><img src="/media/plan.webp" alt=""></x-webx-lightbox>', ['picture' => $picture]);
+        $this->assertStringContainsString('aria-label="Open picture 2 of 5"', $html);
+
+        // Without it, and in the page's language.
+        $this->assertStringContainsString('aria-label="Open the picture"', Blade::render('<x-webx-lightbox :image="$picture" />', ['picture' => $picture]));
+        $this->app->setLocale('ru');
+        $this->assertStringContainsString('aria-label="Открыть фото 1 из 3"', Blade::render('<x-webx-lightbox :image="$picture" :index="1" :total="3" />', ['picture' => $picture]));
+        $this->app->setLocale('en');
+
+        // A name of its own wins: the alt, an aria-label by hand, words or a described picture in the slot.
+        $named = [
+            '<x-webx-lightbox :image="$picture" alt="The plan" :index="1" :total="3" />',
+            '<x-webx-lightbox :image="$picture" aria-label="Site plan" :index="1" :total="3" />',
+            '<x-webx-lightbox :image="$picture" :index="1" :total="3"><span>Plan</span></x-webx-lightbox>',
+            '<x-webx-lightbox :image="$picture" :index="1" :total="3"><img src="/p.webp" alt="Plan"></x-webx-lightbox>',
+        ];
+
+        foreach ($named as $template) {
+            $html = Blade::render($template, ['picture' => $picture]);
+            $this->assertStringNotContainsString('Open', $html, $template);
+        }
+
+        $this->assertSame(1, substr_count(Blade::render('<x-webx-lightbox :image="$picture" aria-label="Site plan" />', ['picture' => $picture]), 'aria-label='));
+        // A null label from a template is no label: the link is named.
+        $this->assertStringContainsString('aria-label="Open the picture"', Blade::render('<x-webx-lightbox :image="$picture" :aria-label="null" />', ['picture' => $picture]));
+    }
+
+    #[Test]
     public function the_slot_is_what_the_link_shows_and_unknown_sizes_are_left_out(): void
     {
         $html = Blade::render('<x-webx-lightbox src="/a.jpg" width="0"><span>Look</span></x-webx-lightbox>');
@@ -145,6 +178,19 @@ final class LightboxTest extends TestCase
     }
 
     #[Test]
+    public function the_script_is_told_the_windows_layout_of_the_config(): void
+    {
+        $layout = $this->settings()['layout'];
+
+        $this->assertSame(768, $layout['narrow']);
+        $this->assertSame(['side' => 100, 'max' => 1600, 'height' => 0.84, 'below' => false], $layout['wide']);
+        $this->assertSame(['side' => 12, 'max' => 0, 'height' => 0.75, 'below' => true], $layout['phone']);
+
+        config(['webx-widgets.lightbox.phone.below' => false]);
+        $this->assertFalse($this->settings()['layout']['phone']['below']);
+    }
+
+    #[Test]
     public function the_attribute_is_found_on_a_link_only(): void
     {
         $this->assertTrue(Lightbox::wanted('<a class="x" data-webx-lightbox href="/a.jpg">'));
@@ -154,7 +200,7 @@ final class LightboxTest extends TestCase
     }
 
     /**
-     * @return array{words: array<string, string>, icons: array<string, string>}
+     * @return array{words: array<string, string>, icons: array<string, string>, layout: array<string, mixed>}
      */
     private function settings(): array
     {
@@ -163,7 +209,7 @@ final class LightboxTest extends TestCase
         $settings = json_decode($match[1] ?? '', true);
         $this->assertIsArray($settings);
 
-        /** @var array{words: array<string, string>, icons: array<string, string>} $settings */
+        /** @var array{words: array<string, string>, icons: array<string, string>, layout: array<string, mixed>} $settings */
         return $settings;
     }
 }

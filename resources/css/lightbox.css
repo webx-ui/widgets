@@ -20,6 +20,11 @@
   --webx-lightbox-outline: var(--site-color-bg);
   --webx-lightbox-placeholder: var(--site-color-surface-muted);
   --webx-lightbox-icon-size: 28px;
+  /* The arrows on a phone, a pair under the picture: their size, the space between them and
+     the picture. Where the picture ends is the script's, `--webx-lightbox-arrows-top`. */
+  --webx-lightbox-arrow-size: 48px;
+  --webx-lightbox-arrows-gap: var(--site-space-2);
+  --webx-lightbox-arrows-top: auto;
   /* Over the header, the dialogs and the consent banner. */
   --webx-lightbox-z: 400;
 }
@@ -55,6 +60,26 @@
   color: var(--webx-lightbox-color);
   filter: drop-shadow(0 0 2px var(--webx-lightbox-outline));
   pointer-events: none;
+}
+
+/* PhotoSwipe's arrows under the picture (a phone): shown on a touch screen too, side by side in the
+   middle. Its own rule hides them until a mouse is used; this one comes later and wins. */
+.webx-lightbox__arrow.is-below {
+  top: var(--webx-lightbox-arrows-top);
+  width: var(--webx-lightbox-arrow-size);
+  height: var(--webx-lightbox-arrow-size);
+  margin-top: var(--webx-lightbox-arrows-gap);
+  visibility: visible;
+}
+
+.webx-lightbox__arrow--prev.is-below {
+  right: auto;
+  left: calc(50% - var(--webx-lightbox-arrow-size) - var(--webx-lightbox-arrows-gap) / 2);
+}
+
+.webx-lightbox__arrow--next.is-below {
+  right: auto;
+  left: calc(50% + var(--webx-lightbox-arrows-gap) / 2);
 }
 
 .webx-lightbox-link {

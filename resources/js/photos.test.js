@@ -214,6 +214,126 @@ describe('photos', () => {
     expect(outer).toHaveBeenCalledTimes(1)
   })
 
+  it('the photo follows the finger; let go, it pages past 15% of the frame, short of it it goes back', async () => {
+    let time = 0
+    vi.spyOn(performance, 'now').mockImplementation(() => time)
+    const root = await start(markup())
+    const frame = root.querySelector('.webx-photos__frame')
+    const photos = root.querySelectorAll('.webx-photos__photo')
+
+    // 300 wide: 40 px slowly is 13% — back to the first.
+    pointer(frame, 'pointerdown', { x: 200, y: 100 })
+    time += 500
+    pointer(frame, 'pointermove', { x: 160, y: 101 })
+    expect(root.classList.contains('is-dragging')).toBe(true)
+    expect(photos[0].style.transform).toBe('translateX(-40px)')
+    // The next one comes in beside it.
+    expect(photos[1].style.transform).toBe('translateX(260px)')
+    expect(photos[1].classList.contains('is-dragged')).toBe(true)
+    time += 500
+    pointer(frame, 'pointerup', { x: 160, y: 101 })
+    expect(shown(root)).toBe(0)
+    expect(root.classList.contains('is-dragging')).toBe(false)
+
+    // 50 px slowly is 17%: the next one.
+    pointer(frame, 'pointerdown', { x: 200, y: 100 })
+    time += 500
+    pointer(frame, 'pointermove', { x: 150, y: 100 })
+    time += 500
+    pointer(frame, 'pointerup', { x: 150, y: 100 })
+    expect(shown(root)).toBe(1)
+    vi.restoreAllMocks()
+  })
+
+  it('pages by a flick faster than 0.4 px/ms, however short', async () => {
+    let time = 0
+    vi.spyOn(performance, 'now').mockImplementation(() => time)
+    const root = await start(markup())
+    const frame = root.querySelector('.webx-photos__frame')
+
+    // 20 px in 30 ms.
+    pointer(frame, 'pointerdown', { x: 200, y: 100 })
+    time += 15
+    pointer(frame, 'pointermove', { x: 190, y: 100 })
+    time += 15
+    pointer(frame, 'pointerup', { x: 180, y: 100 })
+    expect(shown(root)).toBe(1)
+
+    // The same 20 px over a second: no flick, and too short.
+    pointer(frame, 'pointerdown', { x: 200, y: 100 })
+    time += 500
+    pointer(frame, 'pointermove', { x: 190, y: 100 })
+    time += 500
+    pointer(frame, 'pointerup', { x: 180, y: 100 })
+    expect(shown(root)).toBe(1)
+    vi.restoreAllMocks()
+  })
+
+  it('gives way past the first photo by 0.3 and does not go round', async () => {
+    const root = await start(markup())
+    const frame = root.querySelector('.webx-photos__frame')
+    const photos = root.querySelectorAll('.webx-photos__photo')
+
+    pointer(frame, 'pointerdown', { x: 100, y: 100 })
+    pointer(frame, 'pointermove', { x: 200, y: 100 })
+    expect(photos[0].style.transform).toBe('translateX(30px)')
+    expect(photos[2].classList.contains('is-dragged')).toBe(false)
+    pointer(frame, 'pointerup', { x: 200, y: 100 })
+    expect(shown(root)).toBe(0)
+  })
+
+  it('swallows the click a drag ends in, paged or not', async () => {
+    const root = await start(markup({ linked: true }))
+    const link = document.querySelector('.link')
+
+    pointer(link, 'pointerdown', { x: 100, y: 100 })
+    pointer(link, 'pointermove', { x: 120, y: 100 })
+    pointer(link, 'pointerup', { x: 120, y: 100 })
+    // Back at the first: past its edge there is nothing to page to.
+    expect(shown(root)).toBe(0)
+    const click = new MouseEvent('click', { bubbles: true, cancelable: true })
+    link.dispatchEvent(click)
+    expect(click.defaultPrevented).toBe(true)
+  })
+
+  it('pages by a touchpad: a sideways wheel of 60px over the frame is one photo', async () => {
+    let time = 1000
+    vi.spyOn(performance, 'now').mockImplementation(() => time)
+    const root = await start(markup())
+    const frame = root.querySelector('.webx-photos__frame')
+    const wheel = (deltaX, { x = 100, y = 100, deltaY = 0 } = {}) => {
+      time += 16
+      const event = new WheelEvent('wheel', {
+        deltaX,
+        deltaY,
+        clientX: x,
+        clientY: y,
+        bubbles: true,
+        cancelable: true,
+      })
+      frame.dispatchEvent(event)
+      return event
+    }
+
+    wheel(30)
+    expect(shown(root)).toBe(0)
+    expect(wheel(31).defaultPrevented).toBe(true)
+    expect(shown(root)).toBe(1)
+    for (let at = 0; at < 10; at++) wheel(40)
+    expect(shown(root)).toBe(1)
+
+    time += 500
+    wheel(-61)
+    expect(shown(root)).toBe(0)
+
+    // Down the page, or off the frame: not the photos'.
+    expect(wheel(5, { deltaY: 60 }).defaultPrevented).toBe(false)
+    time += 500
+    expect(wheel(80, { y: 260 }).defaultPrevented).toBe(false)
+    expect(shown(root)).toBe(0)
+    vi.restoreAllMocks()
+  })
+
   it('leaves the markup as it found it', async () => {
     const root = await start(markup({ linked: true }))
     end(root)

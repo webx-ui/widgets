@@ -46,7 +46,7 @@ final class PhotosTest extends TestCase
         $this->assertStringContainsString('class="webx-photos card__photos"', $html);
         $this->assertStringContainsString('style="--webx-photos-ratio: 3 / 2; --webx-photos-interval: 5000ms"', $html);
         $this->assertStringContainsString('role="group" aria-roledescription="carousel" aria-label="Photos"', $html);
-        $this->assertStringContainsString('data-webx-photos="{&quot;autoplay&quot;:5000,&quot;words&quot;:{&quot;pause&quot;:&quot;Pause&quot;,&quot;play&quot;:&quot;Play&quot;}}"', $html);
+        $this->assertStringContainsString('data-webx-photos="{&quot;autoplay&quot;:5000,&quot;swipe&quot;:{&quot;threshold&quot;:0.15,&quot;velocity&quot;:0.4,&quot;resistance&quot;:0.3,&quot;wheel&quot;:60,&quot;pause&quot;:400},&quot;words&quot;:{&quot;pause&quot;:&quot;Pause&quot;,&quot;play&quot;:&quot;Play&quot;}}"', $html);
 
         // The first is shown, the rest wait for the script; every one is a real picture with its alt.
         $this->assertMatchesRegularExpression('~<img class="webx-photos__photo is-active" src="/media/a.jpg" alt="The hall"\s+loading="lazy"\s+decoding="async"~', $html);

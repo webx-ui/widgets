@@ -70,11 +70,34 @@ function leafletWithoutPictures() {
   }
 }
 
+// What two widgets share — the feel of a swipe — is a module of its own in the sources and a copy
+// inside each widget's file in dist/: one id per importer, so Rollup makes no shared chunk of it
+// (each widget stays one request). Only the modules named here.
+const SHARED = ['swipe.js']
+function sharedCopies() {
+  return {
+    name: 'webx-widgets-shared-copies',
+    enforce: 'pre',
+    async resolveId(source, importer, options) {
+      const name = source.split('/').pop()
+      if (!importer || !SHARED.includes(name)) return null
+      const resolved = await this.resolve(source, importer, { ...options, skipSelf: true })
+      if (!resolved) return null
+      const owner = importer.split(/[\\/]/).pop().split('?')[0]
+      return `${resolved.id}?copy-for=${owner}`
+    },
+    load(id) {
+      const at = id.indexOf('?copy-for=')
+      return at === -1 ? null : readFileSync(id.slice(0, at), 'utf8')
+    },
+  }
+}
+
 export default {
   root,
   publicDir: false,
   logLevel: 'warn',
-  plugins: [sources(), leafletWithoutPictures()],
+  plugins: [sources(), leafletWithoutPictures(), sharedCopies()],
   build: {
     outDir: 'dist',
     emptyOutDir: true,

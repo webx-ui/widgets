@@ -115,6 +115,8 @@ return [
         'prev' => 'Önceki görsel',
         'next' => 'Sonraki görsel',
         'error' => 'Görsel yüklenemedi',
+        'open' => ':count görselden :index. görseli aç',
+        'open_one' => 'Görseli aç',
     ],
     'video' => [
         'untitled' => 'Video',

@@ -7,6 +7,7 @@ namespace WebxUi\Widgets\Tests;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\AdminServiceProvider;
 use WebxUi\Admin\Testing\MigratesOnce;
@@ -252,7 +253,7 @@ final class GalleryTest extends TestCase
 
         foreach (['still' => 3, 'slider' => 6] as $mosaic => $count) {
             foreach ([true, false] as $zoom) {
-                $html = $this->render(['pictures' => $pictures, 'view' => 'mosaic', 'mosaic' => $mosaic, 'zoom' => $zoom]);
+                $html = $this->render(['pictures' => $pictures, 'view' => 'mosaic', 'mosaic' => $mosaic, 'zoom' => $zoom], second: true);
                 $case = $mosaic.($zoom ? ', with zoom' : ', without zoom');
 
                 $this->assertSame($count, substr_count($html, '<img class="b-gallery__image"'), $case);
@@ -260,6 +261,113 @@ final class GalleryTest extends TestCase
                 $this->assertStringNotContainsString('fetchpriority', $html, $case);
             }
         }
+    }
+
+    #[Test]
+    public function the_mosaic_and_the_grid_offer_the_librarys_copies_for_the_share_of_the_block_a_picture_takes(): void
+    {
+        Storage::fake('public');
+        $pictures = $this->pictures(3);
+        $pictures[1]['alt'] = '';
+
+        // The copies already cut: the square preview and two by width, under the library's own prefix.
+        foreach (['photo-1', 'photo-2', 'photo-3'] as $name) {
+            foreach (['320x320-cover', '640', '1280'] as $size) {
+                Storage::disk('public')->put("media/thumbs/{$name}/{$size}.webp", 'x');
+            }
+        }
+
+        foreach (['pair' => '50vw', 'column' => '100vw'] as $narrow => $small) {
+            $mosaic = $this->render(['pictures' => $pictures, 'view' => 'mosaic', 'narrow' => $narrow], second: true);
+
+            $this->assertSame(3, preg_match_all('~<img class="b-gallery__image" src="[^"]+photo-\d\.webp\?v=\w+" srcset="[^"]+/media/thumbs/photo-\d/640\.webp\?v=\w+ 640w, [^"]+/media/thumbs/photo-\d/1280\.webp\?v=\w+ 1280w, [^"]+/media/ab/cd/photo-\d\.webp\?v=\w+ 1800w" sizes="[^"]+"[^>]* loading="lazy" decoding="async">~', $mosaic), $narrow);
+            // The large one two thirds of the block, the small ones a third; in a narrow block the whole of it, the small ones side by side or one under another.
+            $this->assertStringContainsString('sizes="(min-width: 36em) 67vw, 100vw"', $mosaic, $narrow);
+            $this->assertSame(2, substr_count($mosaic, 'sizes="(min-width: 36em) 34vw, '.$small.'"'), $narrow);
+            // The square preview is a different cut of the picture: not the mosaic's.
+            $this->assertStringNotContainsString('320x320', (string) preg_replace('~<a [^>]*>~', '', $mosaic), $narrow);
+        }
+
+        $grid = $this->render(['pictures' => $pictures, 'columns' => 3], second: true);
+        $this->assertSame(3, preg_match_all('~<img class="b-gallery__image" src="[^"]+/320x320-cover\.webp\?v=\w+" srcset="[^"]+/320x320-cover\.webp\?v=\w+ 320w, [^"]+/640\.webp\?v=\w+ 640w, [^"]+/1280\.webp\?v=\w+ 1280w, [^"]+/photo-\d\.webp\?v=\w+ 1800w" sizes="\(min-width: 28\.5em\) 34vw, \(min-width: 18\.75em\) 50vw, 100vw"[^>]* loading="lazy" decoding="async">~', $grid));
+
+        // One picture across the column: the whole of it.
+        $one = $this->render(['pictures' => array_slice($pictures, 0, 1), 'columns' => 1], second: true);
+        $this->assertStringContainsString('sizes="100vw"', $one);
+
+        // A copy as wide as the picture or wider is no copy: a picture of 1000 px lists 640 and itself.
+        $small = $this->picture('photo-small');
+        $small->forceFill(['width' => 1000, 'height' => 667])->save();
+        Storage::disk('public')->put('media/thumbs/photo-small/640.webp', 'x');
+        Storage::disk('public')->put('media/thumbs/photo-small/1280.webp', 'x');
+        $narrowPicture = $this->render(['pictures' => [['path' => $small->path, 'alt' => 'Small']], 'view' => 'mosaic'], second: true);
+        $this->assertMatchesRegularExpression('~srcset="[^"]+/640\.webp\?v=\w+ 640w, [^"]+/photo-small\.webp\?v=\w+ 1000w"~', $narrowPicture);
+    }
+
+    #[Test]
+    public function a_copy_not_cut_yet_is_left_out_and_cut_after_the_response(): void
+    {
+        Storage::fake('public');
+        $pictures = $this->pictures(1);
+
+        $html = $this->render(['pictures' => $pictures, 'view' => 'mosaic'], second: true);
+        // Nothing but the picture to choose from: no srcset, and no waiting for the resize.
+        $this->assertStringNotContainsString('srcset', $html);
+        $this->assertStringContainsString('loading="lazy" decoding="async"', $html);
+        $this->assertSame([], Storage::disk('public')->allFiles('media/thumbs/photo-1'));
+
+        // After the response the copies are cut, and the next page lists them.
+        $image = imagecreatetruecolor(1800, 1200);
+        ob_start();
+        imagewebp($image);
+        Storage::disk('public')->put('media/ab/cd/photo-1.webp', (string) ob_get_clean());
+        $this->render(['pictures' => $pictures, 'view' => 'mosaic'], second: true);
+        $this->app->terminate();
+
+        $this->assertTrue(Storage::disk('public')->exists('media/thumbs/photo-1/640.webp'));
+        $this->assertTrue(Storage::disk('public')->exists('media/thumbs/photo-1/1280.webp'));
+        $this->assertStringContainsString('/media/thumbs/photo-1/1280.webp', $this->render(['pictures' => $pictures, 'view' => 'mosaic'], second: true));
+    }
+
+    #[Test]
+    public function only_the_block_that_opens_the_page_fetches_its_first_pictures_at_once(): void
+    {
+        $pictures = $this->pictures(6);
+
+        // First on the page: the first row of the grid, the first three of the mosaic.
+        $grid = $this->render(['pictures' => $pictures, 'columns' => 3]);
+        $this->assertSame(3, preg_match_all('~<img class="b-gallery__image"[^>]*height="320"\s*decoding="async">~', $grid));
+        $this->assertSame(3, substr_count($grid, 'loading="lazy" decoding="async"'));
+
+        $mosaic = $this->render(['pictures' => $pictures, 'view' => 'mosaic', 'mosaic' => 'slider']);
+        $this->assertSame(3, preg_match_all('~<img class="b-gallery__image"[^>]*height="1200"\s*decoding="async">~', $mosaic));
+        $this->assertSame(3, preg_match_all('~<img class="b-gallery__image"[^>]*loading="lazy" decoding="async">~', $mosaic));
+
+        // Under another block: every one waits until it nears the screen.
+        $this->assertSame(6, substr_count($this->render(['pictures' => $pictures, 'columns' => 3], second: true), 'loading="lazy" decoding="async"'));
+    }
+
+    #[Test]
+    public function a_lightbox_link_around_a_picture_without_an_alt_says_which_it_opens(): void
+    {
+        $pictures = $this->pictures(5);
+        $pictures[1]['alt'] = '';
+
+        foreach (['grid', 'slider', 'mosaic'] as $view) {
+            $html = $this->render(['pictures' => $pictures, 'view' => $view]);
+
+            $this->assertSame(1, substr_count($html, 'aria-label="Open picture 2 of 5"'), $view);
+            // A picture with an alt names its link already.
+            $this->assertStringNotContainsString('Open picture 1 of 5', $html, $view);
+        }
+
+        // The pictures a still mosaic leaves for the lightbox count on from the third.
+        $pictures[3]['alt'] = '';
+        $this->assertStringContainsString('aria-label="Open picture 4 of 5"', $this->render(['pictures' => $pictures, 'view' => 'mosaic']));
+
+        $this->app->setLocale('ru');
+        $this->assertStringContainsString('aria-label="Открыть фото 2 из 5"', $this->render(['pictures' => $pictures]));
+        $this->app->setLocale('en');
     }
 
     #[Test]
@@ -348,13 +456,15 @@ final class GalleryTest extends TestCase
     /**
      * @param  array<string, mixed>  $values
      */
-    private function render(array $values, ?string $key = null): string
+    private function render(array $values, ?string $key = null, bool $second = false): string
     {
         $this->rendered++;
         // Each render a page of its own: the ids of its sliders start over.
         $this->app->forgetInstance(Sliders::class);
+        $block = ['key' => $key ?? "k{$this->rendered}", 'type' => 'gallery', 'values' => $values];
 
-        return (string) $this->app->make(Renderer::class)->render([['key' => $key ?? "k{$this->rendered}", 'type' => 'gallery', 'values' => $values]]);
+        // `second`: under another block — an empty gallery, which prints nothing — not the first screen.
+        return (string) $this->app->make(Renderer::class)->render($second ? [['key' => 'above', 'type' => 'gallery', 'values' => []], $block] : [$block]);
     }
 
     /** The indent a template line left out leaves before the next one, which the browser drops. */
@@ -364,12 +474,17 @@ final class GalleryTest extends TestCase
     }
 
     /**
-     * The markup without what the mosaic's pictures say since: a carousel's slides past the first
-     * were lazy by the slider's hand, and its id is a hash of its slides, so both go too.
+     * The markup without what the pictures of the mosaic and the grid say since — when they are
+     * fetched, their copies and their share of the block: a carousel's slides past the first were
+     * lazy by the slider's hand, and its id is a hash of its slides, so both go too.
      */
     private static function earlier(string $html): string
     {
-        return self::tight((string) preg_replace(['~webx-slider-[0-9a-f]{8}~', '~<img loading="lazy" ~'], ['webx-slider-*', '<img '], str_replace(self::LATER, '', $html)));
+        return self::tight((string) preg_replace(
+            ['~webx-slider-[0-9a-f]{8}~', '~<img loading="lazy" ~', '~\s(?:srcset|sizes)="[^"]*"~', '~\s(?:loading="lazy"|decoding="async")~'],
+            ['webx-slider-*', '<img ', '', ''],
+            str_replace(self::LATER, '', $html),
+        ));
     }
 
     /** @return array<string, array<string, mixed>> */

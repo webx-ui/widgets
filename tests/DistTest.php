@@ -54,8 +54,15 @@ final class DistTest extends PlainTestCase
     /** Each of the small widgets of §14 with a file of its own: a table's shadows, back to top, share, counter, countdown, the notice bar. */
     private const int PAGE_TOOL_BUDGET = 2 * 1024;
 
-    /** Before and after, the table of contents, show more, the zoom, the fields of a form and the photos of a card: 3 KB gzip each — a layout of their own as well as a few lines of script. */
+    /** Before and after, the table of contents, show more, the zoom and the fields of a form: 3 KB gzip each — a layout of their own as well as a few lines of script. */
     private const int CONTENT_WIDGET_BUDGET = 3 * 1024;
+
+    /**
+     * The photos of a card: half a kilobyte over the others, for the drag — the photo following the
+     * finger and the mouse, the next one beside it, the glide to its place — and the touchpad's
+     * steps, the package's feel of a swipe (`swipe.js`). Still no library.
+     */
+    private const int PHOTOS_BUDGET = 3584;
 
     /** The shell of a form and, from W6.3, its checks in the browser: 8 KB gzip (§17.6), only where a form stands. */
     private const int FORM_BUDGET = 8 * 1024;
@@ -192,8 +199,9 @@ final class DistTest extends PlainTestCase
     {
         foreach (['compare', 'toc', 'load-more', 'zoom', 'field', 'photos'] as $widget) {
             $size = self::gzipped("{$widget}.js") + self::gzipped("{$widget}.css");
+            $budget = $widget === 'photos' ? self::PHOTOS_BUDGET : self::CONTENT_WIDGET_BUDGET;
 
-            $this->assertLessThanOrEqual(self::CONTENT_WIDGET_BUDGET, $size, sprintf('%s is %.1f KB gzip.', $widget, $size / 1024));
+            $this->assertLessThanOrEqual($budget, $size, sprintf('%s is %.1f KB gzip.', $widget, $size / 1024));
         }
     }
 

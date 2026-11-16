@@ -1,6 +1,7 @@
 {{--
     What the lightbox's script is told (spec §8), once before </body> on a page that has one: the
-    words in the page's language and the icons of the chain — a theme's arrow is the lightbox's.
+    words in the page's language, the icons of the chain — a theme's arrow is the lightbox's — and
+    the window's layout of the package's config.
 --}}
 @php
     $icon = static fn (string $name): string => \Illuminate\Support\Facades\Blade::render('<x-webx-icon :name="$name" class="webx-lightbox__icon" />', ['name' => $name]);
@@ -15,6 +16,8 @@
             'next' => __('webx-widgets::widgets.lightbox.next'),
             'error' => __('webx-widgets::widgets.lightbox.error'),
         ],
+        // The window's margins and where the arrows stand (`webx-widgets.lightbox`).
+        'layout' => (array) config('webx-widgets.lightbox', []),
         'icons' => [
             'prev' => trim($icon('chevron-left')),
             'next' => trim($icon('chevron-right')),
