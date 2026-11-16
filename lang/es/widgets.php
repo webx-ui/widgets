@@ -212,6 +212,7 @@ return [
         'none' => 'Hoy ya no quedan horas',
         'unavailable' => 'no disponible',
         'times' => 'Horas del :date',
+        'visitor_zone' => 'Zona horaria: :zone',
     ],
     'captcha' => [
         'missing' => 'Confirme que no es un robot y envíe el formulario de nuevo.',

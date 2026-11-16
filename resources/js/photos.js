@@ -18,6 +18,7 @@
  */
 
 import '../css/photos.css'
+import { unhold } from './held.js'
 import { flick, swipeSettings, wheelSteps } from './swipe.js'
 
 const webx = (window.webx ??= {})
@@ -58,6 +59,9 @@ export function photos(root) {
 
   const show = (next) => {
     index = (next + count) % count
+    // A photo held back (§14.2) gets its address as it is shown, and the next one ahead of time.
+    unhold(pictures[index])
+    unhold(pictures[(index + 1) % count])
     pictures.forEach((picture, at) => {
       picture.classList.toggle('is-active', at === index)
       if (at === index) picture.removeAttribute('aria-hidden')

@@ -77,6 +77,7 @@ final class Field extends Component
      * @param  array<string, list<string>>|null  $when
      * @param  array<string, list<string>>|null  $unless
      * @param  list<int|string>|null  $weekdays
+     * @param  list<string>|null  $skip
      */
     public function __construct(
         public string $name,
@@ -145,6 +146,18 @@ final class Field extends Component
         public ?string $noTimesLabel = null,
         public ?string $unavailableLabel = null,
         public ?string $timesLabel = null,
+        // FORM_STEPS §6.7. `visitor-timezone` — the times are the visitor's: the grid and «today» in the
+        // browser's zone, sent as `<name>[timezone]`; `timezone` stays the zone of a page without
+        // JavaScript. `lead-days` — days from today before the first that may be chosen (1 — from
+        // tomorrow). `skip` — times of the grid not offered (`HH:MM`). `slots="panel"` — the times in a
+        // panel headed by the day («Tuesday, November 17»), the zone inside it, the days of the week
+        // in two letters. `first-day` — the first day open is chosen as the field is shown.
+        public bool $visitorTimezone = false,
+        public int|string|null $leadDays = null,
+        public ?array $skip = null,
+        public ?string $slots = null,
+        public bool $firstDay = false,
+        public ?string $visitorZoneLabel = null,
     ) {
         if (! in_array($type, self::TYPES, true)) {
             throw new InvalidArgumentException("<x-webx-field type=\"{$type}\">: one of ".implode(', ', self::TYPES).'.');
@@ -274,7 +287,7 @@ final class Field extends Component
      * and «today» in the zone as the page was printed — the `min` of the date without the script.
      * The script counts «today» again: a page cached whole would keep yesterday's.
      *
-     * @return array{step: int, from: int, to: int, weekdays: list<int>, zone: string, zoneLabel: string, times: list<array{value: string, label: string}>, date: string, time: string, today: string}
+     * @return array{step: int, from: int, to: int, weekdays: list<int>, zone: string, zoneLabel: string, times: list<array{value: string, label: string}>, date: string, time: string, today: string, min: string, lead: int, visitor: bool, label: ?string, panel: bool, first: bool}
      */
     public function moment(): array
     {
@@ -290,9 +303,23 @@ final class Field extends Component
         sort($weekdays);
         $zone = $this->zone();
         $times = [];
+        $skip = [];
+
+        foreach ($this->skip ?? [] as $one) {
+            if (is_string($one) && preg_match('/^(\d{1,2}):(\d{2})$/', trim($one), $match) === 1) {
+                $skip[] = sprintf('%02d:%02d', (int) $match[1], (int) $match[2]);
+            }
+        }
+
+        $lead = is_numeric($this->leadDays) ? max(0, min(365, (int) $this->leadDays)) : 0;
 
         for ($at = $from; $at + $step <= $to; $at += $step) {
             $value = sprintf('%02d:%02d', intdiv($at, 60), $at % 60);
+
+            if (in_array($value, $skip, true)) {
+                continue;
+            }
+
             $times[] = ['value' => $value, 'label' => Carbon::createFromTime(intdiv($at, 60), $at % 60)->locale(app()->getLocale())->isoFormat('LT')];
         }
 
@@ -305,6 +332,7 @@ final class Field extends Component
         $chosen = is_array($chosen) ? $chosen : [];
         $now = Carbon::now($zone);
         $offset = preg_replace('/^([+-])0?(\d+):00$/', '$1$2', $now->format('P')) ?? $now->format('P');
+        $label = $this->timezoneLabel !== null && trim($this->timezoneLabel) !== '' ? trim($this->timezoneLabel) : null;
 
         return [
             'step' => $step,
@@ -312,13 +340,19 @@ final class Field extends Component
             'to' => $to,
             'weekdays' => $weekdays === [] ? [1, 2, 3, 4, 5, 6, 7] : $weekdays,
             'zone' => $zone,
-            'zoneLabel' => $this->timezoneLabel !== null && trim($this->timezoneLabel) !== ''
-                ? trim($this->timezoneLabel)
-                : (string) __('webx-widgets::widgets.datetime.zone', ['zone' => $zone === 'UTC' ? 'UTC' : $zone.' (UTC'.($offset === '+0' ? '' : $offset).')']),
+            'zoneLabel' => $label ?? (string) __('webx-widgets::widgets.datetime.zone', ['zone' => $zone === 'UTC' ? 'UTC' : $zone.' (UTC'.($offset === '+0' ? '' : $offset).')']),
             'times' => $times,
             'date' => is_string($chosen['date'] ?? null) ? $chosen['date'] : '',
             'time' => is_string($chosen['time'] ?? null) ? $chosen['time'] : '',
             'today' => $now->format('Y-m-d'),
+            // The first day that may be chosen: the `min` of the date without the script.
+            'min' => $now->copy()->addDays($lead)->format('Y-m-d'),
+            'lead' => $lead,
+            'visitor' => $this->visitorTimezone,
+            // The page's own words about the zone, which the script keeps for the visitor's zone too.
+            'label' => $label,
+            'panel' => $this->slots === 'panel',
+            'first' => $this->firstDay,
         ];
     }
 
@@ -436,6 +470,7 @@ final class Field extends Component
                 'no_times' => $this->noTimesLabel ?? __('webx-widgets::widgets.datetime.none'),
                 'unavailable' => $this->unavailableLabel ?? __('webx-widgets::widgets.datetime.unavailable'),
                 'times' => $this->timesLabel ?? __('webx-widgets::widgets.datetime.times'),
+                'visitor_zone' => $this->visitorZoneLabel ?? __('webx-widgets::widgets.datetime.visitor_zone'),
             ],
             'control' => fn (ComponentAttributeBag $attributes): ComponentAttributeBag => $this->control($attributes),
         ]);

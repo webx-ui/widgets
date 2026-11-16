@@ -1,0 +1,20 @@
+/*
+ * A strip dragged with the mouse (spec §14): the script gives it `.webx-drag-scroll`. The hand
+ * shows only where a mouse is: a finger and a touchpad scroll it as they always did. While dragged
+ * the snap is off — the script brings the nearest frame to the start on release — and nothing in
+ * it is selected. A strip's own links keep their pointer unless its block says `cursor: inherit`.
+ */
+
+@media (hover: hover) and (pointer: fine) {
+  .webx-drag-scroll.is-ready {
+    cursor: grab;
+  }
+}
+
+.webx-drag-scroll.is-dragging {
+  scroll-snap-type: none;
+  scroll-behavior: auto;
+  cursor: grabbing;
+  user-select: none;
+  -webkit-user-select: none;
+}

@@ -212,6 +212,7 @@ return [
         'none' => 'No times left today',
         'unavailable' => 'unavailable',
         'times' => 'Times on :date',
+        'visitor_zone' => 'Time zone: :zone',
     ],
     'captcha' => [
         'missing' => 'Please confirm you are not a robot and send the form again.',

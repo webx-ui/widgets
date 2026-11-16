@@ -212,6 +212,7 @@ return [
         'none' => 'Não restam horários hoje',
         'unavailable' => 'indisponível',
         'times' => 'Horários de :date',
+        'visitor_zone' => 'Fuso horário: :zone',
     ],
     'captcha' => [
         'missing' => 'Confirme que não é um robô e envie o formulário de novo.',

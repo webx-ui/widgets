@@ -11,6 +11,11 @@
  * sheet from the bottom (dialog.css). Decided here and not by a media query: a modal lies over the
  * viewport, outside every container of the page, and the stylesheets of a theme know only
  * container queries (THEMES §8). A turned phone turns the open dialog with it.
+ *
+ * `webx-dialog--page`: the dialog is the whole window and scrolls with its backdrop, its box
+ * `.webx-dialog__window` inside. A click on the dialog outside that box closes it — the box, not
+ * the dialog's own rectangle, which is the window here; a press that began inside the box (a
+ * selection dragged out of it) is no click outside. Narrow, it is `is-narrow` (under the header).
  */
 
 import { listeners } from '../core.js'
@@ -24,11 +29,23 @@ const lock = () => document.documentElement.classList.toggle('webx-scroll-locked
 const NARROW = '(width < 40rem)'
 let narrow = null
 
-const shape = (dialog) =>
+const shape = (dialog) => {
+  const small = narrow?.matches ?? false
+  // A dialog scrolled as a page has a box of its own: a sheet it is not.
+  const page = dialog.classList.contains('webx-dialog--page')
   dialog.classList.toggle(
     'is-sheet',
-    dialog.classList.contains('webx-dialog--sheet') && (narrow?.matches ?? false),
+    dialog.classList.contains('webx-dialog--sheet') && !page && small,
   )
+  dialog.classList.toggle('is-narrow', page && small)
+}
+
+/** The box of a dialog drawn as a page; null for one that is its own box. */
+const windowOf = (dialog) =>
+  dialog.classList.contains('webx-dialog--page')
+    ? (Array.from(dialog.children).find((el) => el.classList.contains('webx-dialog__window')) ??
+      null)
+    : null
 
 function watchWidth() {
   if (narrow || typeof window.matchMedia !== 'function') return
@@ -42,6 +59,12 @@ function prepare(dialog) {
   if (prepared.has(dialog)) return
   prepared.add(dialog)
 
+  // Where the press began: a selection dragged out of the box ends with a click on the backdrop.
+  let pressed = null
+  dialog.addEventListener('pointerdown', (event) => {
+    pressed = event.target
+  })
+
   dialog.addEventListener('click', (event) => {
     const close =
       event.target instanceof Element ? event.target.closest('[data-webx-dialog-close]') : null
@@ -51,14 +74,23 @@ function prepare(dialog) {
       return
     }
 
+    const began = pressed
+    pressed = null
+    const box = windowOf(dialog)
+    if (box) {
+      const outside = (node) => !(node instanceof Node) || !box.contains(node)
+      if (outside(event.target) && (began === null || outside(began))) dialog.close()
+      return
+    }
+
     // A click on the dialog element itself outside its box is a click on the backdrop.
     if (event.target !== dialog) return
-    const box = dialog.getBoundingClientRect()
+    const rect = dialog.getBoundingClientRect()
     const inside =
-      event.clientX >= box.left &&
-      event.clientX <= box.right &&
-      event.clientY >= box.top &&
-      event.clientY <= box.bottom
+      event.clientX >= rect.left &&
+      event.clientX <= rect.right &&
+      event.clientY >= rect.top &&
+      event.clientY <= rect.bottom
     if (!inside) dialog.close()
   })
 
@@ -81,6 +113,8 @@ export function openDialog(dialog, opener = null) {
   watchWidth()
   shape(dialog)
   dialog.showModal()
+  // Scrolled as a page, it opens at its top, wherever it was left the last time.
+  if (dialog.classList.contains('webx-dialog--page')) dialog.scrollTop = 0
   open.add(dialog)
   lock()
 }

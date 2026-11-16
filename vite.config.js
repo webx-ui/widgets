@@ -70,10 +70,10 @@ function leafletWithoutPictures() {
   }
 }
 
-// What two widgets share — the feel of a swipe — is a module of its own in the sources and a copy
-// inside each widget's file in dist/: one id per importer, so Rollup makes no shared chunk of it
-// (each widget stays one request). Only the modules named here.
-const SHARED = ['swipe.js']
+// What two widgets share — the feel of a swipe, the pictures held back — is a module of its own
+// in the sources and a copy inside each widget's file in dist/: one id per importer, so Rollup
+// makes no shared chunk of it (each widget stays one request). Only the modules named here.
+const SHARED = ['swipe.js', 'held.js']
 function sharedCopies() {
   return {
     name: 'webx-widgets-shared-copies',
@@ -148,6 +148,8 @@ export default {
         'language-offer': join(root, 'resources/js/language-offer.js'),
         // A picture magnified under the mouse or two fingers; the keyboard's way in is the lightbox.
         zoom: join(root, 'resources/js/zoom.js'),
+        // A strip dragged with the mouse — a gallery's ribbon: only where `data-webx-drag-scroll` stands.
+        'drag-scroll': join(root, 'resources/js/drag-scroll.js'),
         // The fields of a form: Show on a password, the line beside a file — the rest is HTML.
         field: join(root, 'resources/js/field.js'),
         // The shell of a form: sending in place, the errors of a 422 by field, the answer.

@@ -9,11 +9,12 @@ afterEach(() => {
 
 const TIMES = ['09:00', '09:30', '10:00', '10:30', '11:00', '11:30']
 
-const config = (zone, weekdays = [1, 2, 3, 4, 5, 6, 7]) =>
+const config = (zone, weekdays = [1, 2, 3, 4, 5, 6, 7], extra = {}) =>
   JSON.stringify({
     step: 30,
     weekdays,
     zone,
+    ...extra,
     times: TIMES.map((value) => ({ value, label: value })),
     words: {
       previous: 'Previous month',
@@ -22,11 +23,12 @@ const config = (zone, weekdays = [1, 2, 3, 4, 5, 6, 7]) =>
       unavailable: 'unavailable',
       time: 'Time',
       times: 'Times on :date',
+      zone: 'Time zone: :zone',
     },
   }).replace(/"/g, '&quot;')
 
 /** The field as `<x-webx-field type="datetime">` prints it, in a form of the widgets. */
-async function start({ now, zone = 'Asia/Tokyo', weekdays, date = '', time = '' }) {
+async function start({ now, zone = 'Asia/Tokyo', weekdays, date = '', time = '', extra = {} }) {
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(new Date(now))
   document.documentElement.lang = 'en'
@@ -34,13 +36,14 @@ async function start({ now, zone = 'Asia/Tokyo', weekdays, date = '', time = '' 
     <form data-webx-send action="/send" method="post">
       <fieldset class="webx-field webx-field--datetime" data-webx-field="fields.meeting">
         <legend class="webx-field__label webx-field__label--legend">Meeting</legend>
-        <div class="webx-datetime" data-webx-datetime="${config(zone, weekdays)}">
+        <div class="webx-datetime" data-webx-datetime="${config(zone, weekdays, extra)}">
           <div class="webx-datetime__plain">
             <input type="date" id="meeting" name="fields[meeting][date]" value="${date}">
             <select id="meeting-time" name="fields[meeting][time]">
               <option value="">Choose…</option>
               ${TIMES.map((one) => `<option value="${one}"${one === time ? ' selected' : ''}>${one}</option>`).join('')}
             </select>
+            ${extra.visitor ? `<input type="hidden" name="fields[meeting][timezone]" value="${zone}" data-webx-timezone>` : ''}
           </div>
           <p class="webx-datetime__zone" id="meeting-zone">Times are in ${zone}</p>
         </div>
@@ -234,5 +237,92 @@ describe('datetime', () => {
     window.webx.unmount()
     expect(document.querySelector('.webx-datetime__picker')).toBeNull()
     expect(document.querySelector('.webx-datetime__plain').hidden).toBe(false)
+  })
+
+  describe('the options of FORM_STEPS §6.7', () => {
+    const zoneInput = () => document.querySelector('[data-webx-timezone]')
+    const legend = () => document.querySelector('.webx-datetime__legend')
+
+    it('`visitor`: counts the grid in the browser’s zone, sends it and names it', async () => {
+      vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockReturnValue({
+        timeZone: 'America/New_York',
+      })
+      // 23:30 of the 11th in UTC: the 12th in Tokyo, the site's zone — still the 11th in New York.
+      await start({ now: '2026-12-11T23:30:00Z', extra: { visitor: true } })
+
+      expect(day('2026-12-11').classList.contains('is-today')).toBe(true)
+      expect(day('2026-12-11').hasAttribute('aria-disabled')).toBe(true)
+      expect(zoneInput().value).toBe('America/New_York')
+      expect(document.querySelector('.webx-datetime__zone').textContent).toBe(
+        'Time zone: America/New_York',
+      )
+
+      day('2026-12-14').click()
+      document.querySelector('.webx-datetime__time input[value="10:30"]').click()
+      expect(document.querySelector('[data-webx-field]').dataset.webxAnswer).toContain(
+        '(America/New_York)',
+      )
+
+      // Taken away, the page is as it was printed: the site's zone.
+      window.webx.unmount()
+      expect(zoneInput().value).toBe('Asia/Tokyo')
+    })
+
+    it('without `visitor` keeps the site’s zone whatever the browser says', async () => {
+      vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockReturnValue({
+        timeZone: 'America/New_York',
+      })
+      await start({ now: '2026-12-11T23:30:00Z' })
+
+      expect(day('2026-12-12').classList.contains('is-today')).toBe(true)
+      expect(document.querySelector('.webx-datetime__zone').textContent).toBe(
+        'Times are in Asia/Tokyo',
+      )
+    })
+
+    it('`first`: the nearest day open is chosen with its times, no time yet', async () => {
+      // Friday 11th, 12:00 in Tokyo: nothing left today, the weekend closed — Monday the 14th.
+      await start({
+        now: '2026-12-11T03:00:00Z',
+        weekdays: [1, 2, 3, 4, 5],
+        extra: { first: true },
+      })
+
+      expect(document.querySelector('input[type=date]').value).toBe('2026-12-14')
+      expect(day('2026-12-14').classList.contains('is-selected')).toBe(true)
+      expect(times()).toEqual(TIMES)
+      expect(document.querySelector('select').value).toBe('')
+      expect(document.querySelector('.webx-datetime__time input:checked')).toBeNull()
+    })
+
+    it('`lead`: the days before the first that may be chosen are aria-disabled', async () => {
+      // 08:30 of the 12th in Tokyo; one day ahead.
+      await start({ now: '2026-12-11T23:30:00Z', extra: { lead: 1, first: true } })
+
+      expect(day('2026-12-12').getAttribute('aria-disabled')).toBe('true')
+      expect(day('2026-12-12').getAttribute('aria-label')).toContain('unavailable')
+      day('2026-12-12').click()
+      expect(document.querySelector('input[type=date]').value).toBe('2026-12-13')
+      expect(day('2026-12-13').hasAttribute('aria-disabled')).toBe(false)
+    })
+
+    it('`panel`: headed by the day with its weekday, the zone inside, the week in two letters', async () => {
+      await start({ now: '2026-11-15T23:30:00Z', extra: { panel: true } })
+
+      expect(
+        Array.from(document.querySelectorAll('.webx-datetime__weekday'), (one) => one.textContent),
+      ).toEqual(['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'])
+      expect(document.querySelector('.webx-datetime__weekday').getAttribute('abbr')).toBe('Monday')
+
+      day('2026-11-17').click()
+      expect(legend().textContent).toBe('Tuesday, November 17')
+      const zone = document.querySelector('.webx-datetime__zone')
+      expect(zone.closest('.webx-datetime__times')).not.toBeNull()
+      expect(zone.classList.contains('is-inside')).toBe(true)
+
+      window.webx.unmount()
+      expect(zone.closest('.webx-datetime__times')).toBeNull()
+      expect(zone.classList.contains('is-inside')).toBe(false)
+    })
   })
 })

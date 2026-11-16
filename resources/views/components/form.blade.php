@@ -13,9 +13,13 @@
     them back — a link to this page without JavaScript, `fresh()` and the focus on the first field
     with it. Hidden until the form is sent.
 
+    `done-href` (FORM_STEPS §16.2): __done is a link there instead of a button that closes the dialog;
+    to the page the dialog stands on, it closes the dialog and scrolls to the top (form.js).
+
     `steps` (FORM_STEPS §3): the fields stand in <x-webx-form.step>s; __body begins with the
     indicator steps.js fills (webx-form-steps, hidden until it runs), the form carries the words of
-    the indicator and the door that checks a step (`data-webx-check`). Without JavaScript the steps
+    the indicator and the door that checks a step (`data-webx-check`); `hold-next` — `data-webx-steps-hold`,
+    «Next» held until the step is answered (§3.6). Without JavaScript the steps
     are fieldsets one under another and the button under them sends them all.
 
     Classes: webx-form (+ --steps), __body, __message, __answer, __heading, __text, __answer-value (a visitor's
@@ -33,6 +37,10 @@
     if (! in_array($attributes->get('data-webx-attribution'), [null, false], true)) {
         \WebxUi\Widgets\Facades\Widgets::need('attribution');
     }
+    // The button under the thank-you in a dialog: it closes the dialog, or a link (`done-href`).
+    $done = $doneHref !== null
+        ? ['tag' => 'a', 'before' => '', 'after' => ' href="'.e($doneHref).'" data-webx-done']
+        : ['tag' => 'button', 'before' => ' type="button"', 'after' => ' data-webx-dialog-close'];
     $enctype = $sending && ! $attributes->has('enctype') && preg_match('/<input[^>]+type="file"/', (string) $slot) === 1 ? 'multipart/form-data' : null;
 @endphp
 <form {{ $attributes->class(['webx-form', 'webx-form--steps' => $steps, 'is-sent' => $answer !== null])->merge([
@@ -46,6 +54,7 @@
     'data-webx-steps-count' => $steps ? $words['step'] : null,
     'data-webx-steps-return' => $steps ? $words['return'] : null,
     'data-webx-steps-fix' => $steps ? $words['fix'] : null,
+    'data-webx-steps-hold' => $steps && $holdNext ? '' : null,
 ]) }}{!! $returned !!}>
     @if ($sending)
         @if ($csrf)
@@ -79,7 +88,7 @@
                 @endif
             </div>@endif</div>
         <div class="webx-form__error" role="alert" data-webx-failed="{{ $words['failed'] }}" data-webx-expired="{{ $words['expired'] }}">@if ($refusals !== [])<div class="webx-form__refusals">@foreach ($refusals as $refusal)<p class="webx-form__refusal">{{ $refusal }}</p>@endforeach</div>@endif</div>
-        <button type="button" class="webx-form__done" data-webx-dialog-close hidden>{{ $words['close'] }}</button>
+        <{{ $done['tag'] }}{!! $done['before'] !!} class="webx-form__done"{!! $done['after'] !!} hidden>{{ $words['close'] }}</{{ $done['tag'] }}>
         @if ($again)
             <a class="webx-form__again" href="{{ $againUrl }}" data-webx-again{{ $aside ? '' : ' hidden' }}>{{ $words['again'] }}</a>
         @endif

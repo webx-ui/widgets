@@ -11,14 +11,19 @@
     `data-webx-form-dialog`, `data-webx-dialog-close` and `{{ $body }}`.
 
     `$description` — the form's line under its title (inbox §5), HTML; null without one. `$sheet` —
-    a sheet from the bottom on a narrow screen (`data-webx-sheet` on an opener).
+    a sheet from the bottom on a narrow screen (`data-webx-sheet` on an opener). `$page` — the form's
+    `dialog.scroll: page` (FORM_STEPS §16.1): the dialog is the whole window and scrolls with its
+    backdrop, its box (__window) inside; the page under it stays.
 
-    Classes: webx-dialog (+ --sheet) and webx-form-dialog, __header, __heading, __title,
-    __description, __close, __body; __done and is-sent only around an inbox view published before
+    Classes: webx-dialog (+ --sheet, --page, __window) and webx-form-dialog, __header, __heading, __title,
+    __description, __close, __body, __window and __header--flow (scrolled as a whole); __done and is-sent only around an inbox view published before
     W6.4.
 --}}
-<dialog id="{{ $id }}" @class(['webx-dialog', 'webx-dialog--sheet' => $sheet ?? false, 'webx-form-dialog']) data-webx-form-dialog="{{ $form->slug }}" aria-labelledby="{{ $id }}-title"@if ($description ?? null) aria-describedby="{{ $id }}-description"@endif{!! $open ? ' open' : '' !!}>
-    <div class="webx-dialog__header webx-form-dialog__header">
+<dialog id="{{ $id }}" @class(['webx-dialog', 'webx-dialog--sheet' => $sheet ?? false, 'webx-dialog--page' => $page ?? false, 'webx-form-dialog']) data-webx-form-dialog="{{ $form->slug }}" aria-labelledby="{{ $id }}-title"@if ($description ?? null) aria-describedby="{{ $id }}-description"@endif{!! $open ? ' open' : '' !!}>
+@if ($page ?? false)
+<div class="webx-dialog__window webx-form-dialog__window">
+@endif
+    <div @class(['webx-dialog__header', 'webx-form-dialog__header', 'webx-form-dialog__header--flow' => $page ?? false])>
         <div class="webx-dialog__heading">
             <h2 class="webx-dialog__title webx-form-dialog__title" id="{{ $id }}-title">{{ $title }}</h2>
             @if ($description ?? null)
@@ -33,4 +38,7 @@
             <button type="button" class="webx-form-dialog__done" data-webx-dialog-close hidden>{{ __('webx-widgets::widgets.dialog.close') }}</button>
         @endif
     </div>
+@if ($page ?? false)
+</div>
+@endif
 </dialog>

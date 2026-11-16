@@ -22,11 +22,15 @@
  * of the slide is told on the root as `webx:slide` — `detail.index` (the slide's own number from 0,
  * a loop's copies not counted), `detail.count` and `detail.auto` (autoplay moved it) — for what a
  * theme draws around the slider.
+ *
+ * A slide past the first in view may come with its pictures held back (§14.2): the slides in view,
+ * the one before them and the next ones get theirs on start and on every move.
  */
 
 import '../css/slider.css'
 import Swiper from 'swiper'
 import { A11y, Autoplay, EffectFade, Navigation, Pagination, Thumbs } from 'swiper/modules'
+import { unhold } from './held.js'
 import { swipeSettings, wheelSteps } from './swipe.js'
 
 const webx = (window.webx ??= {})
@@ -62,7 +66,11 @@ function thumbnails(slides, text) {
     button.setAttribute('aria-label', words(text.thumb, { ':index': index + 1 }))
 
     const picture = slide.querySelector('img')
-    const src = slide.dataset.thumb || picture?.currentSrc || picture?.getAttribute('src')
+    const src =
+      slide.dataset.thumb ||
+      picture?.currentSrc ||
+      picture?.getAttribute('src') ||
+      picture?.dataset.webxSrc
     if (src) {
       const image = document.createElement('img')
       image.className = 'webx-slider__thumb-image'
@@ -164,6 +172,10 @@ export function slider(root) {
 
   const count = slides.length + copies.length
   const loop = config.loop === true && count > Math.ceil(perView) + 1
+  // Too few slides for Swiper to bring round (a mosaic of two pages): the arrows, the keys and
+  // autoplay go from the last back to the first instead, and from the first to the last. One
+  // slide has nowhere to go — no arrows, as without a loop.
+  const rewind = config.loop === true && !loop && count > 1
   const group = () => (fade ? 1 : Math.max(1, Math.floor(perView)))
 
   const swiper = new Swiper(viewport, {
@@ -182,6 +194,7 @@ export function slider(root) {
     spaceBetween: fade ? 0 : gap,
     speed: reduced ? 0 : config.speed,
     loop,
+    rewind,
     loopAddBlankSlides: false,
     watchSlidesProgress: true,
     effect: fade ? 'fade' : 'slide',
@@ -231,8 +244,9 @@ export function slider(root) {
       notificationClass: 'webx-slider__notice',
       prevSlideMessage: text.prev,
       nextSlideMessage: text.next,
-      firstSlideMessage: text.first,
-      lastSlideMessage: text.last,
+      // Going round, there is no first or last slide to hit: the arrow says where it goes.
+      firstSlideMessage: rewind ? text.prev : text.first,
+      lastSlideMessage: rewind ? text.next : text.last,
       // Dots away from the slides say which slide they are of how many: "Slide 2 of 4".
       paginationBulletMessage:
         outside && text.show
@@ -257,6 +271,21 @@ export function slider(root) {
     const fast = Math.abs(instance.touches.diff ?? 0) / Math.max(1, ms) > swipe.velocity
     instance.params.longSwipesMs = fast ? Number.POSITIVE_INFINITY : 0
   })
+
+  // The slides in view, the one before them and the next ones: their held pictures, before they slide in.
+  const near = () => {
+    const all = swiper.slides ?? []
+    const at = swiper.activeIndex ?? 0
+    const ahead = Math.ceil(fade ? 1 : perView)
+    for (let index = Math.max(0, at - 1); index <= at + ahead && index < all.length; index++) {
+      unhold(all[index])
+    }
+    // The first slide's neighbour behind is the last one, a loop or an arrow away.
+    if (at === 0 && all.length > 0) unhold(all[all.length - 1])
+  }
+  swiper.on('slideChange', near)
+  swiper.on('resize', near)
+  near()
 
   root.classList.add('is-ready')
   track.classList.add('is-ready')

@@ -7,14 +7,16 @@ namespace WebxUi\Widgets\View\Components;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\HtmlString;
 use Illuminate\View\Component;
+use WebxUi\Widgets\Pictures;
 use WebxUi\Widgets\View\Sliders;
 
 /**
  * `<x-webx-slide>` — one slide of `<x-webx-slider>`, anything inside (spec §7).
  *
  * Its pictures load at once only if it is among the first in view when the page opens; the rest
- * get `loading="lazy"`, unless they say otherwise. `thumb` is the picture of its thumbnail in
- * `gallery` — by default its first image.
+ * get `loading="lazy"`, unless they say otherwise — and, where the site holds back the pictures
+ * nobody sees yet (`webx-widgets.pictures.defer`), no address until the slider shows the slide.
+ * `thumb` is the picture of its thumbnail in `gallery` — by default its first image.
  */
 final class Slide extends Component
 {
@@ -31,9 +33,13 @@ final class Slide extends Component
         return view('webx-widgets::components.slide');
     }
 
-    /** Every `<img>` that does not choose for itself loads when it comes near the screen. */
+    /**
+     * Every `<img>` that does not choose for itself loads when it comes near the screen — or, held
+     * back, when the slider shows its slide: a strip of slides on the screen is fetched whole, lazy
+     * or not.
+     */
     public static function lazy(string $html): HtmlString
     {
-        return new HtmlString((string) preg_replace('/<img\b(?![^>]*\sloading\s*=)/i', '<img loading="lazy"', $html));
+        return new HtmlString(Pictures::defer((string) preg_replace('/<img\b(?![^>]*\sloading\s*=)/i', '<img loading="lazy"', $html)));
     }
 }

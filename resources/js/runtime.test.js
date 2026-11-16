@@ -121,6 +121,24 @@ describe('tabs', () => {
     expect(document.querySelectorAll('[data-webx-tab]')[1].hidden).toBe(false)
   })
 
+  it('gives a panel its held pictures when it is selected, and the next one ahead (§14.2)', async () => {
+    await start(`
+      <div data-webx-tabs>
+        <section data-webx-tab="A"><img src="/a.jpg" alt=""></section>
+        <section data-webx-tab="B"><img data-webx-src="/b.jpg" alt=""></section>
+        <section data-webx-tab="C"><img data-webx-src="/c.jpg" alt=""></section>
+        <section data-webx-tab="D"><img data-webx-src="/d.jpg" alt=""></section>
+      </div>`)
+    const images = () =>
+      [...document.querySelectorAll('[data-webx-tab] img')].map((image) =>
+        image.getAttribute('src'),
+      )
+
+    expect(images()).toEqual(['/a.jpg', '/b.jpg', null, null])
+
+    document.querySelectorAll('[role="tab"]')[2].click()
+    expect(images()).toEqual(['/a.jpg', '/b.jpg', '/c.jpg', '/d.jpg'])
+  })
   it('opens on the panel the address points into', async () => {
     history.replaceState(null, '', '/#cards')
     await start(markup)
@@ -253,6 +271,92 @@ describe('dialog', () => {
     await start(markup)
 
     expect(document.getElementById('callback').open).toBe(true)
+  })
+
+  describe('`page`: scrolled as a whole with its backdrop', () => {
+    const page = `
+      <a href="#long" data-webx-dialog="long">Long form</a>
+      <dialog id="long" class="webx-dialog webx-dialog--page">
+        <div class="webx-dialog__window">
+          <a href="#" data-webx-dialog-close>Close</a>
+          <p class="text">A long form.</p><input id="name">
+        </div>
+      </dialog>`
+    const click = (target, init = {}) =>
+      target.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, ...init }))
+    const press = (target) => target.dispatchEvent(new Event('pointerdown', { bubbles: true }))
+
+    it('closes on a click outside its box — the dialog is the whole window — not inside it', async () => {
+      history.replaceState(null, '', '/')
+      await start(page)
+      const opener = document.querySelector('[data-webx-dialog]')
+      const dialog = document.getElementById('long')
+      const text = dialog.querySelector('.text')
+      // The window: the dialog's own rectangle holds every click, the box does not.
+      vi.spyOn(dialog, 'getBoundingClientRect').mockReturnValue({
+        left: 0,
+        top: 0,
+        right: 1000,
+        bottom: 800,
+      })
+
+      opener.focus()
+      opener.click()
+      expect(dialog.open).toBe(true)
+
+      press(text)
+      click(text, { clientX: 500, clientY: 400 })
+      expect(dialog.open).toBe(true)
+
+      // A selection dragged from the box and let go over the backdrop is no click outside.
+      press(text)
+      click(dialog, { clientX: 5, clientY: 5 })
+      expect(dialog.open).toBe(true)
+
+      press(dialog)
+      click(dialog, { clientX: 5, clientY: 5 })
+      await Promise.resolve()
+      expect(dialog.open).toBe(false)
+      expect(document.activeElement).toBe(opener)
+      expect(document.documentElement.classList.contains('webx-scroll-locked')).toBe(false)
+    })
+
+    it('leaves Esc to the browser, keeps the focus inside, opens at its top', async () => {
+      history.replaceState(null, '', '/')
+      await start(page)
+      const opener = document.querySelector('[data-webx-dialog]')
+      const dialog = document.getElementById('long')
+
+      opener.focus()
+      opener.click()
+      dialog.scrollTop = 300
+      dialog.querySelector('#name').focus()
+      expect(key(dialog.querySelector('#name'), 'Escape')).toBe(true)
+      // What Esc does in a browser: closes it, and the focus goes back where it came from.
+      dialog.close()
+      await Promise.resolve()
+      expect(document.activeElement).toBe(opener)
+
+      opener.click()
+      expect(dialog.scrollTop).toBe(0)
+    })
+
+    it('is narrow on a phone, under the header — and never a sheet', async () => {
+      const query = { matches: true, addEventListener: () => {} }
+      vi.stubGlobal(
+        'matchMedia',
+        vi.fn(() => query),
+      )
+      history.replaceState(null, '', '/')
+      await start(page.replace('webx-dialog--page', 'webx-dialog--page webx-dialog--sheet'))
+      const dialog = document.getElementById('long')
+
+      document.querySelector('[data-webx-dialog]').click()
+      expect(dialog.classList.contains('is-narrow')).toBe(true)
+      expect(dialog.classList.contains('is-sheet')).toBe(false)
+
+      vi.unstubAllGlobals()
+    })
   })
 })
 

@@ -16,7 +16,9 @@
  *    the focus on the first field wrong; an error goes as soon as its field is changed;
  *  - the answer of FormResponse: off to `redirect`, `html` in place of the fields, `message`
  *    under them in a live region — in a dialog in place of them, with a button that closes it;
- *    `heading_html` (a heading with the visitor's answers in it) as HTML, `heading` as text;
+ *    `heading_html` (a heading with the visitor's answers in it) as HTML, `heading` as text; that
+ *    button a link (`done-href`, FORM_STEPS §16.2) goes where it leads — to the page the dialog is
+ *    on, it closes the dialog and brings the page to its top instead of loading it again;
  *  - `again` (`.webx-form__again`): the thank-you in place of the fields and a button that brings
  *    them back empty, the focus on the first — the link to the page itself it is without this;
  *  - the checks of FormRules (§17.5) before anything is sent: a touched field when it is left,
@@ -769,6 +771,21 @@ export function form(el) {
       if (other.classList.contains('is-invalid')) recheck(other)
     }
   }
+  if (done instanceof HTMLAnchorElement) {
+    on(done, 'click', (event) => {
+      const to = new URL(done.href, location.href)
+      const here = new URL(location.href)
+      if (to.origin !== here.origin || to.pathname !== here.pathname || to.search !== here.search)
+        return
+      // The page it stands on: nothing to load — the dialog goes and the page is at its top.
+      event.preventDefault()
+      dialog?.close()
+      const still = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
+      // After the dialog has given the focus back to its opener, which scrolls to it.
+      setTimeout(() => window.scrollTo({ top: 0, behavior: still ? 'auto' : 'smooth' }))
+    })
+  }
+
   if (again) {
     // A link to the page without the script; with it, the same form again in place.
     again.setAttribute('role', 'button')

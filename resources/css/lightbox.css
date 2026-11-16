@@ -25,6 +25,13 @@
   --webx-lightbox-arrow-size: 48px;
   --webx-lightbox-arrows-gap: var(--site-space-2);
   --webx-lightbox-arrows-top: auto;
+  /* The caption under the picture, from its left edge: small and quiet, the picture is the point.
+     Where the picture ends and starts is the script's, `--webx-lightbox-caption-top|left`. */
+  --webx-lightbox-caption-color: var(--site-color-text-muted);
+  --webx-lightbox-caption-size: var(--site-font-size-6);
+  --webx-lightbox-caption-gap: var(--site-space-2);
+  --webx-lightbox-caption-top: auto;
+  --webx-lightbox-caption-left: 0px;
   /* Over the header, the dialogs and the consent banner. */
   --webx-lightbox-z: 400;
 }
@@ -80,6 +87,36 @@
 .webx-lightbox__arrow--next.is-below {
   right: auto;
   left: calc(50% + var(--webx-lightbox-arrows-gap) / 2);
+}
+
+/* The words of the picture shown, under its left edge; on a phone the arrows stand under them.
+   Hidden while the picture zooms in and out of its thumbnail. */
+.webx-lightbox__caption {
+  position: absolute;
+  top: var(--webx-lightbox-caption-top);
+  left: var(--webx-lightbox-caption-left);
+  right: var(--webx-lightbox-caption-left);
+  z-index: 10;
+  margin: 0;
+  padding-top: var(--webx-lightbox-caption-gap);
+  color: var(--webx-lightbox-caption-color);
+  font-size: var(--webx-lightbox-caption-size);
+  line-height: 1.4;
+  text-align: start;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Fades in once the picture is still; leaves at once as it starts to zoom back. */
+.webx-lightbox__caption.is-shown {
+  opacity: 1;
+  transition: opacity var(--site-duration) ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .webx-lightbox__caption.is-shown {
+    transition: none;
+  }
 }
 
 .webx-lightbox-link {

@@ -212,6 +212,7 @@ return [
         'none' => 'Heute sind keine Uhrzeiten mehr frei',
         'unavailable' => 'nicht verfügbar',
         'times' => 'Uhrzeiten am :date',
+        'visitor_zone' => 'Zeitzone: :zone',
     ],
     'captcha' => [
         'missing' => 'Bitte bestätigen Sie, dass Sie kein Roboter sind, und senden Sie das Formular erneut.',

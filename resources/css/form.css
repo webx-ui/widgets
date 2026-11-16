@@ -112,6 +112,13 @@
   cursor: pointer;
 }
 
+/* A link of its own (`done-href`): the same button to look at. */
+.webx-form__done[href] {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
 .webx-form__done[hidden] {
   display: none;
 }

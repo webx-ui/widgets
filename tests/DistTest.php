@@ -177,7 +177,7 @@ final class DistTest extends PlainTestCase
         ));
         sort($built);
 
-        $this->assertSame(['attribution.js', 'back-to-top.css', 'back-to-top.js', 'captcha.js', 'compare.css', 'compare.js', 'consent.css', 'consent.js', 'contacts.css', 'contacts.js', 'countdown.css', 'countdown.js', 'counter.css', 'counter.js', 'datetime.css', 'datetime.js', 'field.css', 'field.js', 'files.css', 'files.js', 'form.css', 'form.js', 'language-offer.css', 'language-offer.js', 'language-switcher.css', 'lightbox.css', 'lightbox.js', 'load-more.css', 'load-more.js', 'map-embed.css', 'map-embed.js', 'map-google.css', 'map-google.js', 'map.css', 'map.js', 'mask.js', 'notice-bar.css', 'notice-bar.js', 'pagination.css', 'photos.css', 'photos.js', 'runtime.css', 'runtime.js', 'select.css', 'select.js', 'share.css', 'share.js', 'slider.css', 'slider.js', 'smooth-scroll.css', 'smooth-scroll.js', 'sources.json', 'steps.css', 'steps.js', 'suggest.css', 'suggest.js', 'summary.css', 'summary.js', 'table.css', 'table.js', 'toc.css', 'toc.js', 'video.css', 'video.js', 'zoom.css', 'zoom.js'], $built);
+        $this->assertSame(['attribution.js', 'back-to-top.css', 'back-to-top.js', 'captcha.js', 'compare.css', 'compare.js', 'consent.css', 'consent.js', 'contacts.css', 'contacts.js', 'countdown.css', 'countdown.js', 'counter.css', 'counter.js', 'datetime.css', 'datetime.js', 'drag-scroll.css', 'drag-scroll.js', 'field.css', 'field.js', 'files.css', 'files.js', 'form.css', 'form.js', 'language-offer.css', 'language-offer.js', 'language-switcher.css', 'lightbox.css', 'lightbox.js', 'load-more.css', 'load-more.js', 'map-embed.css', 'map-embed.js', 'map-google.css', 'map-google.js', 'map.css', 'map.js', 'mask.js', 'notice-bar.css', 'notice-bar.js', 'pagination.css', 'photos.css', 'photos.js', 'runtime.css', 'runtime.js', 'select.css', 'select.js', 'share.css', 'share.js', 'slider.css', 'slider.js', 'smooth-scroll.css', 'smooth-scroll.js', 'sources.json', 'steps.css', 'steps.js', 'suggest.css', 'suggest.js', 'summary.css', 'summary.js', 'table.css', 'table.js', 'toc.css', 'toc.js', 'video.css', 'video.js', 'zoom.css', 'zoom.js'], $built);
     }
 
     /**
@@ -187,7 +187,7 @@ final class DistTest extends PlainTestCase
     #[Test]
     public function the_page_tools_stay_inside_their_budgets(): void
     {
-        foreach (['table', 'back-to-top', 'share', 'counter', 'countdown', 'notice-bar'] as $widget) {
+        foreach (['table', 'back-to-top', 'share', 'counter', 'countdown', 'notice-bar', 'drag-scroll'] as $widget) {
             $size = self::gzipped("{$widget}.js") + self::gzipped("{$widget}.css");
 
             $this->assertLessThanOrEqual(self::PAGE_TOOL_BUDGET, $size, sprintf('%s is %.1f KB gzip.', $widget, $size / 1024));

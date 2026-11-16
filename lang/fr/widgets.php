@@ -212,6 +212,7 @@ return [
         'none' => 'Plus aucun horaire aujourd’hui',
         'unavailable' => 'indisponible',
         'times' => 'Horaires du :date',
+        'visitor_zone' => 'Fuseau horaire : :zone',
     ],
     'captcha' => [
         'missing' => 'Confirmez que vous n’êtes pas un robot et envoyez le formulaire à nouveau.',

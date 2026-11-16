@@ -1,0 +1,1 @@
+@media(hover:hover)and (pointer:fine){.webx-drag-scroll.is-ready{cursor:grab}}.webx-drag-scroll.is-dragging{scroll-snap-type:none;scroll-behavior:auto;cursor:grabbing;user-select:none;-webkit-user-select:none}

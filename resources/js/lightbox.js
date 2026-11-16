@@ -23,6 +23,11 @@
  * Two more attributes of a link, both optional: `data-webx-lightbox-ratio="4:3"` — a frame of that
  * shape the picture is fitted into whole (as is without it), and `data-webx-lightbox-opacity` —
  * the backdrop's, over `--webx-lightbox-backdrop-opacity` (1 unless a theme says otherwise).
+ *
+ * The caption under the picture is the link's `data-caption`, else the `<figcaption>` of the
+ * figure it stands in; a picture without either has no caption element at all. It stands under
+ * the picture's left edge (on a phone between the picture and the arrows), describes the dialog
+ * (`aria-describedby`), and is hidden while the picture zooms in and out of its thumbnail.
  */
 
 import 'photoswipe/style.css'
@@ -92,6 +97,27 @@ export function bottom(slide) {
   // PhotoSwipe centres the picture in the area left by the margins; the margins are even here.
   return Math.round(top / 2 + (slide.panAreaSize.y + height) / 2)
 }
+
+/** Where the picture of a slide starts at its fitted size: the caption under it starts there. */
+export function left(slide) {
+  if (!slide?.panAreaSize || !(slide.width > 0)) return null
+  const zoom = slide.zoomLevels?.initial ?? slide.currZoomLevel ?? 1
+  const width = slide.width * zoom
+  // The margins left and right are even: the picture stands in the middle of the window.
+  return Math.max(0, Math.round(((slide.pswp?.viewportSize?.x ?? 0) - width) / 2))
+}
+
+/**
+ * The words under a picture: the link's own `data-caption`, else the caption of the figure it
+ * stands in — the one a gallery printed beside the thumbnail. Empty: no caption.
+ */
+export function caption(link) {
+  const own = link.dataset.caption
+  const text = own ?? link.closest('figure')?.querySelector('figcaption')?.textContent ?? ''
+  return text.replace(/\s+/g, ' ').trim()
+}
+
+let captions = 0
 
 /** The one open: its PhotoSwipe and the links of its group. */
 let open = null
@@ -191,6 +217,7 @@ function item(link) {
     msrc: thumbnail(picture, width, height),
     element: link,
     ratio: ratio(link.dataset.webxLightboxRatio),
+    caption: caption(link),
   }
   frame(data)
   return data
@@ -270,12 +297,51 @@ export async function show(link) {
     paddingFn: (viewport) => padding(viewport, frames),
   })
 
-  // On a phone the arrows stand as a pair right under the picture, wherever its shape puts its edge.
+  // The caption of the picture shown: an element only while there are words for it.
+  const id = `webx-lightbox-caption-${++captions}`
+  let note = null
+  const describe = () => {
+    const root = pswp.element
+    if (!root) return
+    const text = items[pswp.currIndex]?.caption ?? ''
+    if (!text) {
+      note?.remove()
+      note = null
+      root.removeAttribute('aria-describedby')
+      return
+    }
+    if (!note) {
+      note = document.createElement('p')
+      note.className = 'webx-lightbox__caption'
+      note.id = id
+      note.classList.toggle('is-shown', pswp.opener?.isOpen ?? false)
+      root.appendChild(note)
+    }
+    note.textContent = text
+    root.setAttribute('aria-describedby', id)
+    const edge = bottom(pswp.currSlide)
+    const start = left(pswp.currSlide)
+    if (edge === null || start === null) {
+      root.style.removeProperty('--webx-lightbox-caption-top')
+      root.style.removeProperty('--webx-lightbox-caption-left')
+    } else {
+      root.style.setProperty('--webx-lightbox-caption-top', `${edge}px`)
+      root.style.setProperty('--webx-lightbox-caption-left', `${start}px`)
+    }
+  }
+  // Not while the picture zooms in from its thumbnail or back into it: the words would hang in the air.
+  pswp.on('openingAnimationEnd', () => note?.classList.add('is-shown'))
+  pswp.on('close', () => note?.classList.remove('is-shown'))
+
+  // On a phone the arrows stand as a pair right under the picture, wherever its shape puts its edge;
+  // under its caption when it has one.
   const arrows = () => {
     const root = pswp.element
     if (!root) return
+    describe()
     const below = box(pswp.viewportSize?.x ?? window.innerWidth, frames).below
-    const edge = below ? bottom(pswp.currSlide) : null
+    const under = bottom(pswp.currSlide)
+    const edge = below && under !== null ? under + (note?.offsetHeight ?? 0) : null
     root.querySelectorAll('.pswp__button--arrow').forEach((button) => {
       button.classList.add('webx-lightbox__arrow')
       button.classList.add(

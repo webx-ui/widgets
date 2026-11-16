@@ -37,6 +37,12 @@ use WebxUi\Widgets\Forms\FormRules;
  * here: a flat form does not pay for it). `:check` — the server's door that checks a step without
  * taking anything (`webx_step` = the step's name; 204 or a 422), else the browser's checks alone.
  * Without JavaScript the steps are fieldsets one under another and one button sends them all.
+ * `hold-next` — «Next» is `aria-disabled` and does nothing until every required question of the
+ * step is answered (FORM_STEPS §3.6).
+ *
+ * `close-label`, `done-href` — the button under the thank-you in a dialog (FORM_STEPS §16.2): its
+ * words, and where it leads instead of closing the dialog; a link to the page the dialog is on
+ * closes it and scrolls the page to the top.
  */
 final class Form extends Component
 {
@@ -80,6 +86,8 @@ final class Form extends Component
         public ?string $stepLabel = null,
         public ?string $returnLabel = null,
         public ?string $fixLabel = null,
+        public bool $holdNext = false,
+        public ?string $doneHref = null,
     ) {
         $this->webxFormRules = match (true) {
             $rules instanceof FormRules => $rules,
@@ -130,6 +138,7 @@ final class Form extends Component
             // The page itself, which comes back without what was answered: the flash is gone by
             // then. No `#id` — a link to a fragment of the same page is not a new request.
             'againUrl' => $this->again ? request()->fullUrl() : null,
+            'doneHref' => is_string($this->doneHref) && trim($this->doneHref) !== '' ? trim($this->doneHref) : null,
         ]);
     }
 

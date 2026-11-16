@@ -182,6 +182,15 @@ class WidgetsServiceProvider extends ServiceProvider
         Blade::directive('webxOverlap', static fn (string $arguments = ''): string => sprintf('<?php echo \\%s::attributes(%s); ?>', Overlap::class, trim($arguments) !== '' ? trim($arguments) : 'false'));
         Blade::directive('webxOverlapEdge', static fn (string $arguments = ''): string => sprintf('<?php echo \\%s::edge(%s); ?>', Overlap::class, trim($arguments) !== '' ? trim($arguments) : 'false'));
 
+        // A block's picture of the library in its formats (§19): `@webxPicture($picture, $sizes, [options])`
+        // … the block's own `<img>` … `@endwebxPicture`. Without formats and a picture for the phone
+        // it prints the `<img>` as it is, byte for byte.
+        Blade::directive('webxPicture', static fn (string $arguments = ''): string => sprintf('<?php app(\\%s::class)->open(%s); ob_start(); ?>', Pictures::class, trim($arguments) !== '' ? trim($arguments) : 'null'));
+        Blade::directive('endwebxPicture', static fn (): string => sprintf('<?php echo app(\\%s::class)->close((string) ob_get_clean()); ?>', Pictures::class));
+        // The pictures nobody sees yet held back until the widget shows them (§19): `@webxHeld(<when>)` … `@endwebxHeld`.
+        Blade::directive('webxHeld', static fn (string $when = ''): string => sprintf('<?php app(\\%s::class)->hold(%s); ob_start(); ?>', Pictures::class, trim($when) !== '' ? '(bool) ('.$when.')' : 'true'));
+        Blade::directive('endwebxHeld', static fn (): string => sprintf('<?php echo app(\\%s::class)->release((string) ob_get_clean()); ?>', Pictures::class));
+
         Blade::component('webx-dialog', Dialog::class);
         Blade::component('webx-tabs', Tabs::class);
         Blade::component('webx-tabs.panel', TabsPanel::class);

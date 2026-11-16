@@ -17,6 +17,16 @@
  *    — a month, Home/End — the week's ends; the month's name is a live region;
  *  - the times as a group of radios (`fieldset`/`legend` «Times on 12 December»), described by the zone;
  *  - `data-webx-answer` on the field — the day and the time in words, what the summary says.
+ *
+ * The options of §6.7, each off unless the page says so:
+ *
+ *  - `visitor` — the zone is the browser's: the grid, «today» and «now» in it, the zone sent as
+ *    `<name>[timezone]` and named under the times («Time zone: Europe/…»); a browser that names
+ *    none keeps the site's;
+ *  - `lead` — days from today before the first that may be chosen, the earlier ones `aria-disabled`;
+ *  - `panel` — the times in a panel headed by the day («Tuesday, November 17»), the zone inside it,
+ *    the days of the week in two letters («Mo Tu We»);
+ *  - `first` — the first day open is chosen as the field is shown, its times with it, no time yet.
  */
 
 import '../css/datetime.css'
@@ -32,6 +42,18 @@ const iso = (time) => new Date(time).toISOString().slice(0, 10)
 const time = (day) => Date.parse(`${day}T00:00:00Z`)
 const weekday = (day) => ((new Date(time(day)).getUTCDay() + 6) % 7) + 1
 const minutes = (clock) => +clock.slice(0, 2) * 60 + +clock.slice(3, 5)
+
+/** The browser's own zone, or null when it names none or one this browser cannot count in. */
+export function browserZone() {
+  try {
+    const zone = new Intl.DateTimeFormat().resolvedOptions().timeZone
+    if (!zone) return null
+    new Intl.DateTimeFormat('en-US', { timeZone: zone })
+    return zone
+  } catch {
+    return null
+  }
+}
 
 /** The day and the minute of the day it is now in `zone`. */
 export function nowIn(zone, date = clock.now()) {
@@ -62,6 +84,7 @@ export function datetime(root) {
   const date = root.querySelector('input[type=date]')
   const select = root.querySelector('select')
   const zoneLine = root.querySelector('.webx-datetime__zone')
+  const zoneInput = root.querySelector('[data-webx-timezone]')
   let config
   try {
     config = JSON.parse(root.getAttribute('data-webx-datetime'))
@@ -70,7 +93,18 @@ export function datetime(root) {
   }
   if (!field || !plain || !date || !select || !config) return undefined
 
-  const { zone, weekdays, times, words } = config
+  const { weekdays, times, words } = config
+  const ahead = Math.max(0, Number(config.lead) || 0)
+  const panel = Boolean(config.panel)
+  // The visitor's zone (§6.7): the browser's, sent with the answer; the site's without one.
+  const zone = (config.visitor && browserZone()) || config.zone
+  const printedZone = zoneInput?.value
+  const printedLine = zoneLine?.textContent
+  if (config.visitor) {
+    if (zoneInput) zoneInput.value = zone
+    if (zoneLine && !config.label)
+      zoneLine.textContent = (words.zone ?? 'Time zone: :zone').split(':zone').join(zone)
+  }
   const lang = document.documentElement.lang || undefined
   const say = (options, day) =>
     new Intl.DateTimeFormat(lang, { timeZone: 'UTC', ...options }).format(time(day))
@@ -94,11 +128,15 @@ export function datetime(root) {
     picker.querySelector('table').setAttribute('aria-describedby', zoneLine.id)
     group.setAttribute('aria-describedby', zoneLine.id)
   }
-  // The days of the week from a Monday (2024-01-01).
+  // The days of the week from a Monday (2024-01-01); in the panel two letters of each, «Mo Tu We».
+  const short = (day) => {
+    const name = say({ weekday: 'short' }, day).replace(/\.$/, '')
+    return panel ? name.charAt(0).toLocaleUpperCase(lang) + name.slice(1, 2) : name
+  }
   picker.querySelector('thead tr').innerHTML = [1, 2, 3, 4, 5, 6, 7]
     .map(
       (n) =>
-        `<th class="webx-datetime__weekday" scope="col" abbr="${say({ weekday: 'long' }, `2024-01-0${n}`)}">${say({ weekday: 'short' }, `2024-01-0${n}`)}</th>`,
+        `<th class="webx-datetime__weekday" scope="col" abbr="${say({ weekday: 'long' }, `2024-01-0${n}`)}">${short(`2024-01-0${n}`)}</th>`,
     )
     .join('')
 
@@ -109,7 +147,9 @@ export function datetime(root) {
   /** The times of a day still to come: today's from the next minute on. */
   const left = (day) =>
     day === now.day ? times.filter((one) => minutes(one.value) > now.minute) : times
-  const open = (day) => day >= now.day && weekdays.includes(weekday(day)) && left(day).length > 0
+  /** The first day that may be chosen: today, or `lead` days on. */
+  const earliest = () => (ahead ? iso(time(now.day) + ahead * DAY) : now.day)
+  const open = (day) => day >= earliest() && weekdays.includes(weekday(day)) && left(day).length > 0
   const first = () => {
     for (let at = time(now.day), n = 0; n < 400; n++, at += DAY) if (open(iso(at))) return iso(at)
     return now.day
@@ -133,7 +173,7 @@ export function datetime(root) {
       const can = open(day)
       const why = can
         ? ''
-        : `, ${day === now.day && weekdays.includes(weekday(day)) ? words.none : words.unavailable}`
+        : `, ${day === now.day && !ahead && weekdays.includes(weekday(day)) ? words.none : words.unavailable}`
       const chosen = day === date.value
       row.push(
         `<td class="webx-datetime__cell" role="gridcell" aria-selected="${chosen}"><button type="button" class="webx-datetime__day${can ? ' is-available' : ''}${chosen ? ' is-selected' : ''}${day === now.day ? ' is-today' : ''}" data-day="${day}" tabindex="${day === focused ? 0 : -1}" aria-label="${long(day)}${why}"${can ? '' : ' aria-disabled="true"'}>${+day.slice(8)}</button></td>`,
@@ -150,9 +190,10 @@ export function datetime(root) {
     const day = date.value
     group.hidden = !day || !open(day)
     if (group.hidden) return list.replaceChildren()
-    legend.textContent = words.times
-      .split(':date')
-      .join(say({ day: 'numeric', month: 'long' }, day))
+    // The panel is headed by the day itself, «Tuesday, November 17»; the list says «Times on 17 November».
+    legend.textContent = panel
+      ? say({ weekday: 'long', month: 'long', day: 'numeric' }, day)
+      : words.times.split(':date').join(say({ day: 'numeric', month: 'long' }, day))
     list.replaceChildren(
       ...left(day).map((one) => {
         const label = document.createElement('label')
@@ -201,7 +242,17 @@ export function datetime(root) {
 
   function sync() {
     now = nowIn(zone)
-    const day = date.value && open(date.value) ? date.value : null
+    let day = date.value && open(date.value) ? date.value : null
+    // `first`: the nearest day open is chosen, its times shown, no time yet — a day nobody has to
+    // look for. Written into the hidden date as a choice is, without a `change`: nothing was chosen.
+    if (!day && config.first) {
+      const nearest = first()
+      if (open(nearest)) {
+        date.value = nearest
+        if (!left(nearest).some((one) => one.value === select.value)) select.value = ''
+        day = nearest
+      }
+    }
     focused = day ?? first()
     shown = monthOf(focused)
     draw()
@@ -264,10 +315,25 @@ export function datetime(root) {
   plain.hidden = true
   root.insertBefore(picker, zoneLine)
   root.classList.add('is-enhanced')
+  // In the panel the zone is said inside it, under the day.
+  if (panel) {
+    root.classList.add('is-panel')
+    if (zoneLine) {
+      legend.after(zoneLine)
+      zoneLine.classList.add('is-inside')
+    }
+  }
   sync()
 
   return () => {
     form?.removeEventListener('reset', onReset)
+    if (panel && zoneLine) {
+      zoneLine.classList.remove('is-inside')
+      root.append(zoneLine)
+    }
+    if (zoneInput && printedZone !== undefined) zoneInput.value = printedZone
+    if (zoneLine && printedLine !== undefined) zoneLine.textContent = printedLine
+    root.classList.remove('is-panel')
     picker.remove()
     plain.hidden = false
     root.classList.remove('is-enhanced')

@@ -212,6 +212,7 @@ return [
         'none' => 'Bugün için saat kalmadı',
         'unavailable' => 'uygun değil',
         'times' => ':date için saatler',
+        'visitor_zone' => 'Saat dilimi: :zone',
     ],
     'captcha' => [
         'missing' => 'Lütfen robot olmadığınızı doğrulayın ve formu yeniden gönderin.',

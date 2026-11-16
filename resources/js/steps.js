@@ -19,6 +19,8 @@
  *  - a change of step: `webx:form:step` (cancelable; `detail.from`, `detail.to` — numbers among
  *    the steps shown, `detail.name`), the focus on the step's title without a jump, the top of the
  *    form in sight — in a dialog, of the dialog's own scroll;
+ *  - `data-webx-steps-hold` (FORM_STEPS §3.6): «Next» is `aria-disabled` while a required question
+ *    of the step shown has no answer, and a press — or Enter — does nothing; the focus stays on it;
  *  - a reset (the thank-you, a fresh form) goes back to the first step. A dialog closed before that
  *    keeps the step and what was typed: in the page's memory only, nothing is stored (§3.5).
  */
@@ -90,6 +92,65 @@ export function steps(el) {
   // The page came back from the form without the script: the step of its first error.
   let current = all.find((step) => step.querySelector('[data-webx-field].is-invalid')) ?? all[0]
   let checking = false
+  const hold = el.hasAttribute('data-webx-steps-hold')
+
+  /**
+   * Whether a question has an answer: its controls of its own, not the hidden ones a page fills. A
+   * control the page marks `required` must have a value (a day and a time: both); a group of radios
+   * or ticks — one ticked; anything else — any value.
+   */
+  const filled = (field) => {
+    const controls = Array.from(field.querySelectorAll('input, select, textarea')).filter(
+      (control) => !control.disabled && control.type !== 'hidden',
+    )
+    const value = (control) =>
+      control.type === 'file'
+        ? control.files?.length > 0
+        : String(control.value ?? '').trim() !== ''
+    const checkable = (control) => control.type === 'radio' || control.type === 'checkbox'
+    const typed = controls.filter((control) => control.required && !checkable(control))
+    if (typed.length) return typed.every(value)
+    const checks = controls.filter(checkable)
+    if (checks.length) return checks.some((control) => control.checked)
+    return controls.some(value)
+  }
+
+  /** Required: by the rules the form checks it by, or by `required` on a control of it. */
+  const needed = (field) => {
+    let rules = []
+    try {
+      rules = JSON.parse(field.getAttribute('data-webx-rules') || '[]')
+    } catch {
+      rules = []
+    }
+    return (
+      (Array.isArray(rules) && rules.some((rule) => rule?.rule === 'required')) ||
+      Array.from(field.querySelectorAll('input, select, textarea')).some(
+        (control) => control.required && !control.disabled,
+      )
+    )
+  }
+
+  /** Whether every required question of the step shown is answered: what «Next» waits for. */
+  const answered = (step) =>
+    Array.from(step.querySelectorAll('[data-webx-field]')).every(
+      (field) =>
+        field.closest('form') !== el ||
+        Boolean(field.closest('[data-webx-hidden]')) ||
+        !needed(field) ||
+        filled(field),
+    )
+
+  const held = () => hold && !answered(current)
+
+  /** «Next» of the step shown as held or free: while it asks the server it is held anyway. */
+  const mark = () => {
+    if (!hold) return
+    const button = current.querySelector('[data-webx-step-next]')
+    if (!button) return
+    if (checking || held()) button.setAttribute('aria-disabled', 'true')
+    else button.removeAttribute('aria-disabled')
+  }
 
   const draw = () => {
     const list = shown()
@@ -123,6 +184,8 @@ export function steps(el) {
       else mark.after(button)
       button.hidden = !last
     }
+
+    mark()
 
     if (bar) {
       bar.hidden = list.length < 2
@@ -202,7 +265,7 @@ export function steps(el) {
     if (checking) return
     const list = shown()
     const after = list[list.indexOf(current) + 1]
-    if (!after) return
+    if (!after || held()) return
     const api = webx.formOf?.(el)
     const fields = Array.from(current.querySelectorAll('[data-webx-field]')).filter(
       (field) => field.closest('form') === el,
@@ -231,6 +294,7 @@ export function steps(el) {
       } finally {
         checking = false
         button?.removeAttribute('aria-disabled')
+        mark()
       }
       if (!answer || current !== step) return
       if (answer.status < 200 || answer.status >= 300) {
@@ -292,6 +356,14 @@ export function steps(el) {
     }
   })
 
+  // An answer given or taken back frees or holds «Next».
+  // After form.js, whose conditions may show or hide a question on the same change.
+  const later = () => queueMicrotask(mark)
+  if (hold) {
+    on(el, 'input', later)
+    on(el, 'change', later)
+  }
+
   // The thank-you, a fresh form: the first step again, once form.js has read what is shown.
   on(el, 'reset', () => {
     current = all[0]
@@ -316,6 +388,7 @@ export function steps(el) {
     for (const step of all) {
       step.hidden = false
       step.classList.remove('is-current')
+      if (hold) step.querySelector('[data-webx-step-next]')?.removeAttribute('aria-disabled')
       const nav = step.querySelector('.webx-form-step__nav')
       if (nav) nav.hidden = true
       const count = step.querySelector('.webx-form-step__count')

@@ -3,7 +3,8 @@
     more: a frame of the photos' shape, every photo in it, the first shown; the rest are `hidden`
     by the stylesheet until the script is ready, so without it the first stands alone. The bars and
     the pause button are printed `hidden` and shown by the script, which would otherwise leave
-    buttons that do nothing.
+    buttons that do nothing. Where the site holds back the pictures nobody sees yet (§14.2), the
+    photos past the first have no address until the script shows them, and the next one ahead.
 
     Classes: webx-photos, __frame, __photo, __bars, __bar, __fill, __pause, __pause-icon,
     __play-icon; is-ready, is-paused, is-active, is-done — the script's but the first `is-active`.
@@ -20,7 +21,9 @@
 ]) }}>
     <div class="webx-photos__frame">
         @foreach ($photos as $photo)
+@webxHeld(! $loop->first)
             <img @class(['webx-photos__photo', 'is-active' => $loop->first]) src="{{ $photo['url'] }}" alt="{{ $photo['alt'] }}" @if (! $loop->first) data-webx-later @endif @if (! $loop->first || ! $eager) loading="lazy" @endif decoding="async" draggable="false" @if ($photo['width'] && $photo['height']) width="{{ $photo['width'] }}" height="{{ $photo['height'] }}" @endif>
+@endwebxHeld
         @endforeach
     </div>
     <div class="webx-photos__bars" hidden>

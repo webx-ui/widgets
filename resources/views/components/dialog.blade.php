@@ -10,11 +10,15 @@
 
     `sheet` — on a narrow screen a sheet from the bottom, the whole width, rounded on top, instead
     of a card in the middle; `drawer` — a panel at the inline end of the window, its whole height;
-    `description` — a line under the title, its accessible description.
+    `description` — a line under the title, its accessible description; `page` — the dialog scrolls
+    as a whole with its backdrop, its box __window inside, the page under it still.
 
-    Classes: webx-dialog (+ --sheet, --drawer), __header, __heading, __title, __description, __close, __body.
+    Classes: webx-dialog (+ --sheet, --drawer, --page), __window, __header, __heading, __title, __description, __close, __body.
 --}}
-<dialog {{ $attributes->class(['webx-dialog', 'webx-dialog--sheet' => $sheet, 'webx-dialog--drawer' => $drawer])->merge(['id' => $id, 'aria-labelledby' => $title !== null ? $id.'-title' : null, 'aria-describedby' => $description !== null ? $id.'-description' : null]) }}@if (str_contains((string) $slot, 'data-webx-returned')) open @endif>
+<dialog {{ $attributes->class(['webx-dialog', 'webx-dialog--sheet' => $sheet, 'webx-dialog--drawer' => $drawer, 'webx-dialog--page' => $page])->merge(['id' => $id, 'aria-labelledby' => $title !== null ? $id.'-title' : null, 'aria-describedby' => $description !== null ? $id.'-description' : null]) }}@if (str_contains((string) $slot, 'data-webx-returned')) open @endif>
+@if ($page)
+<div class="webx-dialog__window">
+@endif
     <div class="webx-dialog__header">
         @if ($title !== null || $description !== null)
             <div class="webx-dialog__heading">
@@ -29,4 +33,7 @@
         <a class="webx-dialog__close" href="#" data-webx-dialog-close aria-label="{{ $closeLabel }}"><span aria-hidden="true">&times;</span></a>
     </div>
     <div class="webx-dialog__body">{{ $slot }}</div>
+@if ($page)
+</div>
+@endif
 </dialog>

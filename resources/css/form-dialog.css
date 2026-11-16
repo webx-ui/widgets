@@ -33,3 +33,9 @@
 .webx-form-dialog__done[hidden] {
   display: none;
 }
+
+/* Scrolled as a whole (`dialog.scroll: page`): the title goes with the box, nothing sticks. */
+.webx-form-dialog__header--flow {
+  position: static;
+  background: none;
+}

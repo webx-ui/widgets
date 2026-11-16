@@ -429,4 +429,63 @@ describe('lightbox', () => {
       scrollTo.mockRestore()
     }
   })
+
+  it("shows the caption of a picture's figure under it, and no caption element for one without", async () => {
+    const figure = (n, words) =>
+      `<figure>${link(n)}${words ? `<figcaption> ${words}\n </figcaption>` : ''}</figure>`
+    const { show, caption } = await start(
+      figure(1, 'The terrace at sunset') + figure(2) + link(3, 'g', 'data-caption="Own words"'),
+    )
+    const links = document.querySelectorAll('a')
+    expect(caption(links[0])).toBe('The terrace at sunset')
+    expect(caption(links[1])).toBe('')
+    expect(caption(links[2])).toBe('Own words')
+
+    const pswp = await show(links[0])
+    const root = viewer()
+    const note = root.querySelector('.webx-lightbox__caption')
+    expect(note.textContent).toBe('The terrace at sunset')
+    expect(root.getAttribute('aria-describedby')).toBe(note.id)
+    // Reduced motion: no opening zoom, the caption shows at once. Under the picture's left edge:
+    // 576 × 384 in the middle of a window 600 wide, ending at 576 (see the arrows below).
+    expect(note.classList.contains('is-shown')).toBe(true)
+    expect(root.style.getPropertyValue('--webx-lightbox-caption-top')).toBe('576px')
+    expect(root.style.getPropertyValue('--webx-lightbox-caption-left')).toBe('12px')
+
+    pswp.next()
+    expect(root.querySelector('.webx-lightbox__caption')).toBeNull()
+    expect(root.hasAttribute('aria-describedby')).toBe(false)
+
+    pswp.next()
+    expect(root.querySelector('.webx-lightbox__caption').textContent).toBe('Own words')
+    expect(root.getAttribute('aria-describedby')).toBe(note.id)
+
+    pswp.close()
+    // Hidden as the picture zooms back into its thumbnail.
+    expect(
+      root.querySelector('.webx-lightbox__caption')?.classList.contains('is-shown') ?? false,
+    ).toBe(false)
+    await vi.waitFor(() => expect(viewer()).toBeNull())
+  })
+
+  it('puts the arrows of a phone under the caption, not over it', async () => {
+    const { show } = await start(
+      `<figure>${link(1)}<figcaption>Words</figcaption></figure>` + link(2),
+    )
+    const height = vi
+      .spyOn(HTMLElement.prototype, 'offsetHeight', 'get')
+      .mockImplementation(function () {
+        return this.classList.contains('webx-lightbox__caption') ? 30 : 0
+      })
+    try {
+      const pswp = await show(document.querySelector('a'))
+      expect(viewer().style.getPropertyValue('--webx-lightbox-arrows-top')).toBe('606px')
+      pswp.next()
+      expect(viewer().style.getPropertyValue('--webx-lightbox-arrows-top')).toBe('576px')
+      pswp.close()
+      await vi.waitFor(() => expect(viewer()).toBeNull())
+    } finally {
+      height.mockRestore()
+    }
+  })
 })

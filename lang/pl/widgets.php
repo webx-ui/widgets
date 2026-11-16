@@ -212,6 +212,7 @@ return [
         'none' => 'Na dziś nie ma już godzin',
         'unavailable' => 'niedostępne',
         'times' => 'Godziny w dniu :date',
+        'visitor_zone' => 'Strefa czasowa: :zone',
     ],
     'captcha' => [
         'missing' => 'Potwierdź, że nie jesteś robotem, i wyślij formularz ponownie.',

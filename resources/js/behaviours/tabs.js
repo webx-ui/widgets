@@ -11,9 +11,13 @@
  * `data-webx-tabs-transition="fade"` cross-fades: the root and the panels get `is-fade`, every
  * panel stays laid out in one grid cell and the unselected ones get `is-hidden` (`visibility: hidden` — out of the accessibility tree and the
  * Tab order, as `hidden` would be) instead of `hidden`, which a theme may pin to `display: none`.
+ *
+ * A panel's pictures held back by the server (WIDGETS §14.2) get their addresses when the panel is
+ * selected; the next panel's too, ahead of time.
  */
 
 import { idOf, listeners } from '../core.js'
+import { unhold } from '../held.js'
 
 const HEADING = ':scope > h1, :scope > h2, :scope > h3, :scope > h4, :scope > h5, :scope > h6'
 
@@ -64,6 +68,8 @@ export function tabs(root) {
       if (fade) panels[i].classList.toggle('is-hidden', !selected)
       else panels[i].hidden = !selected
     })
+    unhold(panels[index])
+    unhold(panels[(index + 1) % panels.length])
     if (focus) buttons[index].focus()
   }
 

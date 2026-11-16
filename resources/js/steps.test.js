@@ -193,6 +193,53 @@ describe('a form of steps', () => {
     ).toBe('Not this one.')
   })
 
+  it('`hold`: «Next» is aria-disabled and does nothing until the step is answered', async () => {
+    const calls = answers()
+    const el = await start(
+      form(null).replace('<form id="form-1"', '<form data-webx-steps-hold id="form-1"'),
+    )
+    const next = () =>
+      Array.from(document.querySelectorAll('[data-webx-step-next]')).find(
+        (one) => !one.closest('[hidden]'),
+      )
+
+    expect(next().getAttribute('aria-disabled')).toBe('true')
+    next().click()
+    el.requestSubmit?.()
+    await settle()
+    expect(current()).toBe('purpose')
+    // Held, it says nothing under the question: there is nothing wrong yet.
+    expect(
+      document.querySelector('[data-webx-field="fields.purpose"]').classList.contains('is-invalid'),
+    ).toBe(false)
+
+    choose('question')
+    await settle()
+    expect(next().hasAttribute('aria-disabled')).toBe(false)
+    next().click()
+    await settle()
+    expect(current()).toBe('contacts')
+    expect(calls).toHaveLength(0)
+
+    // A text: held while it is empty, free once typed into, held again when wiped.
+    const name = document.querySelector('#name')
+    expect(document.querySelector('.webx-form__submit').hidden).toBe(false)
+    name.value = 'Alex'
+    name.dispatchEvent(new Event('input', { bubbles: true }))
+    await settle()
+    expect(
+      steps().every(
+        (one) => !one.querySelector('[data-webx-step-next][aria-disabled]') || one.hidden,
+      ),
+    ).toBe(true)
+  })
+
+  it('without `hold` «Next» is never held', async () => {
+    await start(form(null))
+
+    expect(document.querySelector('[data-webx-step-next][aria-disabled]')).toBeNull()
+  })
+
   it('without `check` goes on by the browser’s checks alone', async () => {
     const calls = answers()
     await start(form(null))

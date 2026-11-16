@@ -111,6 +111,23 @@ return [
     ],
 
     /*
+     * A block's picture of the library (spec §19). `mobile` is the media query a picture for the
+     * phone stands for — the hero's «Picture for the phone» as a `<source media>` before the
+     * others, and the preload of the first screen split by it.
+     *
+     * `defer` holds back the pictures nobody sees yet — the slides past the first in view, the
+     * photos of a card past the first, the tabs' pictures past the first — as `data-webx-src` /
+     * `data-webx-srcset`, given back by the widget when it shows them, and the next one ahead of
+     * time. A horizontal strip on the screen is fetched whole otherwise, lazy or not. Null follows
+     * `webx-media.thumbs.formats`: on with them, off — the markup it always was — without. Without
+     * JavaScript a held picture stays empty, so a site that wants the bare strip says false.
+     */
+    'pictures' => [
+        'mobile' => '(max-width: 768px)',
+        'defer' => env('WEBX_WIDGETS_DEFER_PICTURES') === null ? null : (bool) env('WEBX_WIDGETS_DEFER_PICTURES'),
+    ],
+
+    /*
      * The window of the lightbox (spec §8): the picture fitted whole, in its own shape, into a box in
      * the middle of the screen. Up to `narrow` pixels of the window's width it is a phone. Each box:
      * `side` — the least margin left and right, `max` — the widest a picture gets (0: no limit),

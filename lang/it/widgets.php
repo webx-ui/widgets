@@ -212,6 +212,7 @@ return [
         'none' => 'Per oggi non restano orari',
         'unavailable' => 'non disponibile',
         'times' => 'Orari del :date',
+        'visitor_zone' => 'Fuso orario: :zone',
     ],
     'captcha' => [
         'missing' => 'Conferma di non essere un robot e invia di nuovo il modulo.',

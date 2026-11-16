@@ -118,7 +118,10 @@ final class FormDialogs
                     'title' => trim((string) $form->title) !== '' ? trim((string) $form->title) : $form->slug,
                     'body' => new HtmlString($body),
                     'description' => InboxForm::descriptionHtml($form),
-                    'sheet' => $always || in_array($slug, $sheets, true),
+                    // The form's `dialog.scroll` (FORM_STEPS §16.1): the dialog scrolls as a whole with
+                    // its backdrop, the page under it stays. A sheet it is not: it has a box of its own.
+                    'page' => $form->option('dialog.scroll') === 'page',
+                    'sheet' => $form->option('dialog.scroll') !== 'page' && ($always || in_array($slug, $sheets, true)),
                     // The form the page came back from says so itself; a view the site published
                     // before W6.4 does not, and is told by the session.
                     'open' => str_contains($body, 'data-webx-returned') || $this->answered($form),

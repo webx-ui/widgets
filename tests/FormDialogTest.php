@@ -277,4 +277,28 @@ final class FormDialogTest extends TestCase
 
         WidgetsFacade::form('call me');
     }
+
+    #[Test]
+    public function a_form_that_asks_for_it_scrolls_its_dialog_as_a_whole_and_is_no_sheet(): void
+    {
+        Form::query()->where('slug', 'callback')->sole()->update(['options' => ['dialog.scroll' => 'page']]);
+
+        $html = (string) $this->get('/sheet')->assertOk()->getContent();
+
+        // Its box inside the dialog; the title goes with it, nothing sticks; a sheet it never is.
+        $this->assertMatchesRegularExpression('~<dialog id="webx-form-callback" class="webx-dialog webx-dialog--page webx-form-dialog"[^>]*>\s*<div class="webx-dialog__window webx-form-dialog__window">\s*<div class="webx-dialog__header webx-form-dialog__header webx-form-dialog__header--flow">~', $html);
+        $this->assertMatchesRegularExpression('~</div>\s*</div>\s*</dialog>~', $html);
+        // The other form keeps its own box.
+        $this->assertStringContainsString('<dialog id="webx-form-contact" class="webx-dialog webx-form-dialog"', $html);
+        $this->assertSame(1, substr_count($html, 'webx-dialog__window'));
+    }
+
+    #[Test]
+    public function a_dialog_of_its_own_scrolls_as_a_whole_when_it_says_page(): void
+    {
+        $html = Blade::render('<x-webx-dialog id="terms" title="Terms" page><p>Long.</p></x-webx-dialog>');
+
+        $this->assertMatchesRegularExpression('~<dialog id="terms"[^>]*class="webx-dialog webx-dialog--page">\s*<div class="webx-dialog__window">\s*<div class="webx-dialog__header">~', $html);
+        $this->assertStringNotContainsString('webx-dialog__window', Blade::render('<x-webx-dialog id="other" title="Other"><p>Short.</p></x-webx-dialog>'));
+    }
 }

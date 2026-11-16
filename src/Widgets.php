@@ -65,6 +65,9 @@ final class Widgets implements HeadPart
     /** `data-webx-smooth-scroll` on the page's <html> or <body>: the switch of the glide (spec §14). */
     private const string SMOOTH_SCROLL = '~<(?:html|body)\b[^>]*\sdata-webx-smooth-scroll(?:\s*=|[\s>])~i';
 
+    /** An element with `data-webx-drag-scroll`: a strip the mouse drags sideways (spec §14). */
+    private const string DRAG_SCROLL = '~<[a-z][a-z0-9-]*\b[^>]*\sdata-webx-drag-scroll(?:\s*=|[\s>/])~i';
+
     /** A form's slug, the shape `module-inbox` gives it. */
     private const string SLUG = '/^[a-z0-9][a-z0-9_-]*$/i';
 
@@ -422,6 +425,11 @@ final class Widgets implements HeadPart
         // A picture with `data-webx-zoom` claims the zoom the same way: a gallery's link, a slide (§14).
         if (Zoom::wanted($html) && $this->built('zoom', 'js')) {
             $this->need('zoom');
+        }
+
+        // A strip the mouse drags — a gallery's ribbon — claims its few lines the same way (§14).
+        if (preg_match(self::DRAG_SCROLL, $html) === 1 && $this->built('drag-scroll', 'js')) {
+            $this->need('drag-scroll');
         }
 
         // The theme's layout switches the page to the glide; nothing renders to claim it (§14).

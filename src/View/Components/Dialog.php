@@ -18,6 +18,9 @@ use WebxUi\Widgets\Facades\Widgets;
  * `drawer` — a panel pressed to the inline end of the window at its whole height, the same modal
  * dialog in behaviour (focus kept inside, Esc, the backdrop, focus given back): the cart, the
  * filters of a list. With `sheet` too it is a sheet from the bottom on a phone.
+ * `page` — the dialog is the whole window and scrolls with its backdrop, the page under it stays;
+ * its box (`__window`) has no scroll of its own: centred while it is short, 40px from the top and
+ * the bottom once it is taller (80px from the top on a phone, under the site's header).
  * Off by default: a dialog is what it always was unless the site asks.
  */
 final class Dialog extends Component
@@ -29,6 +32,7 @@ final class Dialog extends Component
         public ?string $description = null,
         public bool $sheet = false,
         public bool $drawer = false,
+        public bool $page = false,
     ) {}
 
     public function render(): View

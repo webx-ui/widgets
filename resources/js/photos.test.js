@@ -347,4 +347,27 @@ describe('photos', () => {
     expect(document.querySelector('.card').style.touchAction).toBe('')
     expect(fills(root).some((fill) => fill.className !== 'webx-photos__fill')).toBe(false)
   })
+
+  it('gives a held photo its address as it is shown, and the next one ahead (§14.2)', async () => {
+    const root = await start(
+      markup({ count: 4 }).replace(/ src="\/p([2-4])\.jpg"/g, ' data-webx-src="/p$1.jpg"'),
+    )
+    const photos = () => Array.from(root.querySelectorAll('.webx-photos__photo'))
+
+    expect(photos().map((photo) => photo.getAttribute('src'))).toEqual([
+      '/p1.jpg',
+      '/p2.jpg',
+      null,
+      null,
+    ])
+
+    end(root)
+    expect(shown(root)).toBe(1)
+    expect(photos().map((photo) => photo.getAttribute('src'))).toEqual([
+      '/p1.jpg',
+      '/p2.jpg',
+      '/p3.jpg',
+      null,
+    ])
+  })
 })
