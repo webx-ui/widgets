@@ -321,6 +321,47 @@ describe('dialog', () => {
       expect(document.documentElement.classList.contains('webx-scroll-locked')).toBe(false)
     })
 
+    it('stays open when a click inside redraws what was clicked — a calendar picking a day', async () => {
+      history.replaceState(null, '', '/')
+      await start(page.replace('<p class="text">', '<div class="cal"></div><p class="text">'))
+      const dialog = document.getElementById('long')
+      const cal = dialog.querySelector('.cal')
+      // Like the datetime field: every click on the calendar draws its month anew, so the day
+      // pressed is out of the document before the click reaches the dialog.
+      const draw = () => {
+        cal.innerHTML =
+          '<button type="button" data-go="-1">‹</button><button type="button" class="day">2</button><button type="button" class="off" disabled>7</button><button type="button" data-go="1">›</button>'
+      }
+      draw()
+      cal.addEventListener('click', draw)
+      vi.spyOn(dialog, 'getBoundingClientRect').mockReturnValue({
+        left: 0,
+        top: 0,
+        right: 1000,
+        bottom: 800,
+      })
+
+      document.querySelector('[data-webx-dialog]').click()
+      for (const selector of ['.day', '.off', '[data-go="1"]', '[data-go="-1"]']) {
+        const target = cal.querySelector(selector)
+        press(target)
+        click(target, { clientX: 500, clientY: 400 })
+        expect(target.isConnected).toBe(false)
+        expect(dialog.open).toBe(true)
+      }
+      // Without a pointerdown before it (a key on the day, a synthetic click) — the same.
+      click(cal.querySelector('.day'), { clientX: 500, clientY: 400 })
+      expect(dialog.open).toBe(true)
+
+      // The ways out are still there: the ×, and the backdrop.
+      click(dialog.querySelector('[data-webx-dialog-close]'))
+      expect(dialog.open).toBe(false)
+      document.querySelector('[data-webx-dialog]').click()
+      press(dialog)
+      click(dialog, { clientX: 5, clientY: 5 })
+      expect(dialog.open).toBe(false)
+    })
+
     it('leaves Esc to the browser, keeps the focus inside, opens at its top', async () => {
       history.replaceState(null, '', '/')
       await start(page)

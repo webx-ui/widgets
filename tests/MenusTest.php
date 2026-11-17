@@ -206,7 +206,7 @@ class MenusTest extends TestCase
             </x-webx-header>
             BLADE, ['items' => self::tree()]);
 
-        $this->assertStringStartsWith('<a class="webx-header__skip" href="#content">Skip to content</a>', trim($html));
+        $this->assertStringStartsWith('<a class="webx-header__skip" href="#site-content">Skip to content</a>', trim($html));
         $this->assertStringContainsString('<header id="webx-header" data-webx-header="" data-collapse="auto" data-sticky="hide-on-scroll" class="webx-header webx-header--sticky webx-header--hide-on-scroll webx-header--overlay">', $html);
         $this->assertStringContainsString('<div class="webx-header__topbar">Open 9–18</div>', $html);
         $this->assertStringContainsString('<div class="webx-header__brand"><a href="/" class="logo">Harbor</a></div>', $html);

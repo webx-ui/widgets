@@ -47,6 +47,16 @@ const windowOf = (dialog) =>
       null)
     : null
 
+/**
+ * Whether an event happened inside a node: by the path the event took when it was dispatched,
+ * which keeps the ancestors of a target that has since left the document.
+ */
+const within = (event, node) => {
+  const path = typeof event.composedPath === 'function' ? event.composedPath() : []
+  if (path.length > 0) return path.includes(node)
+  return event.target instanceof Node && node.contains(event.target)
+}
+
 function watchWidth() {
   if (narrow || typeof window.matchMedia !== 'function') return
   narrow = window.matchMedia(NARROW)
@@ -59,10 +69,14 @@ function prepare(dialog) {
   if (prepared.has(dialog)) return
   prepared.add(dialog)
 
-  // Where the press began: a selection dragged out of the box ends with a click on the backdrop.
+  // Whether the press began inside the box: a selection dragged out of it ends with a click on
+  // the backdrop. Decided at the press and by the event path, not by the node later: a calendar
+  // that redraws its days on the click takes the pressed day out of the document before the
+  // click reaches the dialog, and a detached node is in no box.
   let pressed = null
   dialog.addEventListener('pointerdown', (event) => {
-    pressed = event.target
+    const box = windowOf(dialog)
+    pressed = box ? within(event, box) : null
   })
 
   dialog.addEventListener('click', (event) => {
@@ -78,8 +92,7 @@ function prepare(dialog) {
     pressed = null
     const box = windowOf(dialog)
     if (box) {
-      const outside = (node) => !(node instanceof Node) || !box.contains(node)
-      if (outside(event.target) && (began === null || outside(began))) dialog.close()
+      if (!within(event, box) && began !== true) dialog.close()
       return
     }
 

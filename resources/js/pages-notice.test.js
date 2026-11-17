@@ -200,7 +200,7 @@ describe('show more', () => {
 })
 
 const bar = (version = 'abc123', close = true) =>
-  `<a class="skip" href="#content">Skip</a><section class="webx-notice-bar" aria-label="Announcement" data-webx-notice-bar="${version}"><div class="webx-notice-bar__inner"><div class="webx-notice-bar__content">Open on <a href="/hours">Saturdays</a></div>${close ? '<button type="button" class="webx-notice-bar__close" aria-label="Close the announcement" hidden>×</button>' : ''}</div></section>`
+  `<a class="skip" href="#site-content">Skip</a><section class="webx-notice-bar" aria-label="Announcement" data-webx-notice-bar="${version}"><div class="webx-notice-bar__inner"><div class="webx-notice-bar__content">Open on <a href="/hours">Saturdays</a></div>${close ? '<button type="button" class="webx-notice-bar__close" aria-label="Close the announcement" hidden>×</button>' : ''}</div></section>`
 
 describe('notice bar', () => {
   it('shows its close button, and closing remembers the version and hands the keyboard to the top', async () => {

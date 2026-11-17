@@ -404,7 +404,7 @@ final class GalleryTest extends TestCase
             ['picture' => ['path' => 'media/gone.webp'], 'link' => $link('https://social.example/p/4'), 'badge' => 'pin'],
         ];
 
-        $html = $this->render(['eyebrow' => 'Follow us', 'heading' => 'In the feed', 'view' => 'ribbon', 'frames' => $frames, 'pictures' => $this->pictures(3)]);
+        $html = $this->render(['eyebrow' => 'Follow us', 'heading' => 'In the feed', 'view' => 'ribbon', 'frames' => $frames, 'pictures' => $this->pictures(3), 'zoom' => false]);
 
         $this->assertStringContainsString('class="b-gallery b-gallery--ribbon site-bleed"', $html);
         $this->assertStringContainsString('<div class="b-gallery__head">', $html);
@@ -415,7 +415,7 @@ final class GalleryTest extends TestCase
         $this->assertStringContainsString('b-gallery__badge b-gallery__badge--pin', $html);
         $this->assertStringContainsString('b-gallery__badge b-gallery__badge--video', $html);
         $this->assertSame(2, substr_count($html, 'b-gallery__badge '));
-        $this->assertStringNotContainsString('data-webx-lightbox', $html, 'a frame is a link to its post, not to the lightbox');
+        $this->assertStringNotContainsString('data-webx-lightbox', $html, 'without zoom a frame is a link to its post or a picture, not the lightbox');
         $this->assertStringNotContainsString('b-gallery__grid', $html, 'the pictures of the other views are not the ribbon\'s');
 
         // Nothing to show, nothing printed.
@@ -424,6 +424,34 @@ final class GalleryTest extends TestCase
         $styles = (string) self::type()['styles'];
         $this->assertMatchesRegularExpression('~\.b-gallery__ribbon \.b-gallery__image \{\s*aspect-ratio: 3 / 4;~', $styles);
         $this->assertStringContainsString('scroll-snap-type: x mandatory;', $styles);
+    }
+
+    #[Test]
+    public function with_zoom_a_frame_of_the_ribbon_without_a_link_opens_over_the_page(): void
+    {
+        $link = ['target' => 'url', 'entity_type' => null, 'entity_id' => null, 'url' => 'https://social.example/p/1', 'hash' => null, 'new_tab' => false, 'rel' => []];
+        $frames = [
+            ['picture' => ['path' => $this->picture('post-1')->path, 'alt' => 'A pinned post'], 'link' => $link, 'badge' => 'pin'],
+            ['picture' => ['path' => $this->picture('post-2')->path, 'alt' => 'The terrace'], 'link' => null, 'badge' => 'none'],
+            ['picture' => ['path' => $this->picture('post-3')->path, 'alt' => ''], 'link' => null, 'badge' => 'video'],
+        ];
+
+        // The switch is offered for the ribbon too.
+        $this->assertArrayNotHasKey('visible', self::fields()['zoom']);
+
+        $html = $this->render(['view' => 'ribbon', 'frames' => $frames, 'zoom' => true, 'ratio' => '4:3'], 'k9');
+
+        // The post's frame still goes to the post.
+        $this->assertSame(1, preg_match_all('~<a class="b-gallery__post" href="https://social\.example/p/1" target="_blank"~', $html));
+        // The other two open over the page: one group for the ribbon, counted among themselves, captioned.
+        $this->assertSame(2, preg_match_all('~<a href="[^"]+" data-webx-lightbox="gallery-k9"[^>]*class="webx-lightbox-link b-gallery__post"~', $html));
+        $this->assertStringContainsString('data-caption="The terrace"', $html);
+        $this->assertStringContainsString('data-webx-lightbox-ratio="4:3"', $html);
+        $this->assertStringContainsString('aria-label="Open picture 2 of 2"', $html, 'a picture without an alt says which it opens');
+        $this->assertStringNotContainsString('<span class="b-gallery__post">', $html);
+        $this->assertStringContainsString('b-gallery__badge b-gallery__badge--video', $html, 'the badge stays inside the link');
+        $this->assertMatchesRegularExpression('~<ul class="b-gallery__ribbon" role="list" tabindex="0" data-webx-drag-scroll~', $html);
+        $this->assertMatchesRegularExpression('~\.b-gallery__post\.webx-lightbox-link \{\s*display: block;~', (string) self::type()['styles']);
     }
 
     /** The published version of the type swapped for the template before this stage. */

@@ -2,6 +2,8 @@
   /* Kept live by the runtime: what of the header stays on screen when it sticks, and the topbar above it. */
   --webx-header-height: 0px;
   --webx-header-topbar-height: 0px;
+  /* Its height at rest, not scrolled: what the page lays out by while a theme makes it lower. */
+  --webx-header-rest-height: 0px;
   --webx-header-bg: var(--site-color-bg);
   --webx-header-overlay-color: var(--site-color-accent-contrast);
   --webx-header-gap: var(--site-space-5);
@@ -42,6 +44,9 @@
     transform var(--site-duration) var(--site-easing),
     background-color var(--site-duration) var(--site-easing),
     color var(--site-duration) var(--site-easing);
+  /* In the flow it keeps the room of its rest height: a header a theme makes lower once scrolled
+     does not pull the page up. Over the page (`--overlay`, below) it keeps none. */
+  margin-block-end: calc(var(--webx-header-rest-height) - var(--webx-header-height));
 }
 
 /* The topbar scrolls away; the bar under it stays. */

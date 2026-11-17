@@ -280,6 +280,18 @@ describe('parallax', () => {
     expect(frame.className).toBe('')
   })
 
+  it('stands still in a preview of the panel: its frame never scrolls', async () => {
+    document.documentElement.setAttribute('data-webx-preview', '')
+    try {
+      const picture = await load(true)
+
+      expect(picture.className).toBe('')
+      expect(document.getElementById('frame').className).toBe('')
+    } finally {
+      document.documentElement.removeAttribute('data-webx-preview')
+    }
+  })
+
   it('makes a picture placed absolutely taller for its overscan, and leaves one in the flow to be scaled', async () => {
     vi.stubGlobal('CSS', { supports: () => false })
     vi.stubGlobal('requestAnimationFrame', (callback) => frames.push(callback))
@@ -374,6 +386,74 @@ describe('parallax', () => {
     const picture = await load(false)
 
     expect(picture.className).toBe('')
+    expect(watched.length).toBe(0)
+  })
+
+  // What `@webxPicture` prints around a picture with formats: a wrapper without a box of its own.
+  const formats = `<section id="frame" style="overflow-y: hidden"><picture style="display: contents"><source type="image/avif" srcset="/a.avif"><img id="picture" style="position: absolute" data-webx-parallax src="/a.jpg" alt=""></picture></section>`
+
+  it('measures the frame past a <picture> without a box, with and without scroll-driven animations', async () => {
+    vi.stubGlobal('CSS', { supports: () => false })
+    vi.stubGlobal('requestAnimationFrame', (callback) => frames.push(callback))
+    vi.stubGlobal('cancelAnimationFrame', () => {})
+    vi.stubGlobal('innerHeight', 800)
+    await start(formats)
+    const picture = document.getElementById('picture')
+    const frame = document.getElementById('frame')
+
+    // Watched is the section: the <picture> never intersects anything.
+    expect(watched.some((o) => o.els.has(frame))).toBe(true)
+    expect(watched.some((o) => o.els.has(picture.parentElement))).toBe(false)
+    expect(picture.className).toBe('webx-parallax webx-parallax--grown webx-parallax--script')
+    at(frame, 200, 400)
+    watched.find((o) => o.els.has(frame)).callback([{ target: frame, isIntersecting: true }])
+    run()
+    expect(picture.style.getPropertyValue('--webx-parallax-progress')).toBe('0.5000')
+
+    // With them, the timeline is named on the section, which crops and spans the frame.
+    window.webx.unmount()
+    vi.stubGlobal('CSS', { supports: () => true })
+    window.webx.mount()
+    expect(frame.className).toBe('webx-parallax-frame')
+    expect(picture.parentElement.className).toBe('')
+    expect(picture.className).toBe('webx-parallax webx-parallax--grown')
+  })
+
+  it('measures again once the page has loaded: a stylesheet that came late places the picture', async () => {
+    // A site with critical CSS: the block's stylesheet comes after the runtime has started.
+    Object.defineProperty(document, 'readyState', { value: 'interactive', configurable: true })
+    try {
+      vi.stubGlobal('CSS', { supports: () => false })
+      vi.stubGlobal('requestAnimationFrame', (callback) => frames.push(callback))
+      vi.stubGlobal('cancelAnimationFrame', () => {})
+      await start(formats.replace(' style="position: absolute"', ''))
+      const picture = document.getElementById('picture')
+      // Not yet placed: it would be scaled.
+      expect(picture.className).toBe('webx-parallax webx-parallax--script')
+
+      picture.style.position = 'absolute'
+      window.dispatchEvent(new Event('load'))
+      expect(picture.className).toBe('webx-parallax webx-parallax--grown webx-parallax--script')
+      // One observer for the frame now, the first one let go.
+      expect(watched.filter((o) => o.els.size).length).toBe(1)
+
+      // Once only.
+      picture.style.position = ''
+      window.dispatchEvent(new Event('load'))
+      expect(picture.className).toBe('webx-parallax webx-parallax--grown webx-parallax--script')
+      window.webx.unmount()
+      expect(picture.className).toBe('')
+    } finally {
+      delete document.readyState
+    }
+  })
+
+  it('moves nothing in a <picture> with reduced motion either', async () => {
+    reduced = true
+    vi.stubGlobal('CSS', { supports: () => false })
+    await start(formats)
+
+    expect(document.getElementById('picture').className).toBe('')
     expect(watched.length).toBe(0)
   })
 })
@@ -685,11 +765,213 @@ describe('parallax of the first screen', () => {
     expect(frames.length).toBe(0)
   })
 
+  it('goes k · scrollY smoothly, past a <picture> without a box, not all the way at the first pixel', async () => {
+    // What `@webxPicture` prints: the <img> in a <picture> that has no box — measured, it stands
+    // nowhere. The frame is the section; measured on the <picture>, the end was 1px.
+    frames = []
+    vi.stubGlobal('CSS', { supports: () => false })
+    vi.stubGlobal('requestAnimationFrame', (callback) => frames.push(callback))
+    vi.stubGlobal('cancelAnimationFrame', () => {})
+    vi.stubGlobal('innerHeight', 900)
+    vi.stubGlobal('scrollY', 0)
+    document.body.innerHTML = page.replace(
+      /<img id="picture"[^>]*>/,
+      (img) =>
+        `<picture style="display: contents"><source type="image/avif" srcset="/a.avif">${img}</picture>`,
+    )
+    const frame = document.getElementById('frame')
+    at(frame, 0, 900)
+    Object.defineProperty(frame, 'offsetHeight', { configurable: true, value: 900 })
+    delete window.webx
+    vi.resetModules()
+    await import('./runtime.js')
+    const picture = document.getElementById('picture')
+    expect(value(picture, 'end')).toBe('900px')
+
+    // The stylesheet's translate: progress · reach − over. Each point on the line k · scrollY.
+    const reach = parseFloat(value(picture, 'reach'))
+    const over = parseFloat(value(picture, 'over'))
+    const shift = () => parseFloat(value(picture, 'progress')) * reach - over
+    const start = shift()
+    for (const y of [50, 150, 300]) {
+      vi.stubGlobal('scrollY', y)
+      window.dispatchEvent(new Event('scroll'))
+      run()
+      expect(shift() - start).toBeCloseTo(0.3 * y, 0)
+    }
+  })
+
+  // An overlay header a theme makes lower once scrolled (128 → 96), easing into it: the first
+  // screen lays out by its rest height, and the picture keeps going k · scrollY across the switch.
+  for (const supports of [true, false]) {
+    it(`keeps its pace as the header gets lower past its height (${supports ? 'CSS timeline' : 'script'})`, async () => {
+      frames = []
+      vi.stubGlobal('CSS', { supports: (query) => supports && query.includes('scroll()') })
+      vi.stubGlobal('requestAnimationFrame', (callback) => frames.push(callback))
+      vi.stubGlobal('cancelAnimationFrame', () => {})
+      vi.stubGlobal('innerHeight', 900)
+      vi.stubGlobal('scrollY', 0)
+      document.body.innerHTML =
+        '<header id="h" class="webx-header webx-header--overlay webx-header--sticky" data-webx-header data-collapse="never" data-sticky="sticky"><div class="webx-header__bar"></div></header>' +
+        page
+      const el = document.getElementById('h')
+      // Its height eases between the two over a few frames, the way a theme's `transition` does.
+      let height = 128
+      Object.defineProperty(el, 'offsetHeight', { configurable: true, get: () => height })
+      const frame = document.getElementById('frame')
+      // On the screen where the scroll puts it: measured again as the header changes, it is still gone at 900.
+      frame.getBoundingClientRect = () => ({
+        top: -scrollY,
+        bottom: 900 - scrollY,
+        height: 900,
+        left: 0,
+        right: 0,
+        width: 0,
+      })
+      Object.defineProperty(frame, 'offsetHeight', { configurable: true, value: 900 })
+      delete window.webx
+      vi.resetModules()
+      await import('./runtime.js')
+      const root = document.documentElement.style
+      const picture = document.getElementById('picture')
+      const measured = () => ['end', 'reach', 'over'].map((name) => value(picture, name))
+      const before = measured()
+      expect(root.getPropertyValue('--webx-header-rest-height')).toBe('128px')
+
+      const shift = () => parseFloat(value(picture, 'progress')) * 270 - 270
+      for (const y of [100, 126, 130, 134, 138, 141, 144, 200, 300]) {
+        vi.stubGlobal('scrollY', y)
+        window.dispatchEvent(new Event('scroll'))
+        run()
+        if (el.classList.contains('is-scrolled') && height > 96) height = Math.max(96, height - 8)
+        resized.forEach((observer) => observer.callback([]))
+        run()
+        // What the page lays out by stays: the hero's room under the header, the parallax's way.
+        expect(root.getPropertyValue('--webx-header-rest-height')).toBe('128px')
+        expect(measured()).toEqual(before)
+        if (!supports) expect(shift() + 270).toBeCloseTo(0.3 * y, 0)
+      }
+      expect(el.classList.contains('is-scrolled')).toBe(true)
+      expect(root.getPropertyValue('--webx-header-height')).toBe('96px')
+
+      // A resize while scrolled measures the rest height again — without `is-scrolled`, at once.
+      Object.defineProperty(el, 'offsetHeight', {
+        configurable: true,
+        get: () => (el.classList.contains('is-scrolled') ? 64 : 80),
+      })
+      window.dispatchEvent(new Event('resize'))
+      run()
+      expect(root.getPropertyValue('--webx-header-rest-height')).toBe('80px')
+      expect(root.getPropertyValue('--webx-header-height')).toBe('64px')
+      expect(el.className).toBe('webx-header webx-header--overlay webx-header--sticky is-scrolled')
+    })
+  }
+
   it('moves nothing for a visitor who asked for less motion', async () => {
     reduced = true
     const { picture } = await load(true)
     expect(picture.className).toBe('')
     expect(value(picture, 'end')).toBe('')
+  })
+})
+
+describe('parallax of the first screen and of a block below it, on one page', () => {
+  // The page of a site: a hero of the first screen, its picture in a <picture> without a box, then
+  // text-tiles that slide over it (the fog edge) with a parallax of their own, and more tiles below.
+  const picture = (id, moves) =>
+    `<picture style="display: contents"><source type="image/avif" srcset="/${id}.avif"><img id="${id}" style="position: absolute; --webx-parallax-screen-rate: 0.3; --webx-parallax-screen-overscan: 30" data-webx-parallax${moves ? `="${moves}"` : ''} src="/${id}.jpg" alt=""></picture>`
+  const page = `<main id="main"><section id="hero" style="overflow-y: hidden">${picture('a', 'screen')}<div data-webx-overlap-fade>Words</div></section><section id="tiles" style="overflow-y: hidden" data-webx-overlap><picture class="webx-overlap__edge"><img class="webx-overlap__image" src="/fog.png" alt=""></picture>${picture('b')}</section><section id="more" style="overflow-y: hidden">${picture('c')}</section></main>`
+  let frames = []
+
+  const run = () => {
+    const queued = frames
+    frames = []
+    queued.forEach((callback) => callback())
+  }
+  const value = (el, name) => el.style.getPropertyValue(`--webx-parallax-${name}`)
+  const tall = (el, top, height) => {
+    at(el, top, height)
+    Object.defineProperty(el, 'offsetHeight', { configurable: true, value: height })
+  }
+
+  async function load(supports) {
+    frames = []
+    vi.stubGlobal('CSS', { supports: () => supports })
+    vi.stubGlobal('requestAnimationFrame', (callback) => frames.push(callback))
+    vi.stubGlobal('cancelAnimationFrame', () => {})
+    vi.stubGlobal('innerHeight', 800)
+    vi.stubGlobal('scrollY', 0)
+    document.body.innerHTML = page
+    const els = Object.fromEntries(
+      ['main', 'hero', 'tiles', 'more', 'a', 'b', 'c'].map((id) => [
+        id,
+        document.getElementById(id),
+      ]),
+    )
+    tall(els.hero, 0, 800)
+    tall(els.tiles, 800, 700)
+    tall(els.more, 2400, 700)
+    delete window.webx
+    vi.resetModules()
+    await import('./runtime.js')
+    return els
+  }
+
+  it('with scroll-driven animations: the hero runs until the overlap lets it go, the tiles on their own timelines', async () => {
+    const { hero, tiles, more, a, b, c } = await load(true)
+
+    expect(hero.classList.contains('webx-overlap-pinned')).toBe(true)
+    expect(a.className).toBe('webx-parallax webx-parallax--screen')
+    // The overlap's measure, not 1px of a <picture> without a box.
+    expect(value(a, 'end')).toBe(hero.style.getPropertyValue('--webx-overlap-gone'))
+    expect(parseFloat(value(a, 'end'))).toBeGreaterThan(1)
+
+    // The tiles that slide over the hero and those below: each named on its section.
+    for (const [frame, img] of [
+      [tiles, b],
+      [more, c],
+    ]) {
+      expect(frame.classList.contains('webx-parallax-frame')).toBe(true)
+      expect(img.className).toBe('webx-parallax webx-parallax--grown')
+    }
+    expect(a.parentElement.className).toBe('')
+    expect(b.parentElement.className).toBe('')
+  })
+
+  it('without them: the hero k · scrollY, the tiles across the screen — each on its own measure', async () => {
+    const { hero, tiles, more, a, b, c } = await load(false)
+    const end = parseFloat(value(a, 'end'))
+    expect(end).toBeGreaterThan(1)
+    expect(end).toBe(parseFloat(hero.style.getPropertyValue('--webx-overlap-gone')))
+    expect(b.className).toBe('webx-parallax webx-parallax--grown webx-parallax--script')
+    expect(c.className).toBe('webx-parallax webx-parallax--grown webx-parallax--script')
+
+    // The sections are watched, not their pictures.
+    const seen = (frame) => watched.find((o) => o.els.has(frame))
+    expect(seen(tiles)).toBeTruthy()
+    expect(seen(more)).toBeTruthy()
+    expect(watched.some((o) => o.els.has(b.parentElement) || o.els.has(c.parentElement))).toBe(
+      false,
+    )
+
+    seen(tiles).callback([{ target: tiles, isIntersecting: true }])
+    seen(more).callback([{ target: more, isIntersecting: false }])
+    const reach = parseFloat(value(a, 'reach'))
+    const over = parseFloat(value(a, 'over'))
+    const shift = () => parseFloat(value(a, 'progress')) * reach - over
+    const first = shift()
+    for (const y of [50, 150, 300]) {
+      vi.stubGlobal('scrollY', y)
+      at(tiles, 800 - y, 700)
+      window.dispatchEvent(new Event('scroll'))
+      run()
+      // The hero: on the line k · scrollY, k = 0.3.
+      expect(shift() - first).toBeCloseTo(0.3 * y, 0)
+      // The tiles: where their section is on its way across the screen of 800.
+      expect(value(b, 'progress')).toBe((y / 1500).toFixed(4))
+    }
+    // The tiles below are not on the screen yet: nothing written for them.
+    expect(value(c, 'progress')).toBe('')
   })
 })
 

@@ -73,7 +73,7 @@ function leafletWithoutPictures() {
 // What two widgets share — the feel of a swipe, the pictures held back — is a module of its own
 // in the sources and a copy inside each widget's file in dist/: one id per importer, so Rollup
 // makes no shared chunk of it (each widget stays one request). Only the modules named here.
-const SHARED = ['swipe.js', 'held.js']
+const SHARED = ['swipe.js', 'held.js', 'preview.js']
 function sharedCopies() {
   return {
     name: 'webx-widgets-shared-copies',

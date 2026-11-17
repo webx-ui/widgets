@@ -10,6 +10,12 @@
  * - keeps `--webx-header-height` (what stays on screen when it sticks) and
  *   `--webx-header-topbar-height` on :root, and the page's scroll padding with them, so an anchor
  *   is not hidden under a sticky header;
+ * - keeps `--webx-header-rest-height` too: its height at rest, not scrolled. A theme may make the
+ *   header lower once `is-scrolled` (and ease it); what the page lays out by — the room an in-flow
+ *   header keeps, the first screen's `--hero-under` / `--hero-above` — stays the rest height, so
+ *   the page under it does not move. Measured while not scrolled and no transition of the header
+ *   runs; past the threshold (a resize, a font, the fold) by taking `is-scrolled` off for one
+ *   read with transitions off;
  * - `is-scrolled` past its own height, and with `hide-on-scroll` `is-hidden` while scrolling down
  *   — but not while a dropdown or the menu is open or the keyboard is inside.
  */
@@ -67,14 +73,39 @@ export function header(el) {
     apply(!fits())
   }
 
-  const measure = () => {
+  // A transition of the header (or inside it) still running: its height is not the one it ends at.
+  const easing = () =>
+    typeof el.getAnimations === 'function' &&
+    el.getAnimations({ subtree: true }).some((a) => typeof a.transitionProperty === 'string')
+
+  let rest = null
+  const measure = (again = false) => {
     const top = topbar ? topbar.offsetHeight : 0
+    const height = el.offsetHeight - top
+    if (!el.classList.contains('is-scrolled')) {
+      if (rest === null || !easing()) rest = height
+    } else if (rest === null || again) {
+      // Its rest height while scrolled: one read without `is-scrolled`, with no transition to start
+      // either way — inline, over whatever the theme eases the header and its bar with.
+      const parts = [el, ...el.querySelectorAll('*')]
+      const kept = parts.map((part) => part.style.transition)
+      for (const part of parts) part.style.transition = 'none'
+      el.classList.remove('is-scrolled')
+      rest = el.offsetHeight - (topbar ? topbar.offsetHeight : 0)
+      el.classList.add('is-scrolled')
+      void el.offsetHeight
+      parts.forEach((part, i) => (part.style.transition = kept[i]))
+    }
     root.style.setProperty('--webx-header-topbar-height', px(top))
-    root.style.setProperty('--webx-header-height', px(el.offsetHeight - top))
+    root.style.setProperty('--webx-header-height', px(height))
+    root.style.setProperty('--webx-header-rest-height', px(rest))
   }
 
   let frame = 0
-  const update = () => {
+  let again = false
+  // `fresh`: the window, a font or the fold changed — the rest height is measured anew.
+  const update = (fresh = true) => {
+    again ||= fresh
     if (frame) return
     // Next frame rather than inside the observer: folding resizes the header it observes.
     frame = requestAnimationFrame(() => {
@@ -85,7 +116,9 @@ export function header(el) {
       if (folded && !el.classList.contains('is-collapsed')) {
         for (const dialog of el.querySelectorAll('dialog[open]')) dialog.close()
       }
-      measure()
+      if (el.classList.contains('is-collapsed') !== folded) again = true
+      measure(again)
+      again = false
     })
   }
 
@@ -95,11 +128,20 @@ export function header(el) {
 
   let resize = null
   if (typeof ResizeObserver === 'function') {
-    resize = new ResizeObserver(update)
+    // The header's own size at once, before the frame is painted: an overlay header's margin and the
+    // in-flow one's keep up with a height it eases into. The fold waits for the next frame.
+    resize = new ResizeObserver(() => {
+      measure()
+      update(false)
+    })
     for (const part of [el, nav?.firstElementChild, actions].filter(Boolean)) resize.observe(part)
   }
-  on(window, 'resize', update)
-  document.fonts?.ready?.then(update)
+  on(window, 'resize', () => update())
+  document.fonts?.ready?.then(() => update())
+  // Eased back to its rest height at the top of the page: measured where it ends.
+  on(el, 'transitionend', (event) => {
+    if (event.target === el || el.contains(event.target)) measure()
+  })
 
   // Scrolling: solid past its own height; hidden on the way down, back on the way up.
   let last = window.scrollY
@@ -148,5 +190,6 @@ export function header(el) {
     root.classList.remove('webx-header-sticky')
     root.style.removeProperty('--webx-header-height')
     root.style.removeProperty('--webx-header-topbar-height')
+    root.style.removeProperty('--webx-header-rest-height')
   }
 }

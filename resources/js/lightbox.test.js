@@ -489,3 +489,52 @@ describe('lightbox', () => {
     }
   })
 })
+
+describe('lightbox in a ribbon dragged with the mouse', () => {
+  const pointer = (el, type, x) => {
+    const event = new MouseEvent(type, { bubbles: true, cancelable: true, clientX: x, button: 0 })
+    Object.defineProperty(event, 'pointerType', { value: 'mouse' })
+    Object.defineProperty(event, 'pointerId', { value: 1 })
+    el.dispatchEvent(event)
+  }
+
+  it('opens a frame without a link of its own on a click, never at the end of a drag', async () => {
+    // What the gallery's ribbon prints with `zoom`: a post's link, and frames opening over the page.
+    const { caption } = await start(
+      `<ul class="b-gallery__ribbon" data-webx-drag-scroll>
+        <li><a class="b-gallery__post" href="https://social.example/p/1" target="_blank"><img src="/t0.jpg" alt="A post"></a></li>
+        <li>${link(1, 'gallery-k1', 'class="b-gallery__post" data-caption="The terrace"')}</li>
+        <li>${link(2, 'gallery-k1', 'class="b-gallery__post"')}</li>
+      </ul>`,
+    )
+    await import('./drag-scroll.js')
+    const strip = document.querySelector('ul')
+    Object.defineProperty(strip, 'scrollWidth', { configurable: true, get: () => 3000 })
+    Object.defineProperty(strip, 'clientWidth', { configurable: true, get: () => 1000 })
+    strip.scrollTo = () => {}
+    const [post, first] = strip.querySelectorAll('a')
+    expect(strip.classList.contains('is-ready')).toBe(true)
+    expect(caption(first)).toBe('The terrace')
+
+    // Dragged past the threshold: the click that ends it opens nothing.
+    pointer(first, 'pointerdown', 500)
+    pointer(first, 'pointermove', 480)
+    pointer(first, 'pointermove', 400)
+    pointer(first, 'pointerup', 400)
+    // Swallowed by the strip before the link hears it: neither followed nor opened.
+    const ending = new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 })
+    expect(first.dispatchEvent(ending)).toBe(false)
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    expect(viewer()).toBeNull()
+
+    // The post's link is the browser's: the lightbox does not take it.
+    expect(click(post)).toBe(false)
+
+    // A press that moves less than the threshold is a click: the picture opens.
+    pointer(first, 'pointerdown', 500)
+    pointer(first, 'pointermove', 502)
+    pointer(first, 'pointerup', 502)
+    expect(click(first)).toBe(true)
+    await vi.waitFor(() => expect(viewer()).not.toBeNull())
+  })
+})

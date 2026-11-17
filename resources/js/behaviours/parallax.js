@@ -13,8 +13,8 @@
  * Otherwise, and where the browser has no such timelines, this script is the fallback: an
  * IntersectionObserver says when the frame is on screen, and only then each scroll asks for one
  * frame that reads where the frame stands and writes one custom property — a read, then a write,
- * never a read after a write. The frame is the element's parent: the element's own box carries the
- * shift, and measuring it would measure the shift.
+ * never a read after a write. The frame is the element's parent (past a <picture> without a box, see
+ * `frameOf`): the element's own box carries the shift, and measuring it would measure the shift.
  *
  * The value of the attribute is the strength (`soft`, `medium` or empty, `strong`): the stylesheet
  * reads it, this script does not. With `screen` among its words (`screen`, `screen soft`) it is the
@@ -25,6 +25,7 @@
  */
 
 import { listeners } from '../core.js'
+import { inPreview } from '../preview.js'
 
 const reduced = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
 
@@ -45,6 +46,18 @@ function subjectOf(frame) {
   const a = frame.getBoundingClientRect()
   const b = subject.getBoundingClientRect()
   return Math.abs(a.top - b.top) <= 1 && Math.abs(a.height - b.height) <= 1 ? subject : null
+}
+
+/*
+ * The frame: the element's parent, or the first ancestor with a box of its own. A <picture> the
+ * library's formats wrap the <img> in is `display: contents` — it has no box: measured it stands
+ * nowhere, and an IntersectionObserver never sees it on screen, so the picture never moved.
+ */
+function frameOf(el) {
+  let frame = el.parentElement
+  while (frame && frame !== document.body && getComputedStyle(frame).display === 'contents')
+    frame = frame.parentElement
+  return frame ?? el
 }
 
 const number = (style, name, fallback) => {
@@ -74,7 +87,7 @@ function screen(el) {
   const driven = window.CSS?.supports?.('animation-timeline: scroll()') ?? false
   if (!driven && typeof requestAnimationFrame !== 'function') return
 
-  const frame = el.parentElement ?? el
+  const frame = frameOf(el)
   const marks = driven
     ? ['webx-parallax', 'webx-parallax--screen']
     : ['webx-parallax', 'webx-parallax--screen', 'webx-parallax--script']
@@ -147,12 +160,33 @@ function screen(el) {
   }
 }
 
+/*
+ * What is measured at the start is measured again once the page has loaded. A site with critical
+ * CSS loads the stylesheets of its blocks without waiting for them (`media="print"`, then `all`),
+ * and the runtime starts before they come: a block's picture is not yet placed absolutely (it would
+ * be scaled, not made taller) and its frame not yet as tall as it will be (the timeline would be
+ * named on the wrong element, or on none). On `load` they have all come: it starts once more.
+ */
 export function parallax(el) {
-  if (reduced()) return
+  if (reduced() || inPreview()) return
+  let stop = start(el)
+  if (document.readyState === 'complete') return stop
+  const again = () => {
+    stop?.()
+    stop = start(el)
+  }
+  window.addEventListener('load', again, { once: true })
+  return () => {
+    window.removeEventListener('load', again)
+    stop?.()
+  }
+}
+
+function start(el) {
   if ((el.getAttribute('data-webx-parallax') ?? '').split(/\s+/).includes('screen'))
     return screen(el)
 
-  const frame = el.parentElement ?? el
+  const frame = frameOf(el)
   const subject = scrollDriven() ? subjectOf(frame) : null
   // Placed absolutely in its frame, the picture is made taller for its overscan; in the flow, larger.
   const marks =

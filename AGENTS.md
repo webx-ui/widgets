@@ -92,7 +92,7 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
   group. Events `webx:suggest:select` (cancelable), `webx:suggest:results`; the catalogue's `/catalog/suggest`.
 - **A list with a search** — `<x-webx-select name :options :value searchable :source>`: a `<select>` without
   JavaScript, with it the loaded options filtered and `source` asked (JSON `{options, more}`); `change` on the select. `:strict="false"` — text with suggestions.
-- **Blocks** — with `module-media`: `gallery` (grid; slider: `per_view` 1–3, `effect`, `arrows`, `dots`, `thumbs`, `endless`, `autoplay` + `interval` s; mosaic 1 large + 2: `mosaic` still / slider in threes, the rest hidden lightbox links, `narrow` pair|column, `arrows_at` below|head; head `eyebrow` `intro` `align`; `gap` narrow or a site space step; `captions` under|over — alt on glass; ribbon: `frames` picture, link in a new tab, `badge` none|pin|video, column to the screen edge, dragged with a mouse) `logos` `video` `map` `counters` `countdown` `compare` `toc` `tabs` (`eyebrow`; `wrap` — rows under 40em, `--b-tabs-per-row`; `media_bleed` — the section `site-bleed`, `__inner` keeps the column and is the container, the picture to the page's sides under 40em, a direct child of `.site-main` only; no scrollbar on the row; `transition` instant / fade; `overlap` + `overlap_edge`/`overlap_edge_narrow` as in theme-default, `__inner` is `data-webx-overlap-fade`) (`webx:blocks:offered --install --module=widgets`).
+- **Blocks** — with `module-media`: `gallery` (grid; slider: `per_view` 1–3, `effect`, `arrows`, `dots`, `thumbs`, `endless`, `autoplay` + `interval` s; mosaic 1 large + 2: `mosaic` still / slider in threes, the rest hidden lightbox links, `narrow` pair|column, `arrows_at` below|head; head `eyebrow` `intro` `align`; `gap` narrow or a site space step; `captions` under|over — alt on glass; ribbon: `frames` picture, link in a new tab or, with `zoom`, the lightbox, `badge` none|pin|video, column to the screen edge, dragged with a mouse) `logos` `video` `map` `counters` `countdown` `compare` `toc` `tabs` (`eyebrow`; `wrap` — rows under 40em, `--b-tabs-per-row`; `media_bleed` — the section `site-bleed`, `__inner` keeps the column and is the container, the picture to the page's sides under 40em, a direct child of `.site-main` only; no scrollbar on the row; `transition` instant / fade; `overlap` + `overlap_edge`/`overlap_edge_narrow` as in theme-default, `__inner` is `data-webx-overlap-fade`) (`webx:blocks:offered --install --module=widgets`).
 - **Audit** (with `module-audit`) — `widgets.before_consent` (fix `widgets.wait-for-consent`),
   `widgets.banner_off` (fix `widgets.banner-on`), `lightbox_size`, `slider_pause`, `video_pause`,
   `counter_number`, `compare_range`, `toc_target`, `load_more_link`, `zoom_link`, `form_script`,
@@ -102,7 +102,7 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
   each component's view lists its own. `html.webx-js` once the runtime runs,
   `html.webx-scroll-locked` under a modal, `html.webx-header-sticky` while the header sticks.
 - **Tokens and words** — `--webx-<name>-*` per widget on `:root` from `--site-*`; `--webx-header-height`
-  is kept live — the `top` of anything sticky. Words `webx-widgets::widgets.*` in en ru uk de pl fr es it pt tr; each also a prop.
+  is kept live — the `top` of anything sticky; `--webx-header-rest-height` (not scrolled) is what the page lays out by. Words `webx-widgets::widgets.*` in en ru uk de pl fr es it pt tr; each also a prop.
 
 ## Change it without forking
 

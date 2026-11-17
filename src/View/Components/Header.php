@@ -39,7 +39,7 @@ final class Header extends Component
         public int $breakpoint = 960,
         public string $sticky = 'none',
         public bool $overlay = false,
-        public string|bool $skip = '#content',
+        public string|bool $skip = '#site-content',
         public string $menuId = 'webx-mobile-menu',
         public string $side = 'right',
         public string $mode = 'accordion',
@@ -58,7 +58,7 @@ final class Header extends Component
         };
 
         if ($skip === true) {
-            $this->skip = '#content';
+            $this->skip = '#site-content';
         }
     }
 

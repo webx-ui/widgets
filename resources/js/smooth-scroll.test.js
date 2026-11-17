@@ -122,6 +122,20 @@ describe('smooth scrolling', () => {
     expect(seconds('fast')).toBeNull()
   })
 
+  it('stays native in a preview of the panel: a frame as tall as its page glides nowhere', async () => {
+    await start('', { 'data-webx-smooth-scroll': '', 'data-webx-preview': '' })
+    expect(instances).toHaveLength(0)
+  })
+
+  it("stays native in the panel's frame before the panel has reached the page", async () => {
+    const frame = document.createElement('iframe')
+    frame.setAttribute('data-webx-preview', '')
+    vi.spyOn(window, 'frameElement', 'get').mockReturnValue(frame)
+    await start('', { 'data-webx-smooth-scroll': '' })
+    expect(instances).toHaveLength(0)
+    vi.restoreAllMocks()
+  })
+
   it('stays native with reduced motion and on a touch screen', async () => {
     media.reduce = true
     await start('', { 'data-webx-smooth-scroll': '' })
@@ -246,6 +260,37 @@ describe('smooth scrolling', () => {
     for (const link of links.slice(1)) click(link)
     expect(instances[0].calls).toHaveLength(0)
     expect(click(links[0], { ctrlKey: true }) && instances[0].calls).toHaveLength(0)
+  })
+
+  it('leaves the wheel to the browser until the page has loaded, then glides from where it stands', async () => {
+    const frames = []
+    vi.stubGlobal('requestAnimationFrame', (callback) => frames.push(callback))
+    vi.stubGlobal('cancelAnimationFrame', () => {})
+    const state = vi.spyOn(document, 'readyState', 'get').mockReturnValue('loading')
+    await start('<p>Text</p>', { 'data-webx-smooth-scroll': '' })
+    const [lenis] = instances
+
+    // A reload restoring the place, an address with #anchor: the browser's jumps, natively.
+    expect(lenis.options.virtualScroll()).toBe(false)
+    state.mockReturnValue('complete')
+    window.dispatchEvent(new Event('load'))
+    expect(lenis.options.virtualScroll()).toBe(false)
+    expect(lenis.calls).toHaveLength(0)
+
+    // A frame on: the glide starts from the place the browser put the page in, with no way to go.
+    frames.forEach((frame) => frame(0))
+    expect(lenis.options.virtualScroll()).toBe(true)
+    expect(lenis.calls).toEqual([['reset']])
+
+    // Back from the cache: the same.
+    window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }))
+    expect(lenis.calls).toEqual([['reset'], ['reset']])
+    state.mockRestore()
+  })
+
+  it('glides at once on a page that has loaded before it starts', async () => {
+    await start('<p>Text</p>', { 'data-webx-smooth-scroll': '' })
+    expect(instances[0].options.virtualScroll()).toBe(true)
   })
 
   it('lets go when unmounted', async () => {

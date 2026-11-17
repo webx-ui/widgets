@@ -427,9 +427,39 @@ describe('header', () => {
     expect(root.style.getPropertyValue('--webx-header-height')).toBe('70px')
     expect(root.style.getPropertyValue('--webx-header-topbar-height')).toBe('30px')
 
+    expect(root.style.getPropertyValue('--webx-header-rest-height')).toBe('70px')
+
     window.webx.unmount(document.body)
     expect(root.classList.contains('webx-header-sticky')).toBe(false)
     expect(root.style.getPropertyValue('--webx-header-height')).toBe('')
+    expect(root.style.getPropertyValue('--webx-header-rest-height')).toBe('')
+  })
+
+  it('keeps its rest height while it eases back to it at the top, and takes it once it is there', async () => {
+    let height = 60
+    vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(function () {
+      return this.id === 'h' ? height : 0
+    })
+    await start(header('data-collapse="never" data-sticky="sticky"'))
+    const el = document.getElementById('h')
+    const root = document.documentElement.style
+    let running = []
+    el.getAnimations = () => running
+    expect(root.getPropertyValue('--webx-header-rest-height')).toBe('60px')
+
+    // Halfway back from its lower, scrolled look: what it is now, not what it rests at.
+    running = [{ transitionProperty: 'height' }]
+    height = 52
+    window.dispatchEvent(new Event('resize'))
+    await frame()
+    expect(root.getPropertyValue('--webx-header-height')).toBe('52px')
+    expect(root.getPropertyValue('--webx-header-rest-height')).toBe('60px')
+
+    // An animation of its own (a pulsing badge) is no transition; ended, the height is its rest.
+    running = [{ animationName: 'pulse' }]
+    height = 62
+    el.dispatchEvent(new Event('transitionend'))
+    expect(root.getPropertyValue('--webx-header-rest-height')).toBe('62px')
   })
 
   it('hides scrolling down and shows scrolling up, but not while its menu is open', async () => {

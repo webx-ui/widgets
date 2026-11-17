@@ -6,13 +6,20 @@
  * Lenis moves the window's own scroll, so `position: sticky`, the header's `--webx-header-height`
  * and `data-webx-reveal` see what they always see. It stays out of the way:
  *
- * - with reduced motion, on a touch screen (no hover, a coarse pointer: the finger has its own
+ * - in a preview of the panel (`data-webx-preview`: a frame as tall as its page has nothing to
+ *   glide), with reduced motion, on a touch screen (no hover, a coarse pointer: the finger has its own
  *   inertia), and without JavaScript the page scrolls natively — with the theme's own
  *   `scroll-behavior: smooth` for anchors, which `.webx-smooth-scroll` sets aside while it glides;
  * - a modal of the runtime (`html.webx-scroll-locked`: a dialog, the mobile menu, a form in a
  *   dialog) pauses it, closing it resumes it;
  * - whatever scrolls inside the page scrolls itself: any element that can, dialogs, the lightbox,
  *   the map, the panels of the widgets, and `[data-webx-scroll-native]` written by the theme.
+ *
+ * Until the page has loaded, the browser is still putting it in place: a reload brings back where
+ * it was, an address with `#anchor` jumps there, and both are done again as the page grows. Lenis
+ * keeps out of that — the wheel scrolls natively, each jump is taken as it comes — and from `load`
+ * (and a page back from the cache, `pageshow`) it glides from where the page stands: no glide up
+ * to the restored place, none from the top.
  *
  * A link to an anchor of the same page glides to it, over the sticky header (`scroll-margin-top`,
  * `scroll-padding-top` — the header keeps the latter), puts the anchor into the address as
@@ -27,6 +34,7 @@
 
 import '../css/smooth-scroll.css'
 import Lenis from 'lenis'
+import { inPreview } from './preview.js'
 
 const webx = (window.webx ??= {})
 
@@ -59,7 +67,7 @@ const media = (query) => window.matchMedia?.(query).matches ?? false
 
 /** Whether this visitor gets the glide: a mouse or a touchpad, and motion not reduced. */
 export function wanted() {
-  if (media('(prefers-reduced-motion: reduce)')) return false
+  if (inPreview() || media('(prefers-reduced-motion: reduce)')) return false
   return media('(hover: hover) and (pointer: fine)')
 }
 
@@ -125,6 +133,8 @@ export function smoothScroll(el) {
 
   const root = document.documentElement
   const options = settings(el)
+  // The wheel is the browser's until the page is in place (see above).
+  let settled = document.readyState === 'complete'
   const lenis = new Lenis({
     autoRaf: true,
     duration: options.duration,
@@ -134,6 +144,7 @@ export function smoothScroll(el) {
     syncTouch: false,
     allowNestedScroll: true,
     prevent: (node) => node.matches(NATIVE),
+    virtualScroll: () => settled,
   })
 
   root.classList.add('webx-smooth-scroll')
@@ -165,13 +176,27 @@ export function smoothScroll(el) {
 
   // Back and Forward: the browser has put the page where it was; the glide starts from there.
   const restored = () => lenis.reset()
+  // Loaded: the browser's last jump of the restore is behind, one frame on, where the page is drawn.
+  let frame = 0
+  const loaded = () => {
+    cancelAnimationFrame(frame)
+    frame = requestAnimationFrame(() => {
+      settled = true
+      lenis.reset()
+    })
+  }
 
   document.addEventListener('click', click)
   window.addEventListener('popstate', restored)
+  window.addEventListener('pageshow', restored)
+  if (!settled) window.addEventListener('load', loaded, { once: true })
 
   return () => {
     document.removeEventListener('click', click)
     window.removeEventListener('popstate', restored)
+    window.removeEventListener('pageshow', restored)
+    window.removeEventListener('load', loaded)
+    cancelAnimationFrame(frame)
     locks.disconnect()
     lenis.destroy()
     root.classList.remove('webx-smooth-scroll')
