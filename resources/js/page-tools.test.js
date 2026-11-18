@@ -1089,6 +1089,57 @@ describe('overlap', () => {
     expect(hero.style.getPropertyValue('--webx-overlap-lift')).toBe('500.0px')
   })
 
+  it('without scroll-driven animations, lets the browser end the pin: margins, not a translate per frame', async () => {
+    const { hero, over, main } = await load(false)
+    // The hero at the top of the page, the section right under it, the page 400 more after it.
+    hero.getBoundingClientRect = () => ({ top: 0, bottom: 500, height: 500 })
+    main.getBoundingClientRect = () => ({ top: 0, bottom: 1500, height: 1500 })
+    const sheet = document.createElement('style')
+    sheet.textContent =
+      '#main { padding-bottom: 0; border-bottom-width: 0 } #hero, #over { margin-top: 0; margin-bottom: 0 }'
+    document.head.append(sheet)
+    at(over, 500, 600)
+    resized.forEach((observer) => observer.callback([]))
+
+    // Let go when the section has come up 300 + 500: the hero's bottom is then at 1000 on the
+    // page. Its margin reaches from there to the parent's end, the section pulled back as much.
+    expect(hero.style.marginBottom).toBe('500px')
+    expect(over.style.marginTop).toBe('-500px')
+
+    // Past the hold the hero goes up with the page by itself: nothing is written per frame.
+    const observer = watched.find((o) => o.els.has(over))
+    observer.callback([{ target: over, isIntersecting: true }])
+    at(over, -100, 600)
+    window.dispatchEvent(new Event('scroll'))
+    run()
+    expect(hero.style.getPropertyValue('--webx-overlap-progress')).toBe('1.0000')
+    expect(hero.style.getPropertyValue('--webx-overlap-lift')).toBe('0.0px')
+
+    // Margins that would move the section (they do not meet): its own come back, and the
+    // written translate stays.
+    over.getBoundingClientRect = () => {
+      const top = over.style.marginTop ? 537 : 500
+      return { top, bottom: top + 600, height: 600 }
+    }
+    resized.forEach((observer) => observer.callback([]))
+    expect(hero.style.marginBottom).toBe('')
+    expect(over.style.marginTop).toBe('')
+    at(over, -100, 600)
+    window.dispatchEvent(new Event('scroll'))
+    run()
+    expect(hero.style.getPropertyValue('--webx-overlap-lift')).toBe('100.0px')
+
+    // With scroll-driven animations the stylesheet ends the pin: no margin is written.
+    const driven = await load(true)
+    driven.hero.getBoundingClientRect = hero.getBoundingClientRect
+    driven.main.getBoundingClientRect = main.getBoundingClientRect
+    at(driven.over, 500, 600)
+    resized.forEach((observer) => observer.callback([]))
+    expect(driven.hero.style.marginBottom).toBe('')
+    expect(driven.over.style.marginTop).toBe('')
+    sheet.remove()
+  })
+
   it('lets the section wait below its place, its edge standing a peek over the one above', async () => {
     const { hero, over, edge, main } = await load(true)
     expect(over.classList.contains('webx-overlap--rising')).toBe(true)

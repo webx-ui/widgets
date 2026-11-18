@@ -54,6 +54,17 @@
  * scroll while either is on screen write how far along both are — a read, then writes. The pin
  * itself is `position: sticky` on both paths, so it does not shake with the scroll.
  *
+ * On the script's path the pin also ends by itself, not by a written `translate`: the page
+ * scrolls on the compositor and a value written after the scroll comes a frame late, so the
+ * pinned section — drawn over what follows this one — would show its bottom under this
+ * section's bottom by a frame's scroll. A sticky box stops where its margin box meets the end of
+ * its parent: the pinned section gets a `margin-bottom` that reaches from where it is let go to
+ * the parent's end, and this section a `margin-top` pulled back by as much — the two meet, and
+ * nothing moves on the page, printed or under reduced motion either. Written with the sizes, in
+ * the style attribute (what was there comes back after), never on scroll; the parent is watched
+ * too, its end is part of the sum. Where the margins do not cancel out (this section would move),
+ * the written `translate` stays.
+ *
  * Nothing is pinned without JavaScript, under reduced motion or in print: the sections stand one
  * after another and the edge picture lies over the bottom of the one above.
  */
@@ -148,6 +159,14 @@ export function overlap(el) {
   let sizes = { start: 0, hold: 1, leave: 1, sink: 0, rise: 1, lead: 0, rest: 0, share: 0 }
   // Where this section is now, below its place: the script's path writes it, the focus reads it.
   let sunk = 0
+  // The script's path: where the pin ends by itself, set again with every measure (see above).
+  const kept = [pinned.style.marginBottom, el.style.marginTop]
+  let ends = false
+  const loose = () => {
+    ends = false
+    pinned.style.marginBottom = kept[0]
+    el.style.marginTop = kept[1]
+  }
 
   // This section's top in its place: without the `translate` it comes up with.
   function placeTop() {
@@ -157,6 +176,7 @@ export function overlap(el) {
 
   // Measures, then writes: no height here changes with a `translate` or the edge's clip.
   const measure = () => {
+    loose()
     const screen = document.documentElement.clientHeight || window.innerHeight
     const high = pinned.offsetHeight
     const own = el.offsetHeight
@@ -180,7 +200,8 @@ export function overlap(el) {
     const rest = Math.round(Math.min(lead, screen * part(el, '--webx-overlap-edge-rest', 0.03)))
     // The page's scroll at which the pinned section is gone: this one has come up `start + hold`
     // and the pinned one gone up `leave` after it. The first screen's parallax runs until then.
-    const gone = placeTop() + window.scrollY - screen + start + hold + Math.min(high, screen)
+    const from = placeTop()
+    const gone = from + window.scrollY - screen + start + hold + Math.min(high, screen)
     sizes = {
       start,
       hold,
@@ -205,6 +226,27 @@ export function overlap(el) {
     pinned.dispatchEvent(new CustomEvent('webx:overlap', { bubbles: true }))
     if (!settling && typeof requestAnimationFrame === 'function')
       settling = requestAnimationFrame(settle)
+    // `gone` is where the pinned section's bottom is when it is let go: its margin reaches from
+    // there to the end of the parent, this section pulled back as much.
+    if (driven) return
+    const parent = getComputedStyle(scope)
+    const below = parseFloat(getComputedStyle(pinned).marginBottom)
+    const reach =
+      scope.getBoundingClientRect().bottom +
+      window.scrollY -
+      parseFloat(parent.paddingBottom) -
+      parseFloat(parent.borderBottomWidth) -
+      gone
+    if (reach < below - 0.5) return
+    const pull = parseFloat(getComputedStyle(el).marginTop) - reach + below
+    pinned.style.marginBottom = `${reach}px`
+    el.style.marginTop = `${pull}px`
+    // Margins side by side add up, margins that meet take the larger: this section stays put.
+    el.style.marginTop = `${pull - placeTop() + from}px`
+    ends =
+      Math.abs(placeTop() - from) < 0.5 &&
+      Math.abs(parseFloat(getComputedStyle(pinned).marginBottom) - reach) < 0.5
+    if (!ends) loose()
   }
 
   // The ranges read again (see above), on the frame after the sizes: a class for a moment, a read
@@ -275,7 +317,9 @@ export function overlap(el) {
       const screen = document.documentElement.clientHeight || window.innerHeight
       const travelled = screen - (el.getBoundingClientRect().top - sunk)
       const fade = Math.min(1, Math.max(0, (travelled - sizes.start) / sizes.hold))
-      const lift = Math.min(sizes.leave, Math.max(0, travelled - sizes.start - sizes.hold))
+      const lift = ends
+        ? 0
+        : Math.min(sizes.leave, Math.max(0, travelled - sizes.start - sizes.hold))
       const back = Math.min(1, Math.max(0, (travelled - sizes.start) / sizes.rise))
       sunk = sizes.sink * (1 - back)
       el.style.setProperty('--webx-overlap-ahead', ahead(back, sizes.share).toFixed(4))
@@ -301,6 +345,8 @@ export function overlap(el) {
     })
     observer.observe(pinned)
     observer.observe(el)
+    // The parent's end is where the pin ends: what grows in it (a picture, a list) moves it.
+    resizing?.observe(scope)
     // Now, not on the observer's first answer: the edge is whole from this frame on.
     place()
     on(window, 'scroll', ask, { passive: true })
@@ -316,6 +362,7 @@ export function overlap(el) {
     observer?.disconnect()
     resizing?.disconnect()
     on.off()
+    loose()
     if (asked) cancelAnimationFrame(asked)
     if (settling) cancelAnimationFrame(settling)
     sit()
