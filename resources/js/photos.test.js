@@ -370,4 +370,24 @@ describe('photos', () => {
       null,
     ])
   })
+
+  it('gives a held photo in a <picture> its sources back too (§14.2)', async () => {
+    const root = await start(
+      markup({ count: 3 }).replace(
+        /<img class="webx-photos__photo" src="\/p([2-3])\.jpg"([^>]*)>/g,
+        '<picture class="webx-picture" style="display: contents"><source type="image/avif" data-webx-srcset="/p$1.avif 480w" sizes="100vw"><img class="webx-photos__photo" data-webx-src="/p$1.jpg" data-webx-srcset="/p$1.jpg 800w" sizes="100vw"$2></picture>',
+      ),
+    )
+    const sources = () =>
+      Array.from(root.querySelectorAll('source')).map((source) => source.getAttribute('srcset'))
+
+    // The next one ahead of time: its source and its own copies; the one after it still held.
+    expect(sources()).toEqual(['/p2.avif 480w', null])
+    expect(root.querySelectorAll('.webx-photos__photo')[1].getAttribute('srcset')).toBe(
+      '/p2.jpg 800w',
+    )
+
+    end(root)
+    expect(sources()).toEqual(['/p2.avif 480w', '/p3.avif 480w'])
+  })
 })

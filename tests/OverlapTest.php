@@ -45,7 +45,7 @@ final class OverlapTest extends TestCase
         $this->assertSame(
             '<section data-wx-block="x" data-webx-overlap><picture class="webx-overlap__edge" aria-hidden="true">'
             .'<source media="(max-width: 40rem)" srcset="/media/fog-phone.png" width="720" height="140">'
-            .'<img class="webx-overlap__image" src="/media/fog.png" alt="" width="1920" height="220" decoding="async"></picture><p>Words</p></section>',
+            .'<img class="webx-overlap__image" src="/media/fog.png" alt="" width="1920" height="220" decoding="async" fetchpriority="low"></picture><p>Words</p></section>',
             $html,
         );
     }

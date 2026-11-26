@@ -48,6 +48,9 @@
 
 .webx-photos__frame {
   display: grid;
+  /* One cell of the frame's size: an implicit `auto` track takes the photo's intrinsic width,
+     and with `srcset` and `sizes` that is the width `sizes` names — wider than a card. */
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
   aspect-ratio: var(--webx-photos-ratio);
   overflow: hidden;
   touch-action: var(--webx-photos-touch);

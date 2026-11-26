@@ -22,6 +22,10 @@ use WebxUi\Widgets\Facades\Widgets;
  * `autoplay` is milliseconds between photos — 5000 by default, `false` for none, and then no pause
  * button either. It does not start with `prefers-reduced-motion`; the button offers to.
  *
+ * `sizes` is how wide a photo stands — the card's share of the row; `100vw` by default. Every photo
+ * is a picture of the library (`@webxPicture`): its copies by width, in the formats the site cuts,
+ * the ones past the first without an address until they are shown (§14.2).
+ *
  * Without JavaScript the first photo stands alone. A card that is a link, its link stretched over
  * it, says so with `data-webx-photos-surface` on the card: the swipe is read off the card where it
  * lies over the frame, and a tap still follows the link.
@@ -30,8 +34,16 @@ final class Photos extends Component
 {
     public const int DELAY = 5000;
 
-    /** @var list<array{url: string, alt: string, width: ?int, height: ?int}> */
+    /**
+     * Each photo, and what `Pictures` makes its copies of: the value of the media field as given
+     * (its `path` finds the library's copies), or the address and the size for anything else.
+     *
+     * @var list<array{url: string, alt: string, width: ?int, height: ?int, picture: array<string, mixed>}>
+     */
     public array $photos = [];
+
+    /** How wide a photo stands, for its `srcset`: the card's share of the row. */
+    public string $sizes;
 
     /** Milliseconds between photos; 0 — they change only when asked. */
     public int $delay;
@@ -53,6 +65,7 @@ final class Photos extends Component
         float|int|string|null $ratio = null,
         ?string $label = null,
         public bool $eager = false,
+        ?string $sizes = null,
     ) {
         foreach ($images ?? [] as $image) {
             $url = self::filled(self::read($image, 'url')) ?? (is_string($image) ? self::filled($image) : null);
@@ -62,13 +75,17 @@ final class Photos extends Component
             }
 
             $alt = self::read($image, 'alt');
+            $width = self::size(self::read($image, 'width'));
             $this->photos[] = [
                 'url' => $url,
                 'alt' => is_string($alt) ? $alt : '',
-                'width' => self::size(self::read($image, 'width')),
+                'width' => $width,
                 'height' => self::size(self::read($image, 'height')),
+                'picture' => is_array($image) ? ['url' => $url, 'width' => $width] + $image : ['url' => $url, 'width' => $width],
             ];
         }
+
+        $this->sizes = self::filled($sizes) ?? '100vw';
 
         $this->delay = self::delay($autoplay);
         $this->shape = self::shape($ratio, $this->photos);

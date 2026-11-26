@@ -14,6 +14,9 @@ const HELD = '[data-webx-src], [data-webx-srcset]'
 /** Gives back the held addresses of `element` and of everything in it. */
 export function unhold(element) {
   if (!element || typeof element.querySelectorAll !== 'function') return
+  // A card's photo is the `<img>` itself: its sources stand beside it in its `<picture>`.
+  if (element.tagName === 'IMG' && element.parentElement?.tagName === 'PICTURE')
+    element = element.parentElement
   const held = element.matches?.(HELD) ? [element] : []
   held.push(...element.querySelectorAll(HELD))
   for (const node of held) {

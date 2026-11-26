@@ -25,6 +25,7 @@ use WebxUi\Routing\RoutingServiceProvider;
 use WebxUi\Seo\SeoServiceProvider;
 use WebxUi\Settings\SettingsServiceProvider;
 use WebxUi\Themes\ThemeServiceProvider;
+use WebxUi\Widgets\Overlap;
 use WebxUi\Widgets\Pictures;
 use WebxUi\Widgets\View\Sliders;
 use WebxUi\Widgets\WidgetsServiceProvider;
@@ -198,6 +199,81 @@ final class PicturesTest extends TestCase
         // Without the option, or with a text beside it: the width of the screen, or of half the column, as before.
         $this->assertSame(1, substr_count($this->render(['tabs' => [$tab]], 'tabs'), 'sizes="100vw"'));
         $this->assertSame(1, substr_count($this->render(['tabs' => [['text' => '<p>A word.</p>'] + $tab], 'media_bleed' => true], 'tabs'), 'sizes="(min-width: 40rem) 50vw, 100vw"'));
+    }
+
+    #[Test]
+    public function a_cards_photos_are_pictures_of_the_library_the_ones_past_the_first_held_back(): void
+    {
+        config(['webx-media.thumbs.formats' => ['avif']]);
+        $this->cut('photo-1', 'avif', [480, 1080, 1800]);
+        $this->cut('photo-2', 'avif', [480, 1080, 1800]);
+        $this->cut('photo-1', 'webp', [480, 1080]);
+        $this->cut('photo-2', 'webp', [480, 1080]);
+        $share = '(min-width: 832px) 34vw, (min-width: 512px) 50vw, 100vw';
+
+        $html = Blade::render('<x-webx-photos :images="$images" ratio="3/2" :sizes="$share" />', ['images' => [$this->value('photo-1'), $this->value('photo-2')], 'share' => $share], deleteCachedView: true);
+        [$first, $second] = array_slice(explode('<picture class="webx-picture"', $html), 1);
+
+        // The first: in AVIF and by width, for the card's share of the row — lazy, as it was.
+        $this->assertMatchesRegularExpression('~<source type="image/avif" srcset="[^"]+/photo-1/480\.avif\?v=\w+ 480w, [^"]+/1080\.avif\?v=\w+ 1080w, [^"]+/1800\.avif\?v=\w+ 1800w" sizes="'.preg_quote($share, '~').'">~', $first);
+        $this->assertMatchesRegularExpression('~<img class="webx-photos__photo is-active" src="[^"]+/photo-1\.webp\?v=\w+"[^>]* loading="lazy"[^>]* srcset="[^"]+/480\.webp\?v=\w+ 480w, [^"]+/1080\.webp\?v=\w+ 1080w, [^"]+/photo-1\.webp\?v=\w+ 1800w" sizes="'.preg_quote($share, '~').'">~', $first);
+
+        // The next: no address at all — neither its source nor its copies — until the script shows it.
+        $this->assertDoesNotMatchRegularExpression('~\s(?:src|srcset)="~', $second);
+        $this->assertMatchesRegularExpression('~<source type="image/avif" data-webx-srcset="[^"]+/photo-2/480\.avif~', $second);
+        $this->assertMatchesRegularExpression('~<img class="webx-photos__photo" data-webx-src="[^"]+/photo-2\.webp\?v=\w+"[^>]* data-webx-later[^>]* data-webx-srcset="[^"]+/480\.webp~', $second);
+
+        // One photo: the plain picture, with the same choice.
+        $one = Blade::render('<x-webx-photos :images="$images" class="b-x__picture" />', ['images' => [$this->value('photo-1')]], deleteCachedView: true);
+        $this->assertMatchesRegularExpression('~^\s*<picture class="webx-picture" style="display: contents"><source type="image/avif" srcset="[^"]+" sizes="100vw"><img class="b-x__picture" [^>]+ srcset="[^"]+" sizes="100vw"></picture>\s*$~', $one);
+    }
+
+    #[Test]
+    public function the_overlap_edge_is_offered_by_width_in_the_formats_at_low_priority(): void
+    {
+        // WebP is the files' own format: no `<source>` of it besides their own.
+        config(['webx-media.thumbs.formats' => ['avif', 'webp']]);
+        $this->cut('photo-1', 'avif', [480, 1080, 1800]);
+        $this->cut('photo-1', 'webp', [480, 1080]);
+        $this->cut('photo-2', 'avif', [480, 1080, 1800]);
+        $this->cut('photo-2', 'webp', [480, 1080]);
+        $phone = ['width' => 1800, 'height' => 600] + $this->value('photo-2');
+
+        $html = Overlap::edge(true, $this->value('photo-1'), $phone);
+
+        $this->assertMatchesRegularExpression(
+            '~^<picture class="webx-overlap__edge" aria-hidden="true">'
+            // The phone's file, in AVIF and in its own format, each by width with its own size.
+            .'<source media="\(max-width: 40rem\)" type="image/avif" srcset="[^"]+/photo-2/480\.avif\?v=\w+ 480w, [^"]+/1800\.avif\?v=\w+ 1800w" sizes="100vw" width="1800" height="600">'
+            .'<source media="\(max-width: 40rem\)" srcset="[^"]+/photo-2/480\.webp\?v=\w+ 480w, [^"]+/1080\.webp\?v=\w+ 1080w, [^"]+/photo-2\.webp\?v=\w+ 1800w" sizes="100vw" width="1800" height="600">'
+            // The wide file the same way; never lazy, but after everything else.
+            .'<source type="image/avif" srcset="[^"]+/photo-1/480\.avif[^"]+" sizes="100vw">'
+            .'<img class="webx-overlap__image" src="[^"]+/photo-1\.webp\?v=\w+" srcset="[^"]+/480\.webp\?v=\w+ 480w, [^"]+/1080\.webp\?v=\w+ 1080w, [^"]+/photo-1\.webp\?v=\w+ 1800w" sizes="100vw" alt="" width="1800" height="1200" decoding="async" fetchpriority="low"></picture>$~',
+            $html,
+        );
+        $this->assertStringNotContainsString('loading=', $html);
+    }
+
+    #[Test]
+    public function the_ribbon_waits_whole_and_each_frame_is_chosen_for_its_share_of_the_strip(): void
+    {
+        config(['webx-media.thumbs.formats' => ['avif']]);
+        $frames = array_map(function (int $n): array {
+            $this->cut("photo-{$n}", 'avif', [480, 1080, 1800]);
+            $this->cut("photo-{$n}", 'webp', [480, 1080]);
+
+            return ['picture' => $this->value("photo-{$n}")];
+        }, range(1, 6));
+
+        $html = $this->render(['view' => 'ribbon', 'frames' => $frames]);
+        $images = preg_match_all('~<img class="b-gallery__image"[^>]*>~', $html, $found) ? $found[0] : [];
+
+        $this->assertCount(6, $images);
+        $this->assertSame(6, substr_count($html, '<source type="image/avif" srcset="'));
+        foreach ($images as $at => $image) {
+            $this->assertStringContainsString(' loading="lazy"', $image, (string) $at);
+            $this->assertMatchesRegularExpression('~ srcset="[^"]+/480\.webp\?v=\w+ 480w, [^"]+ 1800w" sizes="\(min-width: 64em\) 25vw, \(min-width: 40em\) 40vw, 67vw"~', $image, (string) $at);
+        }
     }
 
     /** @param  list<int>  $widths The copies already cut: the bytes need not be a picture. */

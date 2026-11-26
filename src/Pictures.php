@@ -139,6 +139,17 @@ final class Pictures
         return array_values(array_unique(array_filter($formats, static fn (string $format): bool => in_array($format, ['avif', 'webp'], true))));
     }
 
+    /**
+     * The formats a picture is offered in besides its own: a `<source>` of its own format would
+     * say what its `<img>` (or its own `<source>`) already says.
+     *
+     * @return list<string>
+     */
+    public function formatsBesides(mixed $picture): array
+    {
+        return is_array($picture) ? array_values(array_diff($this->formats(), [$this->formatOf($picture)])) : $this->formats();
+    }
+
     /** Whether the pictures nobody sees yet are held back (`webx-widgets.pictures.defer`, null: with the formats). */
     public function deferring(): bool
     {

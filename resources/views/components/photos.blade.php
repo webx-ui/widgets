@@ -5,12 +5,16 @@
     the pause button are printed `hidden` and shown by the script, which would otherwise leave
     buttons that do nothing. Where the site holds back the pictures nobody sees yet (§14.2), the
     photos past the first have no address until the script shows them, and the next one ahead.
+    Every photo is a picture of the library: its copies by width for `sizes`, and a `<source>` per
+    format the site cuts, held back with it.
 
     Classes: webx-photos, __frame, __photo, __bars, __bar, __fill, __pause, __pause-icon,
     __play-icon; is-ready, is-paused, is-active, is-done — the script's but the first `is-active`.
 --}}
 @if (count($photos) === 1)
+@webxPicture($photos[0]['picture'], $sizes)
 <img {{ $attributes }} src="{{ $photos[0]['url'] }}" alt="{{ $photos[0]['alt'] }}" @unless ($eager) loading="lazy" @endunless @if ($photos[0]['width'] && $photos[0]['height']) width="{{ $photos[0]['width'] }}" height="{{ $photos[0]['height'] }}" @endif>
+@endwebxPicture
 @else
 <div {{ $attributes->class(['webx-photos'])->merge([
     'style' => "--webx-photos-ratio: {$shape}; --webx-photos-interval: ".($delay ?: \WebxUi\Widgets\View\Components\Photos::DELAY).'ms',
@@ -22,7 +26,9 @@
     <div class="webx-photos__frame">
         @foreach ($photos as $photo)
 @webxHeld(! $loop->first)
+@webxPicture($photo['picture'], $sizes)
             <img @class(['webx-photos__photo', 'is-active' => $loop->first]) src="{{ $photo['url'] }}" alt="{{ $photo['alt'] }}" @if (! $loop->first) data-webx-later @endif @if (! $loop->first || ! $eager) loading="lazy" @endif decoding="async" draggable="false" @if ($photo['width'] && $photo['height']) width="{{ $photo['width'] }}" height="{{ $photo['height'] }}" @endif>
+@endwebxPicture
 @endwebxHeld
         @endforeach
     </div>
