@@ -837,6 +837,58 @@ final class BlocksTest extends TestCase
     }
 
     #[Test]
+    public function a_wide_picture_without_text_scrolls_on_a_narrow_column_and_opens_at_its_point(): void
+    {
+        $plan = $this->picture('masterplan');
+        $plan->forceFill(['width' => 2560, 'height' => 1121])->save();
+        $tall = $this->picture('tower');
+        $tall->forceFill(['width' => 800, 'height' => 1200])->save();
+        $room = $this->picture('room');
+        $tabs = [
+            ['title' => 'Phase 1', 'picture' => ['path' => $plan->path], 'text' => '', 'focus' => 30],
+            ['title' => 'Phase 2', 'picture' => ['path' => $plan->path], 'text' => ''],
+            ['title' => 'Phase 3', 'picture' => ['path' => $plan->path], 'text' => '', 'focus' => 140],
+            ['title' => 'Phase 4', 'picture' => ['path' => $plan->path], 'text' => '', 'focus' => 'left'],
+            ['title' => 'Tower', 'picture' => ['path' => $tall->path], 'text' => '', 'focus' => 10],
+            ['title' => 'Room', 'picture' => ['path' => $room->path], 'text' => '<p>Bright.</p>', 'focus' => 10],
+        ];
+
+        $html = $this->render('tabs', ['tabs' => $tabs, 'media_bleed' => true]);
+
+        // The point of each wide picture; out of range clamped, not a number — the middle.
+        preg_match_all('~<div class="b-tabs__body b-tabs__body--scroll"\s+data-focus="(\d+)"\s*>~', $html, $found);
+        $this->assertSame(['30', '50', '100', '50'], $found[1]);
+        // Its size is explicit, so a lazy picture not loaded yet is as wide as it will be.
+        $this->assertSame(4, substr_count($html, 'style="--b-tabs-ratio: 2560 / 1121"'));
+        $this->assertMatchesRegularExpression('~<img class="b-tabs__picture" src="[^"]*masterplan\.webp[^"]*" alt=""\s+width="2560" height="1121"\s+style="--b-tabs-ratio: 2560 / 1121"\s+loading="lazy"\s*>~', $html);
+        // A picture taller than wide, and a tab with text, as before.
+        $this->assertSame(1, substr_count($html, '<div class="b-tabs__body">'));
+        $this->assertSame(1, substr_count($html, '<div class="b-tabs__body b-tabs__body--picture">'));
+        $this->assertSame(4, substr_count($html, 'data-focus='));
+
+        // Without the option nothing scrolls and nothing is marked: the picture as wide as the screen.
+        foreach ([['tabs' => $tabs], ['tabs' => $tabs, 'media_bleed' => false]] as $case => $values) {
+            $off = $this->render('tabs', $values);
+            $this->assertStringNotContainsString('b-tabs__body--scroll', $off, "case {$case}");
+            $this->assertStringNotContainsString('data-focus', $off, "case {$case}");
+            $this->assertStringNotContainsString('--b-tabs-ratio', $off, "case {$case}");
+        }
+
+        $type = json_decode((string) file_get_contents(__DIR__.'/../resources/blocks/tabs.json'), true);
+        $focus = array_column(array_column($type['schema'], null, 'id')['tabs']['children'], null, 'id')['focus'];
+        $this->assertSame(['wx-slider', 50, ['min' => 0, 'max' => 100, 'step' => 1]], [$focus['type'], $focus['default'], $focus['props']]);
+        $styles = (string) $type['styles'];
+        // In the narrow column's query, a direct child of the main column only, the height the theme's.
+        $this->assertMatchesRegularExpression('~@container \(max-width: 39\.99em\) \{[^@]*:where\(\.site-main\) > \.b-tabs--bleed \.b-tabs__body--scroll \{[^}]*overflow-x: auto;[^}]*overscroll-behavior-x: contain;[^}]*scrollbar-width: none;~s', $styles);
+        $this->assertStringContainsString('--b-tabs-scroll-height,', $styles);
+        $this->assertStringContainsString('aspect-ratio: var(--b-tabs-ratio);', $styles);
+        $this->assertStringNotContainsString('@media', $styles);
+        $script = (string) $type['script'];
+        $this->assertStringContainsString("addEventListener('webx:tab'", $script, 'placed on the change of tab the widget tells');
+        $this->assertStringContainsString("matchMedia('(prefers-reduced-motion: reduce)')", $script);
+    }
+
+    #[Test]
     public function the_tabs_type_reads_the_fields_its_template_uses(): void
     {
         $type = json_decode((string) file_get_contents(__DIR__.'/../resources/blocks/tabs.json'), true);
@@ -851,9 +903,9 @@ final class BlocksTest extends TestCase
             $this->assertSame('wx-media', $fields[$id]['type'], $id);
             $this->assertSame(['when' => 'overlap', 'is' => true], $fields[$id]['visible'], $id);
         }
-        $this->assertSame(['title', 'picture', 'text'], array_column($fields['tabs']['children'], 'id'));
-        $this->assertSame('wx-rich-text', $fields['tabs']['children'][2]['type']);
-        $this->assertTrue($fields['tabs']['children'][0]['localized'] && $fields['tabs']['children'][2]['localized']);
+        $this->assertSame(['title', 'picture', 'focus', 'text'], array_column($fields['tabs']['children'], 'id'));
+        $this->assertSame('wx-rich-text', $fields['tabs']['children'][3]['type']);
+        $this->assertTrue($fields['tabs']['children'][0]['localized'] && $fields['tabs']['children'][3]['localized']);
         $this->assertSame(array_keys($fields), array_keys($type['sample']), 'a value for every field');
         $this->assertCount(3, $type['sample']['tabs']);
         $this->assertSame('instant', $fields['transition']['default'], 'a new block switches the way an old one does');

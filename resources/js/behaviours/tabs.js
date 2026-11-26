@@ -14,6 +14,10 @@
  *
  * A panel's pictures held back by the server (WIDGETS §14.2) get their addresses when the panel is
  * selected; the next panel's too, ahead of time.
+ *
+ * Each selection — the first one too — dispatches `webx:tab` on the root (it bubbles), with the
+ * panel and its index in `detail`: what a block over the tabs hooks into instead of their clicks
+ * and keys.
  */
 
 import { idOf, listeners } from '../core.js'
@@ -71,6 +75,9 @@ export function tabs(root) {
     unhold(panels[index])
     unhold(panels[(index + 1) % panels.length])
     if (focus) buttons[index].focus()
+    root.dispatchEvent(
+      new CustomEvent('webx:tab', { bubbles: true, detail: { index, panel: panels[index] } }),
+    )
   }
 
   const anchor = location.hash

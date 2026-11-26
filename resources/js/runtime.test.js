@@ -139,6 +139,26 @@ describe('tabs', () => {
     document.querySelectorAll('[role="tab"]')[2].click()
     expect(images()).toEqual(['/a.jpg', '/b.jpg', '/c.jpg', '/d.jpg'])
   })
+  it('tells which panel is selected — the first one too — with webx:tab on the root', async () => {
+    const seen = []
+    const listen = (event) => seen.push(event.detail.index)
+    document.addEventListener('webx:tab', listen)
+    await start(markup)
+    const panels = [...document.querySelectorAll('[data-webx-tab]')]
+
+    document.querySelectorAll('[role="tab"]')[1].click()
+    const tabs = [...document.querySelectorAll('[role="tab"]')]
+    tabs[1].focus()
+    key(tabs[1], 'End')
+    document.removeEventListener('webx:tab', listen)
+
+    expect(seen).toEqual([0, 1, 2])
+    const last = []
+    panels[0].parentElement.addEventListener('webx:tab', (event) => last.push(event.detail.panel))
+    tabs[2].click()
+    expect(last).toEqual([panels[2]])
+  })
+
   it('opens on the panel the address points into', async () => {
     history.replaceState(null, '', '/#cards')
     await start(markup)

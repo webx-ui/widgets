@@ -184,6 +184,22 @@ final class PicturesTest extends TestCase
         $this->assertSame(1, substr_count($tabs, ' data-webx-src="'));
     }
 
+    #[Test]
+    public function a_wide_tab_picture_that_scrolls_on_a_phone_is_chosen_for_its_own_width_there(): void
+    {
+        config(['webx-media.thumbs.formats' => ['avif']]);
+        $this->cut('photo-1', 'avif', [480, 1080, 1800]);
+        $tab = ['title' => 'Plan', 'text' => '', 'picture' => $this->value('photo-1')];
+
+        // 1800 × 1200 at the screen's height is 150 screens' widths of a phone, not one.
+        $wide = $this->render(['tabs' => [$tab], 'media_bleed' => true], 'tabs');
+        $this->assertMatchesRegularExpression('~<source type="image/avif" srcset="[^"]+" sizes="\(max-width: 40rem\) 150vw, 100vw">\s*<img class="b-tabs__picture" [^>]*style="--b-tabs-ratio: 1800 / 1200"~', $wide, 'its size survives the formats');
+
+        // Without the option, or with a text beside it: the width of the screen, or of half the column, as before.
+        $this->assertSame(1, substr_count($this->render(['tabs' => [$tab]], 'tabs'), 'sizes="100vw"'));
+        $this->assertSame(1, substr_count($this->render(['tabs' => [['text' => '<p>A word.</p>'] + $tab], 'media_bleed' => true], 'tabs'), 'sizes="(min-width: 40rem) 50vw, 100vw"'));
+    }
+
     /** @param  list<int>  $widths The copies already cut: the bytes need not be a picture. */
     private function cut(string $name, string $format, array $widths): void
     {
