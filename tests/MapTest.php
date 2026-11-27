@@ -131,7 +131,7 @@ final class MapTest extends TestCase
         $html = (string) $this->get('/map')->assertOk()->getContent();
 
         $this->assertStringContainsString("<link rel=\"stylesheet\" href=\"{$base}/map.css\">", $html);
-        $this->assertStringContainsString("<script type=\"module\" src=\"{$base}/map.js\"></script>", $html);
+        $this->assertLoadsScript('map', $html);
         $this->assertMatchesRegularExpression('/data-webx-consent-row="media"(?![^>]*hidden)/', $html);
     }
 

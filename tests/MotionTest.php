@@ -154,7 +154,7 @@ final class MotionTest extends TestCase
 
         foreach (['counter', 'countdown'] as $widget) {
             $this->assertMatchesRegularExpression("~<link rel=\"stylesheet\" href=\"[^\"]+/{$widget}\.css\">~", $html);
-            $this->assertMatchesRegularExpression("~<script type=\"module\" src=\"[^\"]+/{$widget}\.js\"></script>~", $html);
+            $this->assertLoadsScript($widget, $html);
         }
 
         $this->assertStringNotContainsString('video.js', $html);

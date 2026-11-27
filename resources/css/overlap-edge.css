@@ -1,0 +1,85 @@
+/*
+ * The edge of `data-webx-overlap` at rest (spec §14.1): what the page needs before any stylesheet
+ * of the site has come. `Overlap::edge()` prints this file inline with the first edge of the page,
+ * the runtime's stylesheet has it too (overlap.css says the rest).
+ *
+ * Why inline: a site with critical CSS (THEMES §13.3) defers every stylesheet, and its critical
+ * file holds the rules of the pages it was read from. On a page it was not read from, the edge
+ * would stand in the flow — a picture as tall as half the screen at the top of its section —
+ * until runtime.css came, then jump out of it: the section's words moved up by the edge's height,
+ * a layout shift of a quarter of the screen. A few hundred bytes are printed once per page, and
+ * the section with its edge is drawn in its place from the first paint.
+ *
+ * Without the script: the section stands where it is and the edge, as wide as the section, lies
+ * over the bottom of the one above, only its lowest `--webx-overlap-peek` of the screen showing.
+ * All in `:where()` or one class: a theme or a block restyles it with a rule of its own.
+ */
+
+:where(:root) {
+  /* Parts of the screen's height: how much of the edge stands over the section above at rest, and
+     the tallest the edge gets — a picture as wide as the page grows with the page, not the screen. */
+  --webx-overlap-peek: 0.18;
+  --webx-overlap-edge-max: 0.6;
+}
+
+/* Over the section's top, its bottom row a pixel into the section: no seam. As wide as the
+   section without the script (the section's own width never widens the page); as wide as the
+   page with it, inside the clipping parent. Over the section above. */
+.webx-overlap__edge {
+  position: absolute;
+  bottom: calc(100% - 1px);
+  left: 0;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  max-width: none;
+  pointer-events: none;
+  /* At rest: its lowest part only. A clip, not a height: the box stays as tall when the script
+     shows all of it — no layout shift. */
+  clip-path: inset(max(0px, calc(100% - var(--webx-overlap-peek) * 100vh)) 0 0 0);
+  clip-path: inset(max(0px, calc(100% - var(--webx-overlap-peek) * 100svh)) 0 0 0);
+  /* And its top dissolves: nothing moves under reduced motion or without the script, and a fog cut
+     straight across is a hard band over the screen above. Down from the cut over as much as is
+     shown, but no more than lies above the cut — an edge shorter than that is not cut at all, its
+     picture's own fade is its top, and the mask leaves it whole. */
+  mask-image: linear-gradient(
+    to bottom,
+    transparent max(0px, calc(100% - var(--webx-overlap-peek) * 100vh)),
+    currentColor
+      calc(
+        max(0px, calc(100% - var(--webx-overlap-peek) * 100vh)) +
+          min(
+            var(--webx-overlap-peek) * 100vh,
+            max(0px, calc(100% - var(--webx-overlap-peek) * 100vh))
+          )
+      )
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent max(0px, calc(100% - var(--webx-overlap-peek) * 100svh)),
+    currentColor
+      calc(
+        max(0px, calc(100% - var(--webx-overlap-peek) * 100svh)) +
+          min(
+            var(--webx-overlap-peek) * 100svh,
+            max(0px, calc(100% - var(--webx-overlap-peek) * 100svh))
+          )
+      )
+  );
+}
+
+/* No taller than a part of the screen: cut from the top, so its bottom row still meets the section.
+   Its top fades in, so a cut through a cloud is not a straight line; a fog's top is clear anyway. */
+.webx-overlap__image {
+  display: block;
+  width: 100%;
+  max-width: none;
+  height: auto;
+  max-height: calc(var(--webx-overlap-edge-max) * 100vh);
+  max-height: calc(var(--webx-overlap-edge-max) * 100svh);
+  border-radius: 0;
+  object-fit: cover;
+  object-position: center bottom;
+  /* A mask reads only the alpha: the colour of the words is opaque, and no literal colour is needed. */
+  mask-image: linear-gradient(to bottom, transparent, currentColor 15%);
+}

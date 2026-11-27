@@ -307,7 +307,8 @@ final class WidgetsPageReader implements AuditPageReader
     /**
      * Forms of `<x-webx-form>` — an inbox form among them — on a page with no `form.js`: neither
      * `@webxTheme` nor `@webxWidgets` in the layout, or the files never synced. Each still sends,
-     * with a reload, and is checked by the server only.
+     * with a reload, and is checked by the server only. `form.js` in the list of scripts the
+     * runtime fetches when wanted (WIDGETS §4.1) is loaded as much as a tag of its own.
      *
      * @return array{count: int, markup: list<string>}|array{}
      */
@@ -324,6 +325,16 @@ final class WidgetsPageReader implements AuditPageReader
 
             if (self::runs($script) && str_ends_with($path, '/form.js')) {
                 return [];
+            }
+        }
+
+        foreach ($document->querySelectorAll('script[type="application/json"][data-webx-on-demand]') as $list) {
+            foreach ((array) json_decode((string) $list->textContent, true) as $entry) {
+                foreach (is_array($entry) ? (array) ($entry['src'] ?? []) : [] as $src) {
+                    if (is_string($src) && str_ends_with((string) parse_url($src, PHP_URL_PATH), '/form.js')) {
+                        return [];
+                    }
+                }
             }
         }
 

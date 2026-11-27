@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Facade;
  * @method static list<string> forms()
  * @method static string finish(string $html)
  * @method static int sequence(string $name)
+ * @method static void eager(string $widget)
  *
  * @see \WebxUi\Widgets\Widgets
  */

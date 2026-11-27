@@ -214,7 +214,7 @@ final class CompareTocTest extends TestCase
             $html = (string) $this->get($page)->assertOk()->getContent();
 
             $this->assertMatchesRegularExpression("~<link rel=\"stylesheet\" href=\"[^\"]+/{$widget}\.css\">~", $html);
-            $this->assertMatchesRegularExpression("~<script type=\"module\" src=\"[^\"]+/{$widget}\.js\"></script>~", $html);
+            $this->assertLoadsScript($widget, $html);
         }
     }
 

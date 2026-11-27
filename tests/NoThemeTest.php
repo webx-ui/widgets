@@ -70,8 +70,12 @@ class NoThemeTest extends TestCase
         $this->artisan('webx:theme:sync')->assertSuccessful();
         $html = (string) $this->get('/asked')->assertOk()->getContent();
 
-        foreach (['runtime', 'form', 'field'] as $widget) {
-            $this->assertMatchesRegularExpression('~<script type="module" src="[^"]+/themes/webx-ui/widgets/[0-9a-f]{12}/'.$widget.'\.js"></script>~', $html);
+        $this->assertMatchesRegularExpression('~<script type="module" src="[^"]+/themes/webx-ui/widgets/[0-9a-f]{12}/runtime\.js"></script>~', $html);
+
+        // The form's scripts wait for the form to come near (§4.1): the runtime, there without a theme too, fetches them.
+        foreach (['form', 'field'] as $widget) {
+            $this->assertMatchesRegularExpression('~/themes/webx-ui/widgets/[0-9a-f]{12}/'.$widget.'\.js~', $html);
+            $this->assertLoadsScript($widget, $html);
         }
 
         $this->assertLessThan(strpos($html, '</body>'), (int) strpos($html, 'field.js'));

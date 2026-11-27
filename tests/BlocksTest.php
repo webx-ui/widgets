@@ -755,7 +755,7 @@ final class BlocksTest extends TestCase
         ]);
 
         $this->assertMatchesRegularExpression(
-            '~<section class="b-tabs b-tabs--top" data-wx-block="tabs" data-webx-overlap>\s*<picture class="webx-overlap__edge" aria-hidden="true"><source media="\(max-width: 40rem\)" srcset="[^"]*fog-phone\.webp[^"]*"[^>]*>\s*<img class="webx-overlap__image" src="[^"]*fog\.webp~',
+            '~<section class="b-tabs b-tabs--top" data-wx-block="tabs" data-webx-overlap>\s*(?:<style data-webx-overlap-edge>[^<]+</style>)?<picture class="webx-overlap__edge" aria-hidden="true"><source media="\(max-width: 40rem\)" srcset="[^"]*fog-phone\.webp[^"]*"[^>]*>\s*<img class="webx-overlap__image" src="[^"]*fog\.webp~',
             $html,
             'the root marked, its edge first inside it',
         );

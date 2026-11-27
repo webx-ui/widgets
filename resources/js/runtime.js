@@ -8,6 +8,9 @@
  *
  * The light behaviours (§6), the mobile menu and the header, the dropdown panel and the form in a dialog (§6.1–§6.4), the reveal on scroll, the parallax of a picture and the section that slides over the one above (§14) live here and not in files of their own: an attribute in any
  * template switches them on, with no component to claim them.
+ *
+ * It also fetches the scripts of the widgets that wait until wanted (§4.1, on-demand.js): those
+ * of the page when it starts, and those a piece of the page brings when `webx.mount(root)` runs.
  */
 
 import '../css/runtime.css'
@@ -21,6 +24,7 @@ import { header } from './behaviours/header.js'
 import { headerNav } from './behaviours/header-nav.js'
 import { mobileMenu } from './behaviours/mobile-menu.js'
 import { mobileNav } from './behaviours/mobile-nav.js'
+import { onDemand } from './on-demand.js'
 import { overlap } from './behaviours/overlap.js'
 import { parallax } from './behaviours/parallax.js'
 import { reveal } from './behaviours/reveal.js'
@@ -39,9 +43,11 @@ if (typeof webx.widget !== 'function') {
     define(name, selector, setup)
     mount(document, name)
   }
+  const demand = onDemand()
   webx.mount = (root = document) => {
     mountBefore?.call(webx, root)
     mount(root)
+    demand.scan(root)
   }
   webx.unmount = (root = document) => {
     unmountBefore?.call(webx, root)
@@ -75,4 +81,6 @@ if (typeof webx.widget !== 'function') {
     ? document.getElementById(decodeURIComponent(location.hash.slice(1)))
     : null
   if (target instanceof HTMLDialogElement) openDialog(target)
+
+  demand.scan(document)
 }

@@ -8,7 +8,7 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
 
 - **Loading** — `dist/runtime.js|css` (behaviours, header, mobile menu) on every page with a theme;
   a widget's own `dist/<name>.js|css` only where a component claims it (`Widgets::need('<name>')`,
-  facade `WebxUi\Widgets\Facades\Widgets`): CSS at `@webxTheme` — claimed only inside `later()` / `@webxLater(<when>)…@endwebxLater` (a closed dialog's form, a hidden banner) it does not block the first paint — JS before `</body>`. A site
+  facade `WebxUi\Widgets\Facades\Widgets`): CSS at `@webxTheme` — claimed only inside `later()` / `@webxLater(<when>)…@endwebxLater` (a closed dialog's form, a hidden banner) it does not block the first paint — JS before `</body>`; a widget of `Widgets::ON_DEMAND` (slider, lightbox, map, the form's group…) as an entry of `data-webx-on-demand` the runtime fetches when its element comes near (`on-demand.js`), at once with `data-webx-eager="<name>"` / `Widgets::eager()`. A site
   without a theme writes `@webxWidgets` before `</body>` (scripts only, no styles, no consent
   banner); `webx:setup --no-theme` adds it, `webx:theme:sync` publishes the files either way.
   `webx.mount(root)` starts what is new in `root`, `webx.unmount(root)` lets it go,

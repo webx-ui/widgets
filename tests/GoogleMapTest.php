@@ -121,7 +121,7 @@ final class GoogleMapTest extends TestCase
         $html = (string) $this->get('/map')->assertOk()->getContent();
 
         $this->assertStringContainsString("<link rel=\"stylesheet\" href=\"{$base}/map-google.css\">", $html);
-        $this->assertStringContainsString("<script type=\"module\" src=\"{$base}/map-google.js\"></script>", $html);
+        $this->assertLoadsScript('map-google', $html);
         $this->assertStringNotContainsString("{$base}/map.js", $html);
         $this->assertStringNotContainsString('maps.googleapis.com', $html, 'nothing of Google before consent, not even a preconnect');
         $this->assertMatchesRegularExpression('/data-webx-consent-row="media"(?![^>]*hidden)/', $html);

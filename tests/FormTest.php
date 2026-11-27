@@ -346,7 +346,7 @@ final class FormTest extends TestCase
         $this->artisan('webx:theme:sync')->assertSuccessful();
         $html = (string) $this->get('/contact')->getContent();
 
-        $this->assertMatchesRegularExpression('~<script type="module" src="[^"]+/form\.js"></script>~', $html);
+        $this->assertLoadsScript('form', $html);
     }
 
     #[Test]

@@ -70,4 +70,37 @@ abstract class TestCase extends Orchestra
     {
         return str_replace('\\', '/', __DIR__).'/Fixtures/'.$path;
     }
+
+    /**
+     * The page loads the widget's script: a tag of its own, or an entry of the list of those that
+     * wait until wanted (spec §4.1) — the runtime fetches it when its element comes near.
+     */
+    protected function assertLoadsScript(string $widget, string $html, string $message = ''): void
+    {
+        $tag = preg_match('~<script type="module" src="[^"]+/'.preg_quote($widget, '~').'\.js"></script>~', $html) === 1;
+
+        $this->assertTrue($tag || in_array($widget, self::onDemand($html), true), $message !== '' ? $message : "The page does not load {$widget}.js.");
+    }
+
+    /**
+     * The widgets of the page's list of scripts that wait until wanted (spec §4.1), by file name.
+     *
+     * @return list<string>
+     */
+    protected static function onDemand(string $html): array
+    {
+        $found = [];
+
+        if (preg_match_all('~<script type="application/json" data-webx-on-demand>(.*?)</script>~s', $html, $lists) > 0) {
+            foreach ($lists[1] as $json) {
+                foreach ((array) json_decode($json, true) as $entry) {
+                    foreach ((array) ($entry['src'] ?? []) as $src) {
+                        $found[] = basename((string) parse_url((string) $src, PHP_URL_PATH), '.js');
+                    }
+                }
+            }
+        }
+
+        return $found;
+    }
 }

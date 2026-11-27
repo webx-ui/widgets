@@ -25,9 +25,14 @@ final class DistTest extends PlainTestCase
      * Runtime with the behaviours, the mobile menu and the header: 16.25 KB gzip (§4). Raised from
      * 16 KB for the overlap's fallback, where the pinned section's sticky ends by itself (margins
      * written with the sizes) instead of a translate per frame that came a frame late and showed a
-     * band of it under the covering section: about 0.2 KB, with 0.1 KB left before it.
+     * band of it under the covering section: about 0.2 KB, with 0.1 KB left before it. Raised to
+     * 17 KB for the loader of the widgets that wait until wanted (§4.1, on-demand.js): 0.75 KB on
+     * every page, against the slider's 33 KB and the lightbox's 24 KB a page no longer fetches
+     * before its gallery comes near. Raised to 17.25 KB for the overlap's edge that stays at rest
+     * when its section has no way to come up (a short section under a short hero): a few bytes,
+     * and the fog no longer lies over the hero's words from the first frame.
      */
-    private const int RUNTIME_BUDGET = 16 * 1024 + 256;
+    private const int RUNTIME_BUDGET = 17 * 1024 + 256;
 
     /** The consent banner, on every page too: 6 KB gzip (§4). */
     private const int CONSENT_BUDGET = 6 * 1024;

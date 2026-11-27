@@ -229,7 +229,7 @@ final class PicturesTest extends TestCase
     }
 
     #[Test]
-    public function the_overlap_edge_is_offered_by_width_in_the_formats_at_low_priority(): void
+    public function the_overlap_edge_is_offered_by_width_in_the_formats_at_the_browsers_priority(): void
     {
         // WebP is the files' own format: no `<source>` of it besides their own.
         config(['webx-media.thumbs.formats' => ['avif', 'webp']]);
@@ -242,16 +242,18 @@ final class PicturesTest extends TestCase
         $html = Overlap::edge(true, $this->value('photo-1'), $phone);
 
         $this->assertMatchesRegularExpression(
-            '~^<picture class="webx-overlap__edge" aria-hidden="true">'
+            '~^<style data-webx-overlap-edge>[^<]+</style><picture class="webx-overlap__edge" aria-hidden="true">'
             // The phone's file, in AVIF and in its own format, each by width with its own size.
             .'<source media="\(max-width: 40rem\)" type="image/avif" srcset="[^"]+/photo-2/480\.avif\?v=\w+ 480w, [^"]+/1800\.avif\?v=\w+ 1800w" sizes="100vw" width="1800" height="600">'
             .'<source media="\(max-width: 40rem\)" srcset="[^"]+/photo-2/480\.webp\?v=\w+ 480w, [^"]+/1080\.webp\?v=\w+ 1080w, [^"]+/photo-2\.webp\?v=\w+ 1800w" sizes="100vw" width="1800" height="600">'
-            // The wide file the same way; never lazy, but after everything else.
+            // The wide file the same way; never lazy, and at the priority the browser gives a
+            // picture: high in the first screen, where it may be the largest paint, low under it.
             .'<source type="image/avif" srcset="[^"]+/photo-1/480\.avif[^"]+" sizes="100vw">'
-            .'<img class="webx-overlap__image" src="[^"]+/photo-1\.webp\?v=\w+" srcset="[^"]+/480\.webp\?v=\w+ 480w, [^"]+/1080\.webp\?v=\w+ 1080w, [^"]+/photo-1\.webp\?v=\w+ 1800w" sizes="100vw" alt="" width="1800" height="1200" decoding="async" fetchpriority="low"></picture>$~',
+            .'<img class="webx-overlap__image" src="[^"]+/photo-1\.webp\?v=\w+" srcset="[^"]+/480\.webp\?v=\w+ 480w, [^"]+/1080\.webp\?v=\w+ 1080w, [^"]+/photo-1\.webp\?v=\w+ 1800w" sizes="100vw" alt="" width="1800" height="1200" decoding="async"></picture>$~',
             $html,
         );
         $this->assertStringNotContainsString('loading=', $html);
+        $this->assertStringNotContainsString('fetchpriority', $html);
     }
 
     #[Test]

@@ -30,7 +30,7 @@ final class DragScrollTest extends TestCase
         $this->artisan('webx:theme:sync')->assertSuccessful();
 
         $html = (string) $this->get('/strip')->assertOk()->getContent();
-        $this->assertMatchesRegularExpression('~<script type="module" src="[^"]+/drag-scroll\.js"></script>~', $html);
+        $this->assertLoadsScript('drag-scroll', $html);
         $this->assertMatchesRegularExpression('~<link rel="stylesheet" href="[^"]+/drag-scroll\.css">~', $html);
 
         $plain = (string) $this->get('/plain')->assertOk()->getContent();

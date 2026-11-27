@@ -139,7 +139,7 @@ final class SuggestTest extends TestCase
 
         $html = (string) $this->get('/with-search')->assertOk()->getContent();
         $this->assertMatchesRegularExpression('~<link rel="stylesheet" href="[^"]+/suggest\.css">~', $html);
-        $this->assertMatchesRegularExpression('~<script type="module" src="[^"]+/suggest\.js"></script>~', $html);
+        $this->assertLoadsScript('suggest', $html);
         // A search box is not a form of the shell: form.js stays away.
         $this->assertStringNotContainsString('form.js', $html);
 

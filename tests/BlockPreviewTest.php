@@ -189,7 +189,9 @@ final class BlockPreviewTest extends TestCase
 
         foreach ([$live, $preview] as $html) {
             $this->assertSame(1, substr_count($html, "{$this->base}/map.css\">"));
-            $this->assertSame(1, substr_count($html, "{$this->base}/map.js\"></script>"));
+            // The page's own list of scripts that wait until wanted (§4.1), as on the live page.
+            $this->assertSame(1, substr_count($html, "{$this->base}/map.js"));
+            $this->assertLoadsScript('map', $html);
         }
 
         $this->assertStringNotContainsString('contacts.css', $preview);

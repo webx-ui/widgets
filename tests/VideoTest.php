@@ -87,7 +87,7 @@ final class VideoTest extends TestCase
         $html = (string) $this->get('/video')->assertOk()->getContent();
 
         $this->assertStringContainsString("<link rel=\"stylesheet\" href=\"{$base}/video.css\">", $html);
-        $this->assertStringContainsString("<script type=\"module\" src=\"{$base}/video.js\"></script>", $html);
+        $this->assertLoadsScript('video', $html);
         $this->assertMatchesRegularExpression('/data-webx-consent-row="media"(?![^>]*hidden)/', $html);
     }
 

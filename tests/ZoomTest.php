@@ -93,9 +93,9 @@ final class ZoomTest extends TestCase
             $html = (string) $this->get($page)->assertOk()->getContent();
 
             $this->assertMatchesRegularExpression('~<link rel="stylesheet" href="[^"]+/zoom\.css">~', $html, $page);
-            $this->assertMatchesRegularExpression('~<script type="module" src="[^"]+/zoom\.js"></script>~', $html, $page);
+            $this->assertLoadsScript('zoom', $html, $page);
             // The keyboard's way in is the lightbox: it comes along.
-            $this->assertMatchesRegularExpression('~<script type="module" src="[^"]+/lightbox\.js"></script>~', $html, $page);
+            $this->assertLoadsScript('lightbox', $html, $page);
         }
 
         $plain = (string) $this->get('/plain')->assertOk()->getContent();

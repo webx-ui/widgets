@@ -206,7 +206,7 @@ final class PagesNoticeTest extends TestCase
             $this->assertMatchesRegularExpression("~<link rel=\"stylesheet\" href=\"[^\"]+/{$widget}\.css\">~", $html);
         }
 
-        $this->assertMatchesRegularExpression('~<script type="module" src="[^"]+/load-more\.js"></script>~', $html);
+        $this->assertLoadsScript('load-more', $html);
         $this->assertDoesNotMatchRegularExpression('~/pagination\.js~', $html);
     }
 

@@ -338,6 +338,24 @@ rendered too — the marker becomes the stylesheets and the scripts go before `<
 The files are published by `php artisan webx:theme:sync` next to the themes', under
 `public/themes/webx-ui/widgets/<hash>/`.
 
+### Scripts on demand
+
+A widget that starts on an element of its own — the slider, the lightbox, the map, the form and
+its parts, and the others of `Widgets::ON_DEMAND` — gets no `<script>` tag. The page carries a
+list instead, `<script type="application/json" data-webx-on-demand>`, and the runtime fetches a
+widget's file when one of its elements comes within 200px of the window, or is touched or focused
+first. A page where none comes near never fetches it. Its stylesheet is in the head as before, and
+what waits works without its script: a click or a submit that comes first is held and given again
+once the widget has started. The parts of a form are fetched together and run in order.
+
+A widget of the first screen that must not wait for the runtime is wanted at once, as a tag:
+
+```blade
+<x-webx-slider data-webx-eager="slider" …>   {{-- or Widgets::eager('slider') --}}
+```
+
+`data-webx-eager` takes several names, separated by spaces, on any element of the page.
+
 ### On a site without a theme
 
 `@webxTheme` prints nothing there, so the marker never stands on the page — and every

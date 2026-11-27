@@ -267,7 +267,7 @@ final class SliderTest extends TestCase
 
         $html = (string) $this->get('/slides')->assertOk()->getContent();
         $this->assertMatchesRegularExpression('~<link rel="stylesheet" href="[^"]+/slider\.css">~', $html);
-        $this->assertMatchesRegularExpression('~<script type="module" src="[^"]+/slider\.js"></script>~', $html);
+        $this->assertLoadsScript('slider', $html);
 
         $this->assertStringNotContainsString('slider.js', (string) $this->get('/plain')->assertOk()->getContent());
     }

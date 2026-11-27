@@ -150,7 +150,7 @@ final class LightboxTest extends TestCase
             $html = (string) $this->get($page)->assertOk()->getContent();
 
             $this->assertMatchesRegularExpression('~<link rel="stylesheet" href="[^"]+/lightbox\.css">~', $html, $page);
-            $this->assertMatchesRegularExpression('~<script type="module" src="[^"]+/lightbox\.js"></script>~', $html, $page);
+            $this->assertLoadsScript('lightbox', $html, $page);
             $this->assertSame(1, substr_count($html, '<script type="application/json" id="webx-lightbox">'), $page);
             // Told before the script that reads it.
             $this->assertLessThan(strpos($html, 'lightbox.js'), (int) strpos($html, 'id="webx-lightbox"'), $page);

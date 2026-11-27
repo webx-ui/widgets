@@ -389,7 +389,9 @@ final class AuditTest extends TestCase
                 .'<div class="webx-toc" data-webx-toc><nav class="webx-toc__nav"><a class="webx-toc__link" href="#intro">Intro</a><a class="webx-toc__link" href="#gone">Gone</a></nav><h2 id="intro">Intro</h2></div>'
                 // Show more whose links an override lost: a button and nothing a crawler follows.
                 .'<div class="webx-load-more" id="buttoned" data-webx-load-more="page" data-next="/slider?page=2"><div data-webx-load-more-list><p>1</p></div><a href="/slider?page=3">3</a><button type="button">Show more</button></div>'
-                .'<div class="slide" id="unlinked" data-webx-zoom="/big.jpg"><img src="/small.jpg" alt=""></div><a href="/big.jpg" data-webx-zoom data-webx-lightbox="g" data-width="1800" data-height="1200"><img src="/big.jpg" alt=""></a><figure data-webx-zoom><a href="/big.jpg"><img src="/big.jpg" alt=""></a></figure>'),
+                .'<div class="slide" id="unlinked" data-webx-zoom="/big.jpg"><img src="/small.jpg" alt=""></div><a href="/big.jpg" data-webx-zoom data-webx-lightbox="g" data-width="1800" data-height="1200"><img src="/big.jpg" alt=""></a><figure data-webx-zoom><a href="/big.jpg"><img src="/big.jpg" alt=""></a></figure>'
+                // A form whose script waits until wanted (§4.1): in the runtime's list, quiet too.
+                .'<form class="webx-form" method="post" action="/subscribe" data-webx-send></form><script type="application/json" data-webx-on-demand>{"form":{"src":["/themes/webx-ui/widgets/0123456789ab/form.js?v=1"],"on":"form[data-webx-send]"}}</script>'),
             '/contacts' => $page('Contacts', '<div class="webx-contact-button"></div><div class="webx-contact-bar"></div>'
                 // A map the owner lets load without consent: its tiles are the script's, no address in the markup.
                 .'<div class="webx-map" data-webx-map=\'{"consent":false}\'></div>'

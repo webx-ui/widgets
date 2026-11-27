@@ -29,6 +29,9 @@ final class Overlap
     /** The type a browser knows a format of the site's copies by. */
     private const array TYPES = ['avif' => 'image/avif', 'webp' => 'image/webp'];
 
+    /** What the first edge of a request claims: the stylesheet of the edge at rest goes with it. */
+    private const string REST = 'overlap-edge';
+
     public static function attributes(mixed $on): string
     {
         return self::on($on) ? ' data-webx-overlap' : '';
@@ -71,10 +74,50 @@ final class Overlap
         $own = $pictures->sources($main);
         $choice = $own !== null ? ' srcset="'.e($own).'" sizes="'.self::SIZES.'"' : '';
 
-        // Low priority, not lazy: on a phone the edge may be in the first screen, but it is fog —
-        // the words of the page and its first picture come before it.
-        return '<picture class="webx-overlap__edge" aria-hidden="true">'.$sources
-            .'<img class="webx-overlap__image" src="'.e($main['url']).'"'.$choice.' alt=""'.self::size($main).' decoding="async" fetchpriority="low"></picture>';
+        // Neither lazy nor of low priority: the browser's own. Under the first screen it fetches
+        // the edge late anyway; in it — a section right under a short hero, on a phone — the edge
+        // may be the largest thing painted, and `fetchpriority="low"` held it behind every script
+        // of the page: the largest paint came seconds late. The hero's picture keeps the lead:
+        // it is `high`, the edge is what the browser gives a picture it sees on the screen.
+        return self::rest().'<picture class="webx-overlap__edge" aria-hidden="true">'.$sources
+            .'<img class="webx-overlap__image" src="'.e($main['url']).'"'.$choice.' alt=""'.self::size($main).' decoding="async"></picture>';
+    }
+
+    /**
+     * The edge at rest (`resources/css/overlap-edge.css`), inline, before the first edge of the
+     * page — once a request ({@see FirstScreen}). A site with critical CSS defers runtime.css,
+     * and its critical file knows only the pages it was read from: on any other page the edge
+     * stood in the flow until the stylesheet came, then left it, and the section's words jumped
+     * up by its height. In a layer of its own, so every stylesheet of the page — runtime.css with
+     * the same rules, a theme restyling the edge — wins over it whatever comes first.
+     */
+    public static function rest(): string
+    {
+        if (! FirstScreen::claim(self::REST)) {
+            return '';
+        }
+
+        // The section is what the edge is placed from: the theme says so in its stylesheet (a
+        // widget's own rules never name a block), and that stylesheet is deferred too.
+        return '<style data-webx-overlap-edge>@layer webx-overlap-edge{:where([data-webx-overlap]){position:relative}'
+            .self::restCss().'}</style>';
+    }
+
+    /** The stylesheet of the edge at rest, its comments and runs of white space gone. */
+    public static function restCss(): string
+    {
+        static $css = null;
+
+        if ($css === null) {
+            $source = (string) file_get_contents(dirname(__DIR__).'/resources/css/overlap-edge.css');
+            $source = (string) preg_replace('~/\*.*?\*/~s', '', $source);
+            $source = (string) preg_replace('~\s+~', ' ', $source);
+            // Not around `+` and `-`: calc() needs them.
+            $source = (string) preg_replace('~\s*([{};:,])\s*~', '$1', $source);
+            $css = trim((string) preg_replace(['~\(\s+~', '~\s+\)~', '~;}~'], ['(', ')', '}'], $source));
+        }
+
+        return $css;
     }
 
     /** Whether the switch of the block is on: a stored `true`, or what a form sends for it. */

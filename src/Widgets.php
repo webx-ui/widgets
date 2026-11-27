@@ -62,6 +62,52 @@ final class Widgets implements HeadPart
     /** The behaviours inside the runtime: claiming one is allowed and loads nothing more. */
     public const array RUNTIME = ['disclosure', 'dialog', 'tabs', 'accordion', 'mobile-menu', 'header', 'dropdown', 'form-dialog', 'reveal', 'parallax', 'overlap'];
 
+    /**
+     * The widgets whose script waits until it is wanted (spec §4.1): the runtime fetches it when an
+     * element it starts on comes near the screen or is touched, and a page where none comes near
+     * never fetches it. Its stylesheet is in the head as before: the page looks the same at once.
+     * The selector is the one the script registers with `webx.widget` (`OnDemandTest` holds them
+     * together). A group — the parts of a form — is fetched together and run in the group's order:
+     * the steps of a form start on the form's own script.
+     *
+     * What is not here loads as before, at once: what has no element to wait for (the consent
+     * banner, the glide, the source of a visit), what is fixed on the screen anyway (the contact
+     * button, back to top, the notice bar), the offer of a language, and what changes its own look
+     * as it starts or works on a field the visitor already holds, all of them a few lines: the
+     * counter (its numbers below the screen at zero from the start, not the server's dropping to
+     * zero as they come near), share (a phone's share sheet instead of the links), the fields (Show
+     * of a password, printed `hidden` until the script), the files of a field and the phone mask.
+     */
+    public const array ON_DEMAND = [
+        'slider' => '[data-webx-slider]',
+        'lightbox' => 'a[data-webx-lightbox]',
+        'zoom' => '[data-webx-zoom]',
+        'photos' => '[data-webx-photos]',
+        'video' => '[data-webx-video], [data-webx-video-background]',
+        'map' => '[data-webx-map]',
+        'map-google' => '[data-webx-map]',
+        'map-embed' => '[data-webx-map]',
+        'compare' => '[data-webx-compare]',
+        'countdown' => '[data-webx-countdown]',
+        'load-more' => '[data-webx-load-more]',
+        'drag-scroll' => '[data-webx-drag-scroll]',
+        'table' => '[data-webx-table]',
+        'toc' => '[data-webx-toc]',
+        'select' => '[data-webx-select]',
+        'suggest' => '[data-webx-suggest]',
+        'form' => 'form[data-webx-send]',
+        'datetime' => '[data-webx-datetime]',
+        'steps' => 'form.webx-form--steps',
+        'summary' => '[data-webx-summary]',
+        'captcha' => '[data-webx-captcha]',
+    ];
+
+    /** The widgets fetched as one: the first of them claimed names the group. */
+    public const array GROUPS = ['form' => ['form', 'datetime', 'steps', 'summary', 'captcha']];
+
+    /** `data-webx-eager="slider lightbox"` anywhere on the page: those scripts load at once. */
+    private const string EAGER = '~\sdata-webx-eager\s*=\s*"([a-z0-9 -]*)"~i';
+
     /** `data-webx-smooth-scroll` on the page's <html> or <body>: the switch of the glide (spec §14). */
     private const string SMOOTH_SCROLL = '~<(?:html|body)\b[^>]*\sdata-webx-smooth-scroll(?:\s*=|[\s>])~i';
 
@@ -73,6 +119,9 @@ final class Widgets implements HeadPart
 
     /** @var array<string, bool> widget => whether the first paint needs it */
     private array $claimed = [];
+
+    /** @var array<string, true> widgets whose script this page loads at once, though it could wait */
+    private array $eager = [];
 
     /** @var list<bool> the open `later()` and `@webxLater` around what renders now */
     private array $holds = [];
@@ -112,6 +161,25 @@ final class Widgets implements HeadPart
         }
 
         $this->claimed[$widget] = ($this->claimed[$widget] ?? false) || ! in_array(true, $this->holds, true);
+    }
+
+    /**
+     * Load the script of an on-demand widget at once on this page, rather than when its element
+     * comes near (spec §4.1): a widget of the first screen whose start must not wait for the
+     * runtime. A template can say the same with `data-webx-eager="<widget>"` on any element.
+     */
+    public function eager(string $widget): void
+    {
+        $this->eager[$widget] = true;
+
+        // A group is wanted at once whole: its parts start on one another.
+        foreach (self::GROUPS as $members) {
+            if (in_array($widget, $members, true)) {
+                foreach ($members as $member) {
+                    $this->eager[$member] = true;
+                }
+            }
+        }
     }
 
     /**
@@ -335,8 +403,9 @@ final class Widgets implements HeadPart
             $body[] = $lightbox;
         }
 
-        // A piece goes into a page already painted: nothing there to wait for.
-        [$links, $scripts] = $this->tags(later: false);
+        // A piece goes into a page already painted: nothing there to wait for, and the panel
+        // starts what it puts in at once.
+        [$links, $scripts] = $this->tags(later: false, onDemand: false);
         $styled = ! $this->chain->isEmpty();
 
         return [
@@ -386,6 +455,7 @@ final class Widgets implements HeadPart
         $this->claimed = [];
         $this->holds = [];
         $this->forms = [];
+        $this->eager = [];
         $this->dialogsDone = false;
         $this->sequences = [];
     }
@@ -436,6 +506,14 @@ final class Widgets implements HeadPart
         if (self::smoothScroll($html) && $this->built('smooth-scroll', 'js')) {
             $this->need('smooth-scroll');
         }
+
+        if (preg_match_all(self::EAGER, $html, $eager) > 0) {
+            foreach ($eager[1] as $names) {
+                foreach (preg_split('/\s+/', trim($names), -1, PREG_SPLIT_NO_EMPTY) ?: [] as $name) {
+                    $this->eager(strtolower($name));
+                }
+            }
+        }
     }
 
     /**
@@ -463,12 +541,17 @@ final class Widgets implements HeadPart
      * the first paint: `media="print"` until loaded, and in `<noscript>` for a browser without
      * JavaScript, which shows that dialog's form as a page of its own.
      *
+     * With `$onDemand`, the script of a widget of `ON_DEMAND` is not a tag but an entry of the list
+     * the runtime reads (`data-webx-on-demand`, spec §4.1), unless the page wants it at once.
+     *
      * @return array{list<string>, list<string>}
      */
-    private function tags(bool $later = true): array
+    private function tags(bool $later = true, bool $onDemand = true): array
     {
         $styles = [];
         $scripts = [];
+        /** @var array<string, array{src: array<string, string>, on: array<string, string>}> $waiting */
+        $waiting = [];
 
         foreach (['runtime', ...array_diff($this->claimed(), self::RUNTIME)] as $widget) {
             if (($url = $this->url($widget, 'css')) !== null) {
@@ -478,12 +561,49 @@ final class Widgets implements HeadPart
                     : $link;
             }
 
-            if (($url = $this->url($widget, 'js')) !== null) {
-                $scripts[] = '<script type="module" src="'.e($url).'"></script>';
+            if (($url = $this->url($widget, 'js')) === null) {
+                continue;
             }
+
+            if ($onDemand && isset(self::ON_DEMAND[$widget]) && ! isset($this->eager[$widget])) {
+                $group = $this->group($widget);
+                $waiting[$group]['src'][$widget] = $url;
+                $waiting[$group]['on'][$widget] = self::ON_DEMAND[$widget];
+
+                continue;
+            }
+
+            $scripts[] = '<script type="module" src="'.e($url).'"></script>';
+        }
+
+        if ($waiting !== []) {
+            $list = [];
+            foreach ($waiting as $name => $entry) {
+                // A group in its own order, whatever the order of the claims: the form before its steps.
+                $order = array_flip(self::GROUPS[$name] ?? []);
+                $sort = static fn (string $a, string $b): int => ($order[$a] ?? 0) <=> ($order[$b] ?? 0);
+                uksort($entry['src'], $sort);
+                uksort($entry['on'], $sort);
+                $list[$name] = ['src' => array_values($entry['src']), 'on' => implode(', ', array_unique($entry['on']))];
+            }
+
+            // Before the runtime's tag, which reads it; a list of addresses, not a script to run.
+            array_splice($scripts, 0, 0, ['<script type="application/json" data-webx-on-demand>'.json_encode($list, JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR).'</script>']);
         }
 
         return [$styles, $scripts];
+    }
+
+    /** The name a widget is fetched under: its group's, or its own. */
+    private function group(string $widget): string
+    {
+        foreach (self::GROUPS as $name => $members) {
+            if (in_array($widget, $members, true)) {
+                return $name;
+            }
+        }
+
+        return $widget;
     }
 
     private function built(string $widget, string $extension): bool

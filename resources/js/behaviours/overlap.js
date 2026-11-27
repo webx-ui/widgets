@@ -31,6 +31,9 @@
  *            so that it is in place before the pinned one goes up, and no more than it takes this
  *            section's bottom to come into the screen: what follows it is never seen covered.
  * A `translate`, written on this section: its place, its view timeline and the sizes above stay.
+ * With no way to come up (rise < 1: a short section under a short pinned one, its bottom on the
+ * screen before the pin starts) nothing waits below and the edge stays as at rest, clipped: whole,
+ * it would lie over the words above from the first frame, the largest paint of the screen.
  *
  * The edge runs ahead of its section over the same `rise`, so that the fog covers the words above
  * while the section's own words are still low on the screen: a `transform` of its own, furthest
@@ -157,6 +160,15 @@ export function overlap(el) {
   const name = `--webx-overlap-${++count}`
   const scope = pinned.parentElement
   let sizes = { start: 0, hold: 1, leave: 1, sink: 0, rise: 1, lead: 0, rest: 0, share: 0 }
+  // Whether this section comes up at all: with no way to come up (a short section under a short
+  // pinned one) it stands in its place, and its edge stays as it is at rest — the lowest
+  // `--webx-overlap-peek` of it. Whole, it would lie over the words above from the first frame.
+  const shape = (rises) =>
+    edges.forEach((picture) => {
+      picture.classList.toggle('webx-overlap__edge--whole', rises)
+      picture.classList.toggle('webx-overlap__edge--ahead', rises)
+      if (!driven) picture.classList.toggle('webx-overlap__edge--ahead-script', rises)
+    })
   // Where this section is now, below its place: the script's path writes it, the focus reads it.
   let sunk = 0
   // The script's path: where the pin ends by itself, set again with every measure (see above).
@@ -223,6 +235,7 @@ export function overlap(el) {
     el.style.setProperty('--webx-overlap-rest', `${sizes.rest}px`)
     el.style.setProperty('--webx-overlap-rest-share', sizes.share.toFixed(4))
     pinned.style.setProperty('--webx-overlap-gone', `${Math.max(0, Math.round(gone))}px`)
+    shape(rise >= 1)
     pinned.dispatchEvent(new CustomEvent('webx:overlap', { bubbles: true }))
     if (!settling && typeof requestAnimationFrame === 'function')
       settling = requestAnimationFrame(settle)
@@ -266,9 +279,6 @@ export function overlap(el) {
   el.style.setProperty('--webx-overlap-timeline', name)
   pinned.classList.add('webx-overlap-pinned', 'webx-overlap-pinned--held')
   el.classList.add('webx-overlap--rising')
-  edges.forEach((picture) =>
-    picture.classList.add('webx-overlap__edge--whole', 'webx-overlap__edge--ahead'),
-  )
   // The section's own colour under the edge that runs ahead; a section with none takes the token.
   const colour = getComputedStyle(el).backgroundColor
   if (colour && !/^(transparent|rgba\(.*,\s*0\))$/.test(colour))
@@ -307,7 +317,6 @@ export function overlap(el) {
   } else {
     pinned.classList.add('webx-overlap-pinned--script')
     el.classList.add('webx-overlap--rising-script')
-    edges.forEach((picture) => picture.classList.add('webx-overlap__edge--ahead-script'))
     fading.forEach((target) => target.classList.add('webx-overlap-fade--script'))
     let seen = false
 

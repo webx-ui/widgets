@@ -43,9 +43,11 @@ final class OverlapTest extends TestCase
         );
 
         $this->assertSame(
-            '<section data-wx-block="x" data-webx-overlap><picture class="webx-overlap__edge" aria-hidden="true">'
+            '<section data-wx-block="x" data-webx-overlap>'
+            .'<style data-webx-overlap-edge>@layer webx-overlap-edge{:where([data-webx-overlap]){position:relative}'.Overlap::restCss().'}</style>'
+            .'<picture class="webx-overlap__edge" aria-hidden="true">'
             .'<source media="(max-width: 40rem)" srcset="/media/fog-phone.png" width="720" height="140">'
-            .'<img class="webx-overlap__image" src="/media/fog.png" alt="" width="1920" height="220" decoding="async" fetchpriority="low"></picture><p>Words</p></section>',
+            .'<img class="webx-overlap__image" src="/media/fog.png" alt="" width="1920" height="220" decoding="async"></picture><p>Words</p></section>',
             $html,
         );
     }
@@ -68,6 +70,31 @@ final class OverlapTest extends TestCase
         $this->assertSame('', Overlap::edge(true, 'fog.png', []));
         // The attribute stands without an edge: the section still slides, on its own top.
         $this->assertSame(' data-webx-overlap', Overlap::attributes(true));
+    }
+
+    #[Test]
+    public function the_edge_at_rest_comes_inline_once_a_page_in_a_layer_of_its_own(): void
+    {
+        $first = Overlap::edge(true, self::WIDE);
+        $second = Overlap::edge(true, self::NARROW);
+
+        // Before the first edge: placed and clipped before any deferred stylesheet has come.
+        $this->assertStringStartsWith('<style data-webx-overlap-edge>@layer webx-overlap-edge{', $first);
+        $this->assertStringStartsWith('<picture ', $second);
+        $this->assertSame(1, substr_count($first.$second, '<style'));
+
+        $css = Overlap::restCss();
+        $this->assertStringNotContainsString('/*', $css);
+        $this->assertStringContainsString('.webx-overlap__edge{position:absolute;', $css);
+        $this->assertStringContainsString('clip-path:inset(max(0px,calc(100% - var(--webx-overlap-peek) * 100svh)) 0 0 0)', $css);
+        $this->assertStringContainsString('--webx-overlap-peek:0.18', $css);
+        // Placed from its section before the theme's stylesheet says so too.
+        $this->assertStringContainsString('{:where([data-webx-overlap]){position:relative}', $first);
+
+        // The runtime's stylesheet has the same rules: overlap.css no longer does.
+        $this->assertStringContainsString("@import './overlap-edge.css';", (string) file_get_contents(__DIR__.'/../resources/css/runtime.css'));
+        $this->assertStringContainsString('.webx-overlap__edge{', (string) file_get_contents(__DIR__.'/../dist/runtime.css'));
+        $this->assertStringNotContainsString('--webx-overlap-peek: 0.18', (string) file_get_contents(__DIR__.'/../resources/css/overlap.css'));
     }
 
     #[Test]

@@ -92,7 +92,7 @@ final class PageToolsTest extends TestCase
         $html = (string) $this->get('/prose')->assertOk()->getContent();
         $this->assertStringContainsString('<section class="b-text"><div class="webx-table" data-webx-table style="--webx-table-columns: 1"><div class="webx-table__caption" id="webx-table-1">Prices <em>2026</em></div>', $html);
         $this->assertMatchesRegularExpression('~<link rel="stylesheet" href="[^"]+/table\.css">~', $html);
-        $this->assertMatchesRegularExpression('~<script type="module" src="[^"]+/table\.js"></script>~', $html);
+        $this->assertLoadsScript('table', $html);
 
         $template = (string) $this->get('/template-table')->assertOk()->getContent();
         $this->assertStringNotContainsString('data-webx-table', $template);
@@ -197,7 +197,7 @@ final class PageToolsTest extends TestCase
 
         foreach (['back-to-top', 'share'] as $widget) {
             $this->assertMatchesRegularExpression("~<link rel=\"stylesheet\" href=\"[^\"]+/{$widget}\.css\">~", $html);
-            $this->assertMatchesRegularExpression("~<script type=\"module\" src=\"[^\"]+/{$widget}\.js\"></script>~", $html);
+            $this->assertLoadsScript($widget, $html);
         }
     }
 
