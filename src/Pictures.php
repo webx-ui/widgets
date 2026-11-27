@@ -226,7 +226,11 @@ final class Pictures
             return $html;
         }
 
-        $printed = implode('', array_map(static fn (array $source): string => '<source'.self::attributes($source).'>', $sources));
+        // `display: contents` hands the `<source>`s to the picture's parent: in a flex or grid
+        // container each was an item of its own, an empty one with the container's `gap` beside
+        // it. Hidden inline, as the picture is made boxless inline: wherever the directive prints,
+        // with or without the runtime's stylesheet (deferred on a site with critical CSS).
+        $printed = implode('', array_map(static fn (array $source): string => '<source'.self::attributes($source).' style="display: none">', $sources));
 
         return substr($html, 0, $at).'<picture class="webx-picture" style="display: contents">'.$printed.$image.'</picture>'.substr($html, $at + strlen($found[0][0]));
     }

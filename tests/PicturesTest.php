@@ -113,6 +113,33 @@ final class PicturesTest extends TestCase
     }
 
     #[Test]
+    public function every_source_is_hidden_so_a_flex_or_grid_parent_gives_it_no_gap(): void
+    {
+        // The picture is `display: contents`: a `<source>` with a box of its own would be an empty
+        // item of the card's flex row or the gallery's grid, a `gap` beside it.
+        config(['webx-media.thumbs.formats' => ['avif', 'webp']]);
+        $this->cut('photo-1', 'avif', [480, 1080, 1800]);
+        $this->cut('photo-2', 'avif', [480, 1080, 1800]);
+        $this->cut('photo-2', 'webp', [480, 1080]);
+
+        $template = "<div style=\"display: flex; gap: 1rem\">\n@webxPicture(\$picture, '100vw', ['mobile' => \$phone])\n".self::IMAGE."@endwebxPicture\n</div>\n";
+        $html = Blade::render($template, ['picture' => $this->value('photo-1'), 'phone' => $this->value('photo-2')], deleteCachedView: true);
+
+        preg_match_all('~<source\b[^>]*>~', $html, $sources);
+        $this->assertCount(3, $sources[0], 'the phone in AVIF and in its own WebP, the picture in AVIF');
+
+        foreach ($sources[0] as $source) {
+            $this->assertStringEndsWith(' style="display: none">', $source);
+        }
+
+        // Held back until a widget shows it, it is hidden the same way.
+        config(['webx-widgets.pictures.defer' => true]);
+        $held = Blade::render("@webxHeld\n".$template.'@endwebxHeld', ['picture' => $this->value('photo-1'), 'phone' => $this->value('photo-2')], deleteCachedView: true);
+        $this->assertSame(3, substr_count($held, ' style="display: none">'));
+        $this->assertStringContainsString('<picture class="webx-picture" style="display: contents"><source media=', $held);
+    }
+
+    #[Test]
     public function with_formats_the_img_gets_a_source_per_format_and_its_own_copies(): void
     {
         config(['webx-media.thumbs.formats' => ['avif', 'webp']]);
@@ -121,7 +148,7 @@ final class PicturesTest extends TestCase
 
         $html = Blade::render("@webxPicture(\$picture, '(min-width: 40rem) 50vw, 100vw')\n".self::IMAGE."@endwebxPicture\n", ['picture' => $this->value('photo-1')], deleteCachedView: true);
 
-        $this->assertMatchesRegularExpression('~^\s*<picture class="webx-picture" style="display: contents"><source type="image/avif" srcset="[^"]+/media/thumbs/photo-1/480\.avif\?v=\w+ 480w, [^"]+/1080\.avif\?v=\w+ 1080w, [^"]+/1800\.avif\?v=\w+ 1800w" sizes="\(min-width: 40rem\) 50vw, 100vw"><img class="b-x__picture" src="[^"]+/photo-1\.webp\?v=\w+" alt="Photo 1" width="1800" height="1200" loading="lazy" srcset="[^"]+/480\.webp\?v=\w+ 480w, [^"]+/1080\.webp\?v=\w+ 1080w, [^"]+/photo-1\.webp\?v=\w+ 1800w" sizes="\(min-width: 40rem\) 50vw, 100vw"></picture>\s*$~', $html);
+        $this->assertMatchesRegularExpression('~^\s*<picture class="webx-picture" style="display: contents"><source type="image/avif" srcset="[^"]+/media/thumbs/photo-1/480\.avif\?v=\w+ 480w, [^"]+/1080\.avif\?v=\w+ 1080w, [^"]+/1800\.avif\?v=\w+ 1800w" sizes="\(min-width: 40rem\) 50vw, 100vw" style="display: none"><img class="b-x__picture" src="[^"]+/photo-1\.webp\?v=\w+" alt="Photo 1" width="1800" height="1200" loading="lazy" srcset="[^"]+/480\.webp\?v=\w+ 480w, [^"]+/1080\.webp\?v=\w+ 1080w, [^"]+/photo-1\.webp\?v=\w+ 1800w" sizes="\(min-width: 40rem\) 50vw, 100vw"></picture>\s*$~', $html);
     }
 
     #[Test]
@@ -194,7 +221,7 @@ final class PicturesTest extends TestCase
 
         // 1800 × 1200 at the screen's height is 150 screens' widths of a phone, not one.
         $wide = $this->render(['tabs' => [$tab], 'media_bleed' => true], 'tabs');
-        $this->assertMatchesRegularExpression('~<source type="image/avif" srcset="[^"]+" sizes="\(max-width: 40rem\) 150vw, 100vw">\s*<img class="b-tabs__picture" [^>]*style="--b-tabs-ratio: 1800 / 1200"~', $wide, 'its size survives the formats');
+        $this->assertMatchesRegularExpression('~<source type="image/avif" srcset="[^"]+" sizes="\(max-width: 40rem\) 150vw, 100vw" style="display: none">\s*<img class="b-tabs__picture" [^>]*style="--b-tabs-ratio: 1800 / 1200"~', $wide, 'its size survives the formats');
 
         // Without the option, or with a text beside it: the width of the screen, or of half the column, as before.
         $this->assertSame(1, substr_count($this->render(['tabs' => [$tab]], 'tabs'), 'sizes="100vw"'));
@@ -215,7 +242,7 @@ final class PicturesTest extends TestCase
         [$first, $second] = array_slice(explode('<picture class="webx-picture"', $html), 1);
 
         // The first: in AVIF and by width, for the card's share of the row — lazy, as it was.
-        $this->assertMatchesRegularExpression('~<source type="image/avif" srcset="[^"]+/photo-1/480\.avif\?v=\w+ 480w, [^"]+/1080\.avif\?v=\w+ 1080w, [^"]+/1800\.avif\?v=\w+ 1800w" sizes="'.preg_quote($share, '~').'">~', $first);
+        $this->assertMatchesRegularExpression('~<source type="image/avif" srcset="[^"]+/photo-1/480\.avif\?v=\w+ 480w, [^"]+/1080\.avif\?v=\w+ 1080w, [^"]+/1800\.avif\?v=\w+ 1800w" sizes="'.preg_quote($share, '~').'" style="display: none">~', $first);
         $this->assertMatchesRegularExpression('~<img class="webx-photos__photo is-active" src="[^"]+/photo-1\.webp\?v=\w+"[^>]* loading="lazy"[^>]* srcset="[^"]+/480\.webp\?v=\w+ 480w, [^"]+/1080\.webp\?v=\w+ 1080w, [^"]+/photo-1\.webp\?v=\w+ 1800w" sizes="'.preg_quote($share, '~').'">~', $first);
 
         // The next: no address at all — neither its source nor its copies — until the script shows it.
@@ -225,7 +252,7 @@ final class PicturesTest extends TestCase
 
         // One photo: the plain picture, with the same choice.
         $one = Blade::render('<x-webx-photos :images="$images" class="b-x__picture" />', ['images' => [$this->value('photo-1')]], deleteCachedView: true);
-        $this->assertMatchesRegularExpression('~^\s*<picture class="webx-picture" style="display: contents"><source type="image/avif" srcset="[^"]+" sizes="100vw"><img class="b-x__picture" [^>]+ srcset="[^"]+" sizes="100vw"></picture>\s*$~', $one);
+        $this->assertMatchesRegularExpression('~^\s*<picture class="webx-picture" style="display: contents"><source type="image/avif" srcset="[^"]+" sizes="100vw" style="display: none"><img class="b-x__picture" [^>]+ srcset="[^"]+" sizes="100vw"></picture>\s*$~', $one);
     }
 
     #[Test]
